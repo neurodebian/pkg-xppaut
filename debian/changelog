@@ -1,0 +1,55 @@
+xppaut (5.85-3) unstable; urgency=low
+
+  * debian/doc-base
+   - HTML help integrated with doc-base, closes: #222148
+  * new maintainer
+
+ -- Balbir Thomas <thomas.1037@osu.edu>  Thu,  5 Aug 2004 01:54:31 -0400
+
+xppaut (5.85-2) unstable; urgency=low
+
+  * debian/control
+    - Updated to debhelper 4
+    - Updated the standards version
+  * debian/rules
+    - Reordered some lines in the clean rule so stamps are removed first
+    - cleaned up comments
+    - removed debhelper commands that did nothing:
+      - commented ones
+      - dh_installexamples
+      - dh_clean -k
+      - dh_installcron
+      - dh_installinfo
+      - dh_installman
+  * debian/dirs
+      - removed empty /usr/sbin directory
+
+ -- Isaac Jones <ijones@syntaxpolice.org>  Fri,  7 Nov 2003 22:52:01 -0500
+
+xppaut (5.85-1) unstable; urgency=low
+
+  * New upstream release, closes: #216089
+  * Upstream Changelog: VERSION 5.85  July 2003
+    - added crosscorrelation
+    - fixed some bugs
+    - added clone which sort of works
+    - added postscript options like font size, font type, line width
+  * And From VERSION 5.6   Sept 2002
+    - added POISSON(t) function
+    - nullclines in the animator
+
+ -- Isaac Jones <ijones@syntaxpolice.org>  Sat, 18 Oct 2003 21:11:02 -0400
+
+xppaut (5.57-1) unstable; urgency=low
+
+  * New upstream release
+  * Added some more information to the man page
+  * Updated the standards version
+
+ -- Isaac Jones <ijones@syntaxpolice.org>  Wed, 23 Apr 2003 22:46:07 -0400
+
+xppaut (5.56-1) unstable; urgency=low
+
+  * Initial Release.
+  * Altered Makefile to add install target and DESTDIR
+ -- Isaac Jones <ijones@syntaxpolice.org>  Mon,  20 October 2002 23:44:47 -0500

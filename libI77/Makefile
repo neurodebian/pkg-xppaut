@@ -8,7 +8,7 @@ CC = gcc
 #  wsfe.c:42: structure has no member named `_ptr'
 #   ...
 #  Then try the following:
-CFLAGS = -DSkip_f2c_Undefs -DNON_UNIX_STDIO -O
+CFLAGS += -DSkip_f2c_Undefs -DNON_UNIX_STDIO -O
 #
 # I really don't know what the $!@@**! is going on but it works ...
 #

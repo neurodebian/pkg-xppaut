@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <X11/Xlib.h>
 #include "menudrive.h"
+#include <sys/stat.h>
+#include <stdlib.h>
 extern char *info_message,*ic_hint[],*sing_hint[],
 *null_hint[],*flow_hint[],*null_freeze[], *bvp_hint[],*color_hint[],
   *stoch_hint[];;
@@ -35,17 +37,27 @@ typedef struct {
 MSGBOXSTRUCT MsgBox;
 
 
-char *getenv();
-
-
 xpp_hlp()
 {
   char cmd[256];
-  if(getenv("XPPHELP")==NULL||getenv("BROWSER")==NULL){
-    err_msg("XPPHELP or BROWSER undefined");
+  char *helpPath;
+  helpPath = getenv("XPPHELP");
+  if(helpPath==NULL){
+    struct stat* statBuff = (struct stat*) malloc(sizeof(struct stat));
+    /* This is the default path on the Debian GNU/Linux system: */
+    stat ("/usr/share/doc/xppaut/html", statBuff);
+    if (S_ISDIR (statBuff->st_mode))
+      helpPath = "/usr/share/doc/xppaut/html";
+    else {
+      err_msg("XPPHELP undefined");
+      return;
+    }
+  }
+  if(getenv("BROWSER")==NULL){
+    err_msg("BROWSER undefined");
     return;
   }
-  sprintf(cmd,"file:///%s",getenv("XPPHELP"));
+  sprintf(cmd,"file:///%s",helpPath);
   if(fork()==0){
       execlp(getenv("BROWSER"),getenv("BROWSER"),cmd,(char *)0);
   }

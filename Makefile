@@ -1,7 +1,7 @@
 # Copyright (C) 1990-2002 Bard Ermentrout
 # Edited for Debian GNU/Linux.
 DESTDIR =
-BINDIR = $(DESTDIR)/usr/X11R6/bin
+BINDIR = $(DESTDIR)/usr/bin
 DOCDIR = $(DESTDIR)/usr/share/doc/xppaut
 # End Debian Edit
 #################################
@@ -20,7 +20,7 @@ OTHERLIBS= libcvode.a libf2cm.a
 ################################## 
 # Standard Linux distributions   #
 ##################################
-CFLAGS=   -g -O -DAUTO -DCVODE_YES -DHAVEDLL -DMYSTR=$(VERSION)  -I/usr/X11R6/include
+CFLAGS +=   -g -O -DAUTO -DCVODE_YES -DHAVEDLL -DMYSTR=$(VERSION)  -I/usr/X11R6/include
 LDFLAGS=  -L/usr/X11R6/lib
 LIBS= -lX11 -lm -ldl 
 # NOTE: Recent (RedHat 8) versions of GCC seem to no longer have
@@ -181,20 +181,20 @@ install: xppaut
 	mkdir -p $(BINDIR)
 	mkdir -p $(DOCDIR)/html
 	mkdir -p $(DOCDIR)/examples
-	mkdir -p $(DESTDIR)/usr/X11R6/man/man1
+	mkdir -p $(DESTDIR)/usr/share/man/man1
 # Put everything home
 	strip xppaut
 	cp xppaut $(BINDIR)
 	cp -r ode* $(DOCDIR)/examples
 	cp -r help/* $(DOCDIR)/html
 	cp README *.pdf $(DOCDIR) 
-	cp xppaut.1 $(DESTDIR)/usr/X11R6/man/man1
+	cp xppaut.1 $(DESTDIR)/usr/share/man/man1
 # End Debian Ed
 uninstall: 
 # Remove everything you created
 	rm $(BINDIR)/xppaut
 	rm -r $(DOCDIR)
-	rm -r $(DESTDIR)/usr/X11R6/man/man1/xppaut.1
+	rm -r $(DESTDIR)/usr/share/man/man1/xppaut.1
 # End Debian Ed
 ##################################################
 #    Make s stand alone library -must link your rhs
@@ -222,7 +222,7 @@ binary:
 #  clean
 ##############################################
 clean:
-	rm *.o;rm libI77/*.o;rm cvodesrc/*.o
+	rm -f {*.o,*.a};rm -r libI77/{*.o,*.a};rm -f cvodesrc/{*.a,*.o};rm -f ode/example.so;rm xppaut
 #######################################################
 #  Documentation
 #######################################################

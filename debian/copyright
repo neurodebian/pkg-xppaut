@@ -1,0 +1,15 @@
+This package was debianized by Isaac Jones <ijones@syntaxpolice.org> on
+Mon,  4 Mar 2002 23:44:47 -0500.
+
+It was downloaded from http://www.math.pitt.edu/~bard/xpp/download.html
+
+Upstream Author:  G. Bard Ermentrout <bard+@pitt.edu>
+
+Copyright:
+
+This software is Copyright (C) 1995-2002 Bard Ermentrout
+
+You are free to distribute this software under the terms of the GNU
+General Public License.  On Debian systems, the complete text of the
+GNU General Public License can be found in
+/usr/share/common-licenses/GPL file.

@@ -1,0 +1,23 @@
+Source: xppaut
+Section: x11
+Priority: optional
+Maintainer: Balbir Thomas <thomas.1037@osu.edu>
+Build-Depends: debhelper (>> 4.0.0), xlibs-dev
+Standards-Version: 3.6.1.0
+
+Package: xppaut
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: Phase Plane Plus Auto: Solves many kinds of equations
+ XPPAUT is a tool for solving
+    * differential equations,
+    * difference equations,
+    * delay equations,
+    * functional equations,
+    * boundary value problems, and
+    * stochastic equations.
+ .
+ The code brings together a number of useful algorithms and is
+ extremely portable. All the graphics and interface are written
+ completely in Xlib which explains the somewhat idiosyncratic and
+ primitive widgets interface.
