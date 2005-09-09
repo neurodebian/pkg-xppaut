@@ -1,3 +1,12 @@
+xppaut (5.85-3.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Fix FTBFS with gcc-4.0 (missing #include of <errno.h>): Applied patch from
+    Andreas Jochens <aj@andaco.de>. (closes: #306173)
+    
+
+ -- Rob Bradford <robster@debian.org>  Sat, 10 Sep 2005 00:51:41 +0100
+
 xppaut (5.85-3) unstable; urgency=low
 
   * debian/doc-base

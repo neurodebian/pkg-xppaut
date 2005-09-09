@@ -35,6 +35,7 @@
 #include "help_defs.h"
 #include "browse.h"
 #include "struct.h"
+#include <errno.h>
 
 #define FIX_SIZE 3
 #define FIX_MIN_SIZE 2
