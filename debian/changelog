@@ -1,3 +1,10 @@
+xppaut (5.85-3.2) unstable; urgency=low
+
+  * Non-maintainer upload to help with xlibs-dev transition.
+  * debian/control: Replace xlibs-dev build-dep. (Closes: #346836)
+
+ -- Marc 'HE' Brockschmidt <he@debian.org>  Fri, 20 Jan 2006 17:12:37 +0100
+
 xppaut (5.85-3.1) unstable; urgency=low
 
   * Non-maintainer upload.

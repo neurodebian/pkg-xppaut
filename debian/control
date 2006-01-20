@@ -2,7 +2,7 @@ Source: xppaut
 Section: x11
 Priority: optional
 Maintainer: Balbir Thomas <thomas.1037@osu.edu>
-Build-Depends: debhelper (>> 4.0.0), xlibs-dev
+Build-Depends: debhelper (>> 4.0.0), libx11-dev, x-dev, xlibs-data
 Standards-Version: 3.6.1.0
 
 Package: xppaut
