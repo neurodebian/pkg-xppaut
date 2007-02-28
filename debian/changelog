@@ -1,3 +1,11 @@
+xppaut (5.85-3.3) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Implement alternative Makefile for 64 bit to fix
+  segfaults on integration on amd64.(Closes: #412102)
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 28 Feb 2007 23:43:59 +0000
+
 xppaut (5.85-3.2) unstable; urgency=low
 
   * Non-maintainer upload to help with xlibs-dev transition.

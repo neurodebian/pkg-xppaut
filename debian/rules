@@ -10,6 +10,15 @@
 export DH_COMPAT=4
 export CFLAGS += -g -Wall
 
+DEB_BUILD_GNU_CPU ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_CPU)
+
+# method copied from db4.2
+USE_64PARSER_CPUS = zx86_64z zia64z zpowerpc64z zs390xz zalphaz
+MAKEFILE = Makefile
+ifeq (z$(DEB_BUILD_GNU_CPU)z,$(findstring z$(DEB_BUILD_GNU_CPU)z,$(USE_64PARSER_CPUS)))
+	MAKEFILE = Makefile.64
+endif
+
 ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
 	INSTALL_PROGRAM += -s
 endif
@@ -34,7 +43,7 @@ build-stamp: configure-stamp
 	dh_testdir
 
 	# Compile the package.
-	$(MAKE)
+	$(MAKE) -f ${MAKEFILE}
 	touch build-stamp
 
 clean:
@@ -43,7 +52,7 @@ clean:
 	dh_testroot
 
 	# Clean up after the build process.
-	-$(MAKE) clean
+	-$(MAKE) -f ${MAKEFILE} clean
 
 	dh_clean
 
@@ -53,7 +62,7 @@ install: build
 	dh_installdirs
 
 	# Install the package into debian/xppaut.
-	$(MAKE) install DESTDIR=$(CURDIR)/debian/xppaut
+	$(MAKE) -f ${MAKEFILE} install DESTDIR=$(CURDIR)/debian/xppaut
 
 
 # Nothing to do by default for build architecture-independent:
