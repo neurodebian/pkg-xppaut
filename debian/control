@@ -1,9 +1,9 @@
 Source: xppaut
 Section: x11
 Priority: optional
-Maintainer: Balbir Thomas <thomas.1037@osu.edu>
-Build-Depends: debhelper (>> 4.0.0), libx11-dev, x-dev, xlibs-data
-Standards-Version: 3.6.1.0
+Maintainer: Debian QA Group <packages@qa.debian.org>
+Build-Depends: debhelper (>= 5), libx11-dev, xbitmaps
+Standards-Version: 3.7.2
 
 Package: xppaut
 Architecture: any

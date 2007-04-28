@@ -222,7 +222,7 @@ binary:
 #  clean
 ##############################################
 clean:
-	rm -f {*.o,*.a};rm -r libI77/{*.o,*.a};rm -f cvodesrc/{*.a,*.o};rm -f ode/example.so;rm xppaut
+	rm -f *.o *.a libI77/*.o libI77/*.a cvodesrc/*.o cvodesrc/*.a ode/example.so xppaut
 #######################################################
 #  Documentation
 #######################################################

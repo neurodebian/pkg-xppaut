@@ -1,3 +1,21 @@
+xppaut (5.85-4) unstable; urgency=low
+
+  * QA upload.
+  * Package is orphaned (#419087); set maintainer to Debian QA Group.
+  * Switch to debhelper 5.
+  * Update build dependencies for modular X.  Closes: #419019.
+    - Replace xlibs-data with xbitmaps.
+    - Remove x-dev.
+  * Makefile, Makefile.64: Fix bashism.
+  * debian/menu: Add quotes to placate Lintian.
+  * debian/rules:
+    - Use perl to detect 64-bit machines.
+    - Let dh_strip handle DEB_BUILD_OPTIONS=nostrip.
+  * debian/watch: Fix pattern.
+  * Conforms to Standards version 3.7.2.
+
+ -- Matej Vela <vela@debian.org>  Sat, 28 Apr 2007 15:46:23 +0200
+
 xppaut (5.85-3.3) unstable; urgency=low
 
   * Non-maintainer upload.
