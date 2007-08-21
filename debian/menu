@@ -1,1 +1,1 @@
-?package(xppaut):needs="X11" section="Apps/Math" title="xppaut" command="/usr/bin/xppaut"
+?package(xppaut):needs="X11" section="Applications/Science/Mathematics" title="xppaut" command="/usr/bin/xppaut"

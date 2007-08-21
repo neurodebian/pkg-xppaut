@@ -183,7 +183,6 @@ install: xppaut
 	mkdir -p $(DOCDIR)/examples
 	mkdir -p $(DESTDIR)/usr/share/man/man1
 # Put everything home
-	strip xppaut
 	cp xppaut $(BINDIR)
 	cp -r ode* $(DOCDIR)/examples
 	cp -r help/* $(DOCDIR)/html

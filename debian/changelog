@@ -1,3 +1,14 @@
+xppaut (5.85-5) unstable; urgency=low
+
+  * QA upload.
+  * Makefile, Makefile.64: Let dh_strip do the stripping (honoring
+    DEB_BUILD_OPTIONS=nostrip).  Closes: #438314.
+  * debian/rules: Doh, `MAKE +=', not `$(MAKE) +='.  Closes: #412102.
+  * debian/rules: Don't ignore errors from `$(MAKE) clean'.
+  * debian/menu: Update section to Applications/Science/Mathematics.
+
+ -- Matej Vela <vela@debian.org>  Tue, 21 Aug 2007 11:32:24 +0200
+
 xppaut (5.85-4) unstable; urgency=low
 
   * QA upload.

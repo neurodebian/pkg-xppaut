@@ -14,7 +14,7 @@ else
 endif
 
 ifneq (,$(shell perl -MConfig -e 'print $$Config{ptrsize} != $$Config{intsize};'))
-	$(MAKE) += -f Makefile.64
+	MAKE += -f Makefile.64
 endif
 
 build: build-stamp
@@ -32,7 +32,7 @@ clean:
 	rm -f build-stamp
 
 	# Clean up after the build process.
-	-$(MAKE) clean
+	$(MAKE) clean
 
 	dh_clean
 
