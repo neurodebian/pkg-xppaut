@@ -26,7 +26,7 @@
 #define GROUP 26
 
 #define NAMLEN 10
-#define MAXARG 10
+#define MAXARG 20
 #define MAXEXPLEN 1024
 typedef struct var_info {
   char lhs[MAXEXPLEN],rhs[MAXEXPLEN],args[MAXARG][NAMLEN+1];

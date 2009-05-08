@@ -14,7 +14,7 @@ extern int METHOD;
 extern int ENDSING,PAR_FOL,SHOOT,PAUSER;
 
 extern int NFlags;
-double ShootIC[4][MAXODE];
+double ShootIC[8][MAXODE];
 int ShootICFlag;
 int ShootIndex;
 
@@ -103,7 +103,12 @@ silent_fixpt(double *x,double eps,double err,double big,int maxit,int n,
   er[i]=eval[2*i];
   em[i]=eval[2*i+1];
  }
-}
+} /* end silent fixed point  */
+
+
+
+
+/* main fixed point finder */ 
 do_sing(x,eps, err,big,maxit, n,ierr,stabinfo)
 double *x,eps, err, big;
 float *stabinfo;
@@ -114,11 +119,13 @@ int maxit, n,*ierr;
  int rp=0,rn=0,cp=0,cn=0,im=0;
  int pose,nege,pr;
  double *work,*eval,*b,*bp,*oldwork,*ework;
- double temp,oldt,old_x[MAXODE];
+ double temp,oldt=DELTA_T,old_x[MAXODE];
  char bob[80];
  char tempstring[80];
  char ch;
  double real,imag;
+ double bigpos=-1e10,bigneg=1e10;
+ int bpos=0,bneg=0;
  /* float xl[MAXODE]; */
  kmem=n*(2*n+5)+50;
  if((work=(double *)malloc(sizeof(double)*kmem))==NULL)
@@ -193,20 +200,28 @@ if(!PAR_FOL)
   if(fabs(imag)<.00000001)imag=0.0;
   if(real<0.0)
   {
-    if(imag!=0.0)cn++;
+    if(imag!=0.0){ 
+      cn++;
+      if(real<bigneg){bigneg=real;bneg=-1;}
+    }
     else
     {
      rn++;
      nege=i;
+     if(real<bigneg){bigneg=real;bneg=i;}
     }
   }
   if(real>0.0)
   {
-    if(imag!=0.0)cp++;
+    if(imag!=0.0){
+      cp++;
+       if(real>bigpos){bigpos=real;bpos=-1;}
+    }
     else
     {
      rp++;
      pose=i;
+      if(real>bigpos){bigpos=real;bpos=i;}
     }
   }
   if((real==0.0)&&(imag!=0.0))im++;
@@ -220,6 +235,16 @@ if(!PAR_FOL)
  
  *stabinfo=(float)(cp+rp)+(float)(cn+rn)/100.0;
  
+ /* Lets change Work back to transposed oldwork */
+   for(i=0;i<n;i++)
+     {
+       for(j=i+1;j<n;j++)
+	 {
+	   temp=oldwork[i+j*n];
+	   work[i+j*n]=oldwork[i*n+j];
+	   work[i*n+j]=temp;
+	 }
+     } 
  create_eq_box(cp,cn,rp,rn,im,x,eval,n);
  if(((rp==1)||(rn==1))&&(n>1))
  {
@@ -231,16 +256,7 @@ if(!PAR_FOL)
   if((ch=='y')||(PAR_FOL&&SHOOT))
   {
    oldt=DELTA_T;
-   /* Lets change Work back to transposed oldwork */
-   for(i=0;i<n;i++)
-     {
-       for(j=i+1;j<n;j++)
-	 {
-	   temp=oldwork[i+j*n];
-	   work[i+j*n]=oldwork[i*n+j];
-	   work[i*n+j]=temp;
-	 }
-     } 
+  
    if(rp==1)
    {
      /* printf(" One real positive -- pos=%d lam=%g \n",pose,eval[2*pose]); */
@@ -277,9 +293,67 @@ if(!PAR_FOL)
    }
     DELTA_T=oldt;
   }
+ }  /* end of normal shooting stuff */
+
+ /* strong (un) stable manifold calculation  
+    only one-d manifolds calculated */
+ /* lets check to see if it is relevant */
+ if(((rn>1)&&(bneg>=0))||((rp>1)&&(bpos>=0))) {
+   ch='n';
+   if(!PAR_FOL)
+     {
+       ch=(char)TwoChoice("YES","NO","Draw Strong Sets?","yn");
+     }
+
+   if((ch=='y')||(PAR_FOL&&SHOOT))
+     {
+       oldt=DELTA_T;
+            
+      
+	 if((rp>1)&&(bpos>=0)) /* then there is a strong unstable */
+	 {
+	   printf("strong unstable %g \n",bigpos);
+	   get_evec(work,oldwork,b,bp,n,maxit,err,ipivot,bigpos,ierr);
+	   if(*ierr==0)
+	     {
+	       change_current_linestyle(UnstableManifoldColor,&oldcol);
+	       pr_evec(x,b,n,pr,bigpos);
+	       DELTA_T=fabs(DELTA_T);
+	       shoot(bp,x,b,1);
+	       shoot(bp,x,b,-1);
+	       change_current_linestyle(oldcol,&dummy);
+	       
+	     }
+	   else
+	     err_msg("Failed to compute eigenvector");   
+	 }
+	 
+     if((rn>1)&&(bneg>=0)) /* then there is a strong stable */
+	 {
+	   printf("strong stable %g \n",bigneg);
+	   get_evec(work,oldwork,b,bp,n,maxit,err,ipivot,bigneg,ierr);
+	   if(*ierr==0)
+	     {
+	       change_current_linestyle(StableManifoldColor,&oldcol);
+	       pr_evec(x,b,n,pr,bigneg);
+	       DELTA_T=-fabs(DELTA_T);
+	       shoot(bp,x,b,1);
+	       shoot(bp,x,b,-1);
+	       change_current_linestyle(oldcol,&dummy);
+	     }
+	   else
+	     err_msg("Failed to compute eigenvector");
+    
+
+	 }
+     }
+        DELTA_T=oldt;   
  }
-  free(work);
-  return;
+  
+
+ 
+ free(work);
+ return;
 }
 
 pr_evec(x,ev,n,pr,eval)
@@ -291,7 +365,7 @@ double eval;
  int i;
  double d=fabs(DELTA_T)*.1;
  ShootICFlag=1;
- if(ShootIndex<3){
+ if(ShootIndex<7){
    for(i=0;i<n;i++){
      ShootIC[ShootIndex][i]=x[i]+d*ev[i];
      ShootIC[ShootIndex+1][i]=x[i]-d*ev[i];

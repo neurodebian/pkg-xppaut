@@ -1,4 +1,6 @@
 #include <stdlib.h> 
+#include <string.h>
+#include <stdio.h>
 #include <math.h>
 #include "xpplim.h"
 #include "getvar.h"
@@ -63,10 +65,11 @@ global -1 u-.2 {m=.5*m}
 type =0 variable
 type =1 parameter
 type =2 output
+type =3 halt
 */
 
 #define MAX_EVENTS 20 /*  this is the maximum number of events per flag */
-#define MAXFLAG 200
+#define MAXFLAG 500
 extern char upar_names[MAXPAR][11];
 typedef struct {
   double f0,f1;
@@ -193,14 +196,24 @@ compile_flags()
       if(index<0){
 	index=find_user_name(PARAM,flag[j].lhsname[i]);
 	if(index<0){
-	  if(strcasecmp(flag[j].lhsname[i],"out_put")==0){
-	    flag[j].type[i]=2;
-	    flag[j].lhs[i]=0;
-	  }
+	  if(strcasecmp(flag[j].lhsname[i],"out_put")==0)
+	    {
+	      flag[j].type[i]=2;
+	      flag[j].lhs[i]=0;
+	    }
 	  else {
-	    printf(" %s is not a valid variable/parameter name \n",
-		   flag[j].lhsname[i]);
-	    return(1);
+	    if(strcasecmp(flag[j].lhsname[i],"arret")==0)
+	      {
+		flag[j].type[i]=3;
+		flag[j].lhs[i]=0;
+		
+	      }
+	  
+	    else {
+	      printf(" <%s> is not a valid variable/parameter name \n",
+		     flag[j].lhsname[i]);
+	      return(1);
+	    }
 	  }
 	}
 	else{ 
@@ -268,10 +281,10 @@ one_flag_step(yold,ynew,istart,told,tnew,neq,s )
     /* printf(" call1 %g %g %g %g\n",told,f0,f1,smin);  */
     switch(sign){
     case 1: 
-      if((((f0<0.0)&&(f1>=0.0))||((f0<=0.0)&&(f1>0.0)))&&tol>tolmin){
+      if((((f0<0.0)&&(f1>0.0))||((f0<0.0)&&(f1>0.0)))&&tol>tolmin){
 	flag[i].hit=ncycle+1;
 	flag[i].tstar=f0/(f0-f1);
-	/* printf(" tstar=%g \n",flag[i].tstar); */
+	/* printf(" f0=%g, f1=%g tstar=%g at t=%g\n tol=%g",f0,f1,flag[i].tstar,*tnew,tol);  */ /* COMMENT! */
       }
       break;
     case -1:
@@ -294,7 +307,7 @@ one_flag_step(yold,ynew,istart,told,tnew,neq,s )
     }
     if(smin>flag[i].tstar)smin=flag[i].tstar;
   }
-/*  printf("smin = %g \n",smin); */
+  /* printf("smin = %g \n",smin); */ /* COMMENT */
  
    if(smin<STOL)smin=STOL;
   else smin=(1+STOL)*smin;  
@@ -314,7 +327,7 @@ one_flag_step(yold,ynew,istart,told,tnew,neq,s )
  /*   printf(" %g %g %g \n",*tnew,ynew[0],ynew[1]); */
     for(i=0;i<NFlags;i++){
       nevents=flag[i].nevents;
- /*     printf(" hit(%d)=%d,ts=%g\n",i,flag[i].hit,flag[i].tstar);  */
+      /* printf(" hit(%d)=%d,ts=%g\n",i,flag[i].hit,flag[i].tstar); */  /* COMMENT */
       if(flag[i].hit==ncycle&&flag[i].tstar<=smin){
 	for(j=0;j<nevents;j++)
 	  flag[i].vrhs[j]=evaluate(flag[i].comrhs[j]); 
@@ -332,8 +345,9 @@ one_flag_step(yold,ynew,istart,told,tnew,neq,s )
 	    if(flag[i].type[j]==1)
 	      set_val(upar_names[in],flag[i].vrhs[j]);
 	    else{
-	      if(flag[i].vrhs[j]>0)
-		send_output(ynew,*tnew);
+
+	      if((flag[i].type[j]==2)&&(flag[i].vrhs[j]>0))send_output(ynew,*tnew);
+	      if((flag[i].type[j]==3)&&(flag[i].vrhs[j]>0))send_halt(ynew,*tnew);
 	    }
 	  }
 	
@@ -382,6 +396,7 @@ one_flag_step(yold,ynew,istart,told,tnew,neq,s )
     }
     if(newhit==0)break;
   }
+  /*  printf(" Exit flags \n"); */ /* COMMENT */
  
   *s=smin;
   

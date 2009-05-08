@@ -1,8 +1,8 @@
+#include <stdlib.h>
 #include "sys/types.h"
 #include "sys/stat.h"
 #include "f2c.h"
 #include "fio.h"
-
 extern FILE *fdopen();
 
 /*global definitions*/
@@ -84,13 +84,13 @@ f_init()
 	p->useek=canseek(stderr);
 #ifdef COMMENTED_OUT
 	if(isatty(fileno(stderr))) {
-		extern char *malloc();
-		setbuf(stderr, malloc(BUFSIZ));
+	  /* extern char *malloc(); */
+	  setbuf(stderr, (char *)malloc(BUFSIZ));
 		/* setvbuf(stderr, _IOLBF, 0, 0); */
 	}	/* wastes space, but win for debugging in windows */
 #endif
 #ifdef NON_UNIX_STDIO
-	{extern char *malloc(); setbuf(stderr, malloc(BUFSIZ));}
+	{/* extern char *malloc();*/ setbuf(stderr, (char *)malloc(BUFSIZ));}
 #else
 	stderr->_flag &= ~_IONBF;
 #endif

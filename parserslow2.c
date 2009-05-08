@@ -202,7 +202,7 @@ char *junk;
    printf("Empty parameter - remove spaces\n");
    return 1;
  }
- if(len>9)len=9;
+ if(len>MXLEN)len=MXLEN;
  strncpy(my_symb[NSYM].name,string,len);
  my_symb[NSYM].name[len]='\0';
  my_symb[NSYM].len=len;
@@ -273,7 +273,7 @@ add_kernel(name,mu,expr)
   }
   convert(name,string);
   len=strlen(string);
-  if(len>9)len=9;
+  if(len>MXLEN)len=MXLEN;
   strncpy(my_symb[NSYM].name,string,len);
   my_symb[NSYM].name[len]='\0';
   my_symb[NSYM].len=len;
@@ -330,7 +330,7 @@ double value;
  }
  convert(junk,string);
  len=strlen(string);
- if(len>9)len=9;
+ if(len>MXLEN)len=MXLEN;
  strncpy(my_symb[NSYM].name,string,len);
  my_symb[NSYM].name[len]='\0';
  my_symb[NSYM].len=len;
@@ -381,7 +381,7 @@ add_net_name(index,name)
   printf(" Adding net %s %d \n",name,index);
   if(duplicate_name(name)==1)return(1);  
   convert(name,string);
-  if(len>9)len=9;
+  if(len>MXLEN)len=MXLEN;
   strncpy(my_symb[NSYM].name,string,len);
   my_symb[NSYM].name[len]='\0';
   my_symb[NSYM].len=len;
@@ -402,7 +402,7 @@ add_vect_name(index,name)
   printf(" Adding vector %s %d \n",name,index);
   if(duplicate_name(name)==1)return(1);  
   convert(name,string);
-  if(len>9)len=9;
+  if(len>MXLEN)len=MXLEN;
   strncpy(my_symb[NSYM].name,string,len);
   my_symb[NSYM].name[len]='\0';
   my_symb[NSYM].len=len;
@@ -446,7 +446,7 @@ add_table_name(index,name)
      int len=strlen(name);
      if(duplicate_name(name)==1)return(1);  
      convert(name,string);
-     if(len>9)len=9;
+     if(len>MXLEN)len=MXLEN;
      strncpy(my_symb[NSYM].name,string,len);
      my_symb[NSYM].name[len]='\0';
      my_symb[NSYM].len=len;
@@ -515,7 +515,7 @@ add_ufun_name(name,index,narg)
  }
   printf(" Added user fun %s \n",name);
   convert(name,string);
-  if(len>9)len=9;
+  if(len>MXLEN)len=MXLEN;
   strncpy(my_symb[NSYM].name,string,len);
   my_symb[NSYM].name[len]='\0';
   my_symb[NSYM].len=len;
@@ -536,12 +536,16 @@ fixup_endfun(u,l,narg)
 }
 
 add_ufun_new(index,narg,rhs,args)
-     char *rhs,args[10][11];
+     char *rhs,args[MAXARG][11];
      int narg,index;
 {
   
   int i,l;
   int end;
+   if(narg>MAXARG){
+    printf("Maximal arguments exceeded \n");
+    return(1);
+  }
   if((ufun[index]=(int *)malloc(1024))==NULL)
     {
       if(ERROUT)printf("not enough memory!!\n");
@@ -606,7 +610,7 @@ int narg;
  convert(junk,string);
  if(add_expr(expr,ufun[NFUN],&end)==0)
  {
-  if(len>9)len=9;
+  if(len>MXLEN)len=MXLEN;
   strncpy(my_symb[NSYM].name,string,len);
   my_symb[NSYM].name[len]='\0';
   my_symb[NSYM].len=len;

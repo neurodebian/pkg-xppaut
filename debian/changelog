@@ -1,3 +1,15 @@
+xppaut (5.98-1) unstable; urgency=low
+
+  * QA upload.
+  * New upstream release. (Closes: #448531).
+  * Move old source changes to quilt.
+  * 050_manpage_section.diff - Fix manpage header entry for section 1.
+  * Don't ship shared objects in /usr/share/doc/examples dir.
+  * Watch file is OK. (Closes: #453576).
+  * Bump Standards Version to 3.8.1.
+
+ -- Barry deFreese <bdefreese@debian.org>  Fri, 08 May 2009 15:51:50 -0400
+
 xppaut (5.85-5) unstable; urgency=low
 
   * QA upload.

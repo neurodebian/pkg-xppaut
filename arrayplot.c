@@ -1,4 +1,5 @@
 #include <stdlib.h> 
+#include <string.h>
 /*   routines for plotting arrays as functions of time  
 
      makes a window 
@@ -48,13 +49,14 @@
 #define MAX_LEN_SBOX 25
 #define FIRSTCOLOR 30
 #define FIX_MIN_SIZE 2
+extern char this_file[100];
 extern Display *display;
 extern int DCURX,DCURXs,DCURY,DCURYs,CURY_OFFs,CURY_OFF,color_total,screen;
 extern GC gc, small_gc,gc_graph;
 double atof();
 extern char uvar_names[MAXODE][12];
 typedef struct {
-  Window base,wclose,wedit,wprint,wstyle,wscale,wmax,wmin,wplot,wredraw,wtime;
+  Window base,wclose,wedit,wprint,wstyle,wscale,wmax,wmin,wplot,wredraw,wtime,wgif;
   int index0,indexn,alive,nacross,ndown,plotdef;
   int height,width,ploth,plotw;
   int nstart,nskip,ncskip;
@@ -216,7 +218,7 @@ wborder(w,i,ap)
      APLOT ap;
 {
  /* if(w==ap.wedit||w==ap.wprint||w==ap.wkill||w==ap.wstyle||w==ap.wredraw) */
-  if(w==ap.wedit||w==ap.wprint||w==ap.wclose||w==ap.wredraw)
+  if(w==ap.wedit||w==ap.wprint||w==ap.wclose||w==ap.wredraw||w==ap.wgif)
     XSetWindowBorderWidth(display,w,i);
 }
 
@@ -264,6 +266,7 @@ create_arrayplot(ap,wname,iname)
   ap->wedit=br_button(base,0,1,"Edit",0);
   ap->wprint=br_button(base,0,2,"Print",0);
   ap->wclose=br_button(base,0,3,"Close",0);
+  ap->wgif=br_button(base,1,0,"GIF",0);
   ap->wmax=make_window(base,10,45,10*DCURXs,DCURYs,1);
   ap->wmin=make_window(base,10,51+DCURYs+color_total,10*DCURXs,DCURYs,1);
   ap->wscale=make_window(base,10+4*DCURXs,48+DCURYs,2*DCURXs,color_total,0);
@@ -330,6 +333,9 @@ apbutton(w)
   }
   if(w==aplot.wclose){
     destroy_aplot();
+  }
+  if(w==aplot.wgif){
+    gif_aplot();
   }
 }
 draw_scale(ap)
@@ -474,7 +480,23 @@ sprintf(values[8],"%d",ap->ncskip);
    
 }
 
+gif_aplot()
+{
+  FILE *fp;
+  char filename[256];
+  sprintf(filename,"%s.gif",this_file);
+  if(!file_selector("GIF palot",filename,"*.gif"))return;
+  if((fp=fopen(filename,"w"))==NULL){
+    err_msg("Cannot open file!");
+    return;
+  }
+  redraw_aplot(aplot);
+  screen_to_gif(aplot.wplot,fp);
+  fclose(fp);
 
+ 
+
+}
 grab_aplot_screen(ap)
      APLOT ap;
 {
@@ -563,6 +585,10 @@ display_aplot(w,ap)
   }
  if(w==ap.wedit){
    XDrawString(display,w,small_gc,0,CURY_OFFs,"Edit",4);
+   return;
+ }
+ if(w==ap.wgif) {
+   XDrawString(display,w,small_gc,0,CURY_OFFs,"GIF",3);
    return;
  }
 if(w==ap.wredraw){

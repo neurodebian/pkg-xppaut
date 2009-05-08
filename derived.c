@@ -1,4 +1,6 @@
 #include <stdlib.h> 
+#include <stdio.h>
+#include <string.h>
 /* Derived parameter stuff !!  */
 #define MAXDERIVED 200
 extern double constants[];

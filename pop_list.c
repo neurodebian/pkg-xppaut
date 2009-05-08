@@ -1,4 +1,5 @@
 #include <stdlib.h> 
+#include <string.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
@@ -6,7 +7,9 @@
 #include "xpplim.h"
 
 #define MAX_N_SBOX 20
-#define MAX_LEN_SBOX 25
+#define MAX_LEN_SBOX 25 
+
+
 #define FORGET_ALL 0
 #define DONE_ALL 2
 #define FORGET_THIS 3

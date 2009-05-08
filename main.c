@@ -1,6 +1,6 @@
 #include <stdlib.h> 
 /*
-  Copyright (C) 2002  Bard Ermentrout
+  Copyright (C) 2002-2008  Bard Ermentrout
     
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,15 +27,14 @@
 #include <X11/Xos.h>
 #include <X11/Xproto.h>
 #include <X11/Xatom.h>
-#include <X11/bitmaps/icon>
+/* #include <X11/bitmaps/icon> */
 #include <math.h>
 #include "pp.bitmap"
 #include <stdio.h>
-#include <stdlib.h>
+/* #include <errno.h> */
 #include "help_defs.h"
 #include "browse.h"
 #include "struct.h"
-#include <errno.h>
 
 #define FIX_SIZE 3
 #define FIX_MIN_SIZE 2
@@ -66,6 +65,7 @@ extern int METHOD,storind;
 extern (*rhs)();
 extern XFontStruct *symfonts[5],*romfonts[5];
 extern int avsymfonts[5],avromfonts[5];
+extern int RunImmediately;
 int Xup,TipsFlag=1;
 Atom deleteWindowAtom=0;
 int XPPBatch=0,batch_range=0;
@@ -155,6 +155,7 @@ int argc;
   init_fit_info();
   strip_saveqn();
   create_plot_list();
+  auto_load_dll();
   if(XPPBatch){
     init_browser();
     init_all_graph();
@@ -465,7 +466,10 @@ unsigned int min_wid,min_hgt;
  
   blank_screen(main_win);
   help();
- 
+  if(RunImmediately==1){
+    run_the_commands(4);
+    RunImmediately=0;
+  }
 while(1)
 {
 /*  put_command("Command:");  */
@@ -619,6 +623,9 @@ redraw_all()
 			 break;
 		case '3': get_3d_par();
 			 break;
+		case 'y':
+		  /*  test_test(); */
+		  break;
 
 
                  } /* End main switch  */
@@ -684,8 +691,8 @@ redraw_all()
 		        tfBell=1-tfBell;
 		        break;
                  case 'h':
-		   /* c_hints(); */
-		    xpp_hlp();  
+		   /* c_hints(); */ 
+		   xpp_hlp();   
 		    /*	   make_key_stroke(); */
  
 
@@ -976,7 +983,8 @@ GC *gc;
 
 make_pops()
 
-{  int x,y,h,w,bw,d;
+{  int x,y;
+  unsigned int h,w,bw,d;
    Window wn;
    Cursor cursor;
    XGetGeometry(display,main_win,&wn,&x,&y,&w,&h,&bw,&d);

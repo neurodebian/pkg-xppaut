@@ -1,5 +1,5 @@
 #include <stdlib.h> 
-
+#include <string.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <stdio.h>
@@ -15,6 +15,8 @@
 #include "struct.h"
 #include "shoot.h"
 
+#define NEQMAXFOREDIT 20
+#define MAXARG 20
 #define MAX_N_EBOX MAXODE
 #define MAX_LEN_EBOX 86
 #define FORGET_ALL 0
@@ -66,7 +68,7 @@ extern int narg_fun[MAXUFUN], *ufun[MAXUFUN];
 
 typedef struct {
   int narg;
-  char args[10][11];
+  char args[MAXARG][11];
 } UFUN_ARG;
 
 extern UFUN_ARG ufun_arg[MAXUFUN];
@@ -354,6 +356,7 @@ edit_rhs()
  int i,status,err,len,i0,j;
  int n=NEQ;
  char fstr[20],msg[200];
+ if(NEQ>NEQMAXFOREDIT) return;
  names=(char **)malloc(n*sizeof(char*));
  values=(char **)malloc(n*sizeof(char*));
  command=(int **)malloc(n*sizeof(int*));
@@ -431,7 +434,7 @@ edit_functions()
  int i,status,err,len,i0,j;
  int n=NFUN;
  char msg[200];
- if(n==0)return;
+ if(n==0||n>NEQMAXFOREDIT)return;
  names=(char **)malloc(n*sizeof(char*));
  values=(char **)malloc(n*sizeof(char*));
  command=(int **)malloc(n*sizeof(int*));
@@ -440,12 +443,18 @@ edit_functions()
    names[i]=(char *)malloc(MAX_LEN_EBOX*sizeof(char));
    command[i]=(int *)malloc(200*sizeof(int));
    sprintf(values[i],"%s",ufun_def[i]);
-   if(narg_fun[i]==0)sprintf(names[i],"%s()",ufun_names[i]);
-   if(narg_fun[i]==1)sprintf(names[i],"%s(%s)",ufun_names[i],
+
+   if(narg_fun[i]==0){
+     sprintf(names[i],"%s()",ufun_names[i]);
+   }
+   if(narg_fun[i]==1){
+     sprintf(names[i],"%s(%s)",ufun_names[i],
 			     ufun_arg[i].args[0]);
+   }
    if(narg_fun[i]>1)sprintf(names[i],"%s(%s,...,%s)",ufun_names[i],
 			    ufun_arg[i].args[0],
 			    ufun_arg[i].args[narg_fun[i]-1]);
+
 			   
  }
 

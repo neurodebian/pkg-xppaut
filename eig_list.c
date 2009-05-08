@@ -1,5 +1,6 @@
 #include <stdlib.h> 
 #include <stdio.h>
+#include <string.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
@@ -226,9 +227,10 @@ eq_list_down(){
 
 get_new_size(win,wid,hgt)
 Window win;
-int *wid,*hgt;
+unsigned int *wid,*hgt;
 {
- int x,y,bw,de;
+  int x,y;
+  unsigned int    bw,de;
  Window root;
  XGetGeometry(display,win,&root,&x,&y,wid,hgt,&bw,&de);
 }
@@ -237,7 +239,8 @@ resize_eq_list(win)
 Window win;
 { 
 
- int nlines,w,h;
+  int nlines;
+  unsigned int w,h;
  if(eq_list.flag==0)return;
  if(win!=eq_list.base)return;
  /*

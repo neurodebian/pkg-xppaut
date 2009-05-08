@@ -1,0 +1,7 @@
+x'=xp
+xp=0
+flag=0
+export {x,flag} {xp,flag}
+init x=1
+done
+

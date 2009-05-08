@@ -1,0 +1,13 @@
+Index: xppaut-5.98/libI77/f2c.h
+===================================================================
+--- xppaut-5.98.orig/libI77/f2c.h	2009-05-08 15:30:28.000000000 -0400
++++ xppaut-5.98/libI77/f2c.h	2009-05-08 15:30:43.000000000 -0400
+@@ -7,6 +7,8 @@
+ #ifndef F2C_INCLUDE
+ #define F2C_INCLUDE
+ 
++#include <errno.h>
++
+ typedef int integer;
+ typedef char *address;
+ typedef short int shortint;

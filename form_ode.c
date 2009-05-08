@@ -476,7 +476,7 @@ get_eqn(fptr)
   NEQ_MIN=NEQ;
   xppver=(float)cstring;
   printf("Used %d constants and %d symbols \n",NCON,NSYM);
-  printf("XPPAUT %g Copyright (C) 2002  Bard Ermentrout \n",xppver);
+  printf("XPPAUT %g Copyright (C) 2002-2008  Bard Ermentrout \n",xppver);
     return(1);
 }
 /*
@@ -1558,11 +1558,13 @@ break_up_list(char *rhs)
 
 
 find_the_name(list,n,name)
-     char list[MAXODE1][11],*name;
+     char list[MAXODE1][33],*name;
      int n;
 {
   int i;
+
   for(i=0;i<n;i++){
+
     if(strcmp(list[i],name)==0)
       return(i);
   }
@@ -1573,8 +1575,8 @@ compile_em() /* Now we try to keep track of markov, fixed, etc as
 		well as their names  */
 {
  VAR_INFO *v,*vnew;
- char vnames[MAXODE1][11],fnames[MAXODE1][11],anames[MAXODE1][11];
- char mnames[MAXODE1][11];
+ char vnames[MAXODE1][33],fnames[MAXODE1][33],anames[MAXODE1][33];
+ char mnames[MAXODE1][33];
  double vval[MAXODE1],mval[MAXODE1],z,xlo,xhi;
  char tmp[50],big[MAXEXPLEN],formula[MAXEXPLEN],*my_string,*junk,*ptr,name[10];
  int nmark=0,neq=0,nfix=0,naux=0,nvar=0,nn,alt,in,i,ntab=0,nufun=0;
@@ -1701,7 +1703,7 @@ compile_em() /* Now we try to keep track of markov, fixed, etc as
       
     if(v->next==NULL)break;
      v=v->next;
-  }
+   }
  
  /*  printf(" Found\n %d variables\n %d markov\n %d fixed\n %d aux\n %d fun \n %d tab\n ",
      nvar,nmark,nfix,naux,nufun,ntab); */
@@ -1750,7 +1752,6 @@ compile_em() /* Now we try to keep track of markov, fixed, etc as
  /* printf(" IN_VARS=%d\n",IN_VARS); */
 
 /* Reset all this stuff so we align the indices correctly */
-
 
  nvar=0;
  naux=0;
@@ -1908,7 +1909,7 @@ compile_em() /* Now we try to keep track of markov, fixed, etc as
        break;
      case SPEC_FUN:
        if(add_spec_fun(v->lhs,v->rhs)==0){
-	 printf(" Illegal network function %s \n",v->rhs);
+	 printf(" Illegal special function %s \n",v->rhs);
 	 exit(0);
        }
        break;
@@ -2139,7 +2140,8 @@ parse_a_string(s1,v)
       strpiece(rhs,s1,i2,n1);
       break;
     }
-    if(strparse(s1,"0)=",i0,&i2)){
+    if(strparse(s1,"(0)=",i0-1,&i2)){
+
       type2=IC;
       strpiece(lhs,s1,0,i1-1);
       strpiece(rhs,s1,i2,n1);

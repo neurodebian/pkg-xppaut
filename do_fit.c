@@ -30,7 +30,8 @@ typedef struct {
   int icols[50],ipar[50],ivar[50];
   double tol,eps;
 } FITINFO;
-
+extern double DELAY;
+extern int DelayFlag;
 FITINFO fin;
 
 char *get_first();
@@ -94,6 +95,10 @@ get_fit_info(y,a,t0,flag,eps,yfit,yderv,npts,npars,nvars,ivar,ipar)
     yold[i]=y[i];
   /*  printf(" init y[%d]=%g \n",i,y[i]); */
   }
+  if(DelayFlag){
+   /* restart initial data */
+   if(do_init_delay(DELAY)==0)return;
+  }
 evaluate_derived();
 /*   This gets the values at the desired points  */
   for(i=0;i<nvars;i++){
@@ -142,6 +147,10 @@ evaluate_derived();
 	  yderv[l][j]=1.0;  /* ... except for those ICs that can vary */
       }
     }
+    if(DelayFlag){
+   /* restart initial data */
+   if(do_init_delay(DELAY)==0)return;
+  }
     evaluate_derived();
    /* now loop through all the points */
     for(k=1;k<npts;k++){
@@ -211,6 +220,7 @@ one_step_int(y,t0,t1,istart)
       cvode_err_msg(kflag);
       return(0);
     }
+    stor_delay(y);
     return 1;
   }
 #endif
@@ -220,6 +230,7 @@ one_step_int(y,t0,t1,istart)
       dp_err(kflag);
       return(0);
     }
+        stor_delay(y);
     return 1;
   }
   if(METHOD==RB23){
@@ -228,6 +239,7 @@ one_step_int(y,t0,t1,istart)
        err_msg("Step size too small");
        return(0);
     }
+        stor_delay(y);
     return 1;
   }
 if(METHOD==RKQS||METHOD==STIFF){
@@ -244,6 +256,7 @@ if(METHOD==RKQS||METHOD==STIFF){
 	       }
 	return(0);
       }
+          stor_delay(y);
       return(1);
     }
   /* cvode(command,y,t,n,tout,kflag,atol,rtol) 
@@ -263,23 +276,27 @@ if(METHOD==RKQS||METHOD==STIFF){
 	
 	return(0);
       }
+        stor_delay(y);
     return(1);
   }
   if(METHOD==0){
     nit=fabs(t0-t1);
     dt=dt/fabs(dt);
     kflag=solver(y,&t,dt,nit,NODE,istart,WORK);
+
     return(1);
   }
   z=(t1-t0)/dt;
   nit=(int)z;
   kflag=solver(y,&t,dt,nit,NODE,istart,WORK);
+
   if(kflag<0)return(0);
   if((dt<0&&t>t1)||(dt>0&&t<t1)){    
     dt=t1-t;
     kflag=solver(y,&t,dt,1,NODE,istart,WORK);
     if(kflag<0)return(0);
   }
+
   return(1);
 } 
     

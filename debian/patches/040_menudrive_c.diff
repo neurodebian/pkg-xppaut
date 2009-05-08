@@ -1,0 +1,45 @@
+Index: xppaut-5.98/menudrive.c
+===================================================================
+--- xppaut-5.98.orig/menudrive.c	2009-05-08 15:32:08.000000000 -0400
++++ xppaut-5.98/menudrive.c	2009-05-08 15:34:48.000000000 -0400
+@@ -1,5 +1,6 @@
+ #include <stdlib.h> 
+ #include <unistd.h>
++#include <sys/stat.h>
+ /* the menu for XPP commands 
+    this calls any command
+    it also has lots of the direct X Gui stuff
+@@ -37,17 +38,27 @@
+ MSGBOXSTRUCT MsgBox;
+ 
+ 
+-char *getenv();
+-
+-
+ xpp_hlp()
+ {
+   char cmd[256];
+-  if(getenv("XPPHELP")==NULL||getenv("BROWSER")==NULL){
+-    err_msg("XPPHELP or BROWSER undefined");
++  char *helpPath;
++  helpPath = getenv("XPPHELP");
++  if(helpPath==NULL){
++    struct stat* statBuff = (struct stat*) malloc(sizeof(struct stat));
++    /* This is the default path on the Debian GNU/Linux system: */
++    stat ("/usr/share/doc/xppaut/html", statBuff);
++    if (S_ISDIR (statBuff->st_mode))
++      helpPath = "/usr/share/doc/xppaut/html";
++    else {
++      err_msg("XPPHELP undefined");
++      return;
++    }
++  }
++  if(getenv("BROWSER")==NULL){
++    err_msg("BROWSER undefined");
+     return;
+   }
+-  sprintf(cmd,"file:///%s",getenv("XPPHELP"));
++  sprintf(cmd,"file:///%s",helpPath);
+   if(fork()==0){
+       execlp(getenv("BROWSER"),getenv("BROWSER"),cmd,(char *)0);
+   }

@@ -1,3 +1,4 @@
+#include <string.h>
 #include "f2c.h"
 #include "fio.h"
 #include "lio.h"

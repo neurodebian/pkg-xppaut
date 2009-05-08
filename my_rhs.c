@@ -67,8 +67,10 @@ int neq;
   for(i=0;i<NODE;i++)
   SETVAR(i+1,y[i]);
 
-  for(i=NODE;i<NODE+FIX_VAR;i++)
+  for(i=NODE;i<NODE+FIX_VAR;i++){
   SETVAR(i+1,evaluate(my_ode[i]));
+  /* printf("%d %g \n",i+1,GETVAR(i+1)); */
+  }
     eval_all_nets();
     do_daes();
     do_in_out(); 
@@ -82,6 +84,24 @@ int neq;
 
  }
 
+fix_only(double t,double *y)
+{
+   int i;
+  SETVAR(0,t);
+  for(i=0;i<NODE;i++)
+    SETVAR(i+1,y[i]);
+  for(i=NODE;i<NODE+FIX_VAR;i++)
+    SETVAR(i+1,evaluate(my_ode[i]));
+
+}
+rhs_only(double *y,double *ydot)
+{
+  int i;
+  for(i=0;i<NODE;i++){
+    ydot[i]=evaluate(my_ode[i]);
+  }
+}
+ 
 vec_rhs( t,y,ydot,neq)
 double t,*y,*ydot;
 int neq;

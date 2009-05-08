@@ -1,7 +1,9 @@
+#include <stdlib.h>
 #include "f2c.h"
 #include "fio.h"
 #include "fmt.h"
 #include "fp.h"
+
 
 extern int cursor;
 rd_ed(p,ptr,len) char *ptr; struct syl *p; ftnlen len;

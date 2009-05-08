@@ -57,7 +57,7 @@ extern GRAPH *MyGraph;
 #define DP83 12
 #define RB23 13
 extern int animation_on_the_fly;
-extern double ShootIC[4][MAXODE];
+extern double ShootIC[8][MAXODE];
 extern int ShootICFlag;
 extern int ShootIndex;
 extern int SimulPlotFlag,current_pop,num_pops,ActiveWinList[];
@@ -125,7 +125,7 @@ extern double DELAY;
 extern int R_COL;
 extern int colorline[11];
 extern (*rhs)();
-
+int STOP_FLAG=0;
 int PSLineStyle;
  struct {
          char item[30];
@@ -380,10 +380,10 @@ set_up_range()
    else range.cycle=0;
     if(values[7][0]=='Y'||values[7][0]=='y')range.movie=1;
    else range.movie=0;
-  /* printf("%s %d %d %d (%d %d) %f %f ",
+    /* printf("%s %d %d %d (%d %d) %f %f ",
 	  range.item, range.steps,
 	  range.reset,range.oldic,range.type,range.index,
-	  range.plow,range.phigh);*/
+	  range.plow,range.phigh); */
  RANGE_FLAG=1;
  return(1);
  }
@@ -655,7 +655,7 @@ int flag; /* 0 for 1-param 1 for 2 parameter */
  char esc;
  char bob[50];
  int ivar=0,ivar2,res=0,oldic=0;
- int nit=20,i,j,itype,itype2,cycle=0,icol=0,nit2;
+ int nit=20,i,j,itype,itype2,cycle=0,icol=0,nit2,iii;
  int color=MyGraph->color[0];
  double t,dpar,plow=0.0,phigh=1.0,p,plow2,phigh2,p2,dpar2;
  double temp,temp2;
@@ -673,6 +673,7 @@ int flag; /* 0 for 1-param 1 for 2 parameter */
  ivar=range.index;
  
  res=range.reset;
+ /*  printf("Reset=%d \n",res); */
  oldic=range.oldic;
  nit=range.steps;
  plow=range.plow;
@@ -726,7 +727,6 @@ if(range.type==PARAM)get_val(range.item,&temp);
    t=T0;
    MyStart=1;
    POIEXT=0;
-  
    if(itype==IC)x[ivar]=p;
    else {
      set_val(range.item,p);
@@ -749,6 +749,15 @@ if(Xup){
     sprintf(bob,"%s=%.16g  i=%d",range.item,p,i);
   bottom_msg(2,bob);
 }
+do_start_flags(x,&MyTime);
+if(fabs(MyTime)>=TRANS&&STORFLAG==1&&POIMAP==0)
+    {
+      storage[0][storind]=(float)MyTime;
+      extra(x,MyTime,NODE,NEQ);
+      for(iii=0;iii<NEQ;iii++)storage[1+iii][storind]=(float)x[iii];
+      storind++;
+    }
+
  if(integrate(&t,x,TEND,DELTA_T,1,NJMP,&MyStart)==1){
    ierr=-1;
    break;
@@ -886,6 +895,9 @@ batch_integrate_once()
   reset_browser();
   /*  printf("batch_range=%d\n",batch_range); */
  if(batch_range==1||STOCH_FLAG>0){
+   reset_dae();
+   RANGE_FLAG=1;
+
   if(do_range(x,0)!=0)
     printf(" Errors occured in range integration \n"); 
  }
@@ -895,7 +907,7 @@ batch_integrate_once()
       /* restart initial data */
       if(do_init_delay(DELAY)==0)return;
     }
-  do_start_flags(x,&MyTime);
+   do_start_flags(x,&MyTime); 
   if(fabs(MyTime)>=TRANS&&STORFLAG==1&&POIMAP==0)
     {
       storage[0][0]=(float)MyTime;
@@ -950,7 +962,7 @@ do_init_data(int com)
   char icfile[256];
   float xm,ym;
   int im,jm,oldstart,iv,jv,badmouse;
-  
+
   oldstart=MyStart;
   MyStart=1;
   x=&MyData[0];
@@ -964,17 +976,20 @@ do_init_data(int com)
     get_new_guesses();
     return;
   }
-  data_back();
+
+ data_back();
   wipe_rep();
   MyTime=T0;
-
+ 
   STORFLAG=1;
   POIEXT=0;
   storind=0;
   reset_browser();
+
+
   switch(com){
- 
   case M_IR: /* do range   */
+
     do_range(x,0);
     return;
   case M_I2:
@@ -1130,7 +1145,22 @@ do_init_data(int com)
 usual_integrate_stuff(x);
 DELTA_T=old_dt;
 }	
-
+run_from_x(double *x)
+{
+ int i,si;
+  printf(" %g %g \n",x[0],x[1]); 
+ MyStart=1;
+ RANGE_FLAG=0;
+ DelayErr=0;
+ reset_dae();
+ MyTime=T0;
+ /* get_ic(2,x); */ 
+  STORFLAG=1;
+  POIEXT=0;
+  storind=0;
+  reset_browser();
+  usual_integrate_stuff(x); 
+}
 run_now()
 {
  int i,si;
@@ -1165,14 +1195,14 @@ usual_integrate_stuff(x)
   int i;
 
   do_start_flags(x,&MyTime);
-if(fabs(MyTime)>=TRANS&&STORFLAG==1&&POIMAP==0)
+   if(fabs(MyTime)>=TRANS&&STORFLAG==1&&POIMAP==0)
     {
       storage[0][0]=(float)MyTime;
       extra(x,MyTime,NODE,NEQ);
       for(i=0;i<NEQ;i++)storage[1+i][0]=(float)x[i];
       storind=1;
     }
-
+  
   integrate(&MyTime,x,TEND,DELTA_T,1,NJMP,&MyStart);
   ping();
   INFLAG=1;
@@ -1571,6 +1601,7 @@ int count,nout, *start;
  /* new poincare map stuff */
  double pmapf,pmapfold;
 
+  int i_nan=0; /* NaN */
 MSWTCH(xpv.x,x);
 
 if(Xup) cwidth=get_command_width();
@@ -1848,11 +1879,66 @@ if(Xup) cwidth=get_command_width();
            {
 	    xvold[ieqn]=xv[ieqn];
 	    xv[ieqn]=(float)x[ieqn-1];
+	/* trap NaN using isnan() in math.h 
+	   modified the out of bounds message as well
+	   print all the variables on the terminal window, haven't decide
+	   should I store them or not. 
+	   If use with nout=1, can pinpoint the offensive variable(s)
+	*/	    
+	    if(isnan(x[ieqn-1])!=0)
+            {
+             sprintf(error_message," %s is NaN at t = %f ",
+             uvar_names[ieqn-1],*t);
+          /* if((STORFLAG==1)&&(storind<MAXSTOR))
+	     { */ i_nan=0;
+	         fprintf(stderr,"variable\tf(t-1)\tf(t) \n");
+	        /* storage[i_nan][storind]=*t;     */
+                for(i_nan=1;i_nan<=ieqn;i_nan++)
+		 {/*storage[i_nan][storind]=xv[i_nan];*/
+ 		 fprintf(stderr," %s\t%g\t%g\n",
+             		uvar_names[i_nan-1],xvold[i_nan],xv[i_nan]);
+		 }
+		for(;i_nan<=NEQ;i_nan++) 
+		 {
+		 /*storage[i_nan][storind]=(float)x[i_nan-1];*/
+ 		 fprintf(stderr," %s\t%g\t%g\n",
+             		uvar_names[i_nan-1],xv[i_nan],(float)x[i_nan-1]);
+		 }	
+	     /* storind++;
+	      if(!(storind<MAXSTOR))
+              if(stor_full()==0)break;
+	     }
+	     */
+     	     err_msg(error_message);
+             rval=1;
+             break;
+             }
+       /* end of NaN */     
             if(fabs(x[ieqn-1])>BOUND)
             {
 	     if(RANGE_FLAG||SuppressBounds)break;
              sprintf(error_message," %s out of bounds at t = %f ",
              uvar_names[ieqn-1],*t);
+         /* if((STORFLAG==1)&&(storind<MAXSTOR))
+	     { */ i_nan=0;
+	         fprintf(stderr,"variable\tf(t-1)\tf(t) \n");
+	        /* storage[i_nan][storind]=*t;     */
+                for(i_nan=1;i_nan<=ieqn;i_nan++)
+		 {/*storage[i_nan][storind]=xv[i_nan];*/
+ 		 fprintf(stderr," %s\t%g\t%g\n",
+             		uvar_names[i_nan-1],xvold[i_nan],xv[i_nan]);
+		 }
+		for(;i_nan<=NEQ;i_nan++) 
+		 {
+		 /*storage[i_nan][storind]=(float)x[i_nan-1];*/
+ 		 fprintf(stderr," %s\t%g\t%g\n",
+             		uvar_names[i_nan-1],xv[i_nan],(float)x[i_nan-1]);
+		 }	
+	     /* storind++;
+	      if(!(storind<MAXSTOR))
+              if(stor_full()==0)break;
+	     }
+	     */
 	     err_msg(error_message);
              rval=1;
 
@@ -1871,8 +1957,8 @@ if(Xup) cwidth=get_command_width();
 	     if(esc=='/'){rval=1;ENDSING=1;break;}
 	    
            }
-	}             
-
+	}        
+	if(STOP_FLAG==1){STOP_FLAG=0;break;}
            if(DelayErr){err_dae();rval=1;ENDSING=1;DelayErr=0;break;}
          /*  printf(" NEQ=%d ieqn = %d \n",NEQ,ieqn); */
            if(ieqn<(NEQ+1))break;
@@ -2007,7 +2093,8 @@ poi:    for(i=0;i<NEQ;i++)oldx[i]=x[i];
 	    if(!(storind<MAXSTOR))
             if(stor_full()==0)break;
 	    if((pflag==1)&&(SOS==1))break;
-	 }
+	   }
+	   
 
 
 out:
@@ -2024,7 +2111,10 @@ out:
 #endif
        return(rval);
   }
-
+send_halt(double *y, double t)
+{
+  STOP_FLAG=1;
+}
 send_output(double *y,double t)
 {
   double yy[MAXODE];

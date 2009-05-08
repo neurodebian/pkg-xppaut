@@ -1,3 +1,4 @@
+#include <errno.h>
 #include "stdio.h"
 #ifndef NULL
 /* ANSI C */
@@ -19,7 +20,8 @@ typedef struct
 	flag uscrtch;
 } unit;
 
-extern int errno;
+/* extern int errno; */
+#include <errno.h>
 extern flag init;
 extern cilist *elist;	/*active external io list*/
 extern flag reading,external,sequential,formatted;

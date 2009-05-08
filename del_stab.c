@@ -171,7 +171,7 @@ COMPLEX cdiv(z,w)
   return sum;
 }
 
-COMPLEX cexp(z)
+COMPLEX cexp2(z)
      COMPLEX z;
 {
   COMPLEX sum;
@@ -307,7 +307,7 @@ make_z(z,delay,n,m,coef,lambda)
   for(k=0;k<m;k++){
     km=(k+1)*n*n;
     temp=rtoc(-delay[k],0.0); /* convert delay to complex number */
-    eld=cexp(cmlt(temp,lambda)); /* compute exp(-lambda*tau) */
+    eld=cexp2(cmlt(temp,lambda)); /* compute exp(-lambda*tau) */
     /* cprintn(eld); */
     for(j=0;j<n;j++)
       for(i=0;i<n;i++)
@@ -427,7 +427,7 @@ double get_arg(delay,coef,m,n,lambda)
   for(k=0;k<m;k++){
     km=(k+1)*n*n;
     temp=rtoc(-delay[k],0.0); /* convert delay to complex number */
-    eld=cexp(cmlt(temp,lambda)); /* compute exp(-lambda*tau) */
+    eld=cexp2(cmlt(temp,lambda)); /* compute exp(-lambda*tau) */
     /* cprintn(eld); */
     for(j=0;j<n;j++)
       for(i=0;i<n;i++)

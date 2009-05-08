@@ -1,7 +1,8 @@
 #include <stdlib.h> 
+#include <string.h>
 /* command-line stuff for xpp */
 #include <stdio.h>
-#define NCMD 10  /* add new commands as needed  */
+#define NCMD 11  /* add new commands as needed  */
 
 #define MAKEC 0
 #define XORFX 1
@@ -13,7 +14,9 @@
 #define SETFILE 7
 #define MSSTYLE 8
 #define PWHITE 9
+#define RUNNOW 10
 
+extern int RunImmediately;
 extern int PaperWhite;
 extern int MSStyle;
 extern int got_file;
@@ -44,8 +47,9 @@ VOCAB my_cmd[NCMD]=
   "-newseed",7,
   "-allwin",6,
   "-setfile",7,
-  "-ee",8,
+  "-ee",3,
   "-white", 6,
+  "-runnow",7
  };
 
 do_comline(argc,argv)
@@ -120,6 +124,9 @@ parse_it(com)
       break;
     case PWHITE:
       PaperWhite=1;
+      break;
+    case RUNNOW:
+      RunImmediately=1;
       break;
     case SETFILE:
       return 1;

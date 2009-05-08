@@ -1,4 +1,5 @@
 #include <stdlib.h> 
+#include <string.h>
 /*    This makes a big box with windows that have the names of the
        variables and their current initial data, parameters, BCs
        etc
@@ -32,6 +33,8 @@ This also has the clone gadget
 #define HOTWILD 2
 #define HOTFILE 1
 
+#define READEM 1
+#define WRITEM 0
 #define MAX_LEN_SBOX 25
 
 #define MAXLINES 5000
@@ -1178,7 +1181,7 @@ initialize_box()
 resize_par_box(win)
 Window win;
 {
-  int h,w;
+  unsigned int h,w;
   int nwin;
   int ok=0;
   BoxList *b;
@@ -1913,8 +1916,20 @@ new_parameter()
     name[0]=0;
     done=new_string("Parameter:",name);
     if(strlen(name)==0||done==0){redo_stuff(); return;}
-    if(strncasecmp(name,"DEFAULT",7  )==0)
+    if(strncasecmp(name,"DEFAULT",7  )==0){
       set_default_params();
+      continue;
+    }
+
+    if(strncasecmp(name,"!LOAD", 5 )==0){
+      io_parameter_file(name,READEM);
+      continue;
+    }
+    if(strncasecmp(name,"!SAVE", 5 )==0){
+      io_parameter_file(name,WRITEM);
+      continue;
+    }
+    
     else {
       index=find_user_name(PARAMBOX,name);
       if(index>=0){
@@ -1939,8 +1954,10 @@ new_parameter()
 
   redo_stuff()
     {
+      evaluate_derived();
    re_evaluate_kernels();
 	  redo_all_fun_tables();
+        evaluate_derived();
 }
 	
   set_default_ics()
@@ -1967,7 +1984,9 @@ new_parameter()
  re_evaluate_kernels();
  redo_all_fun_tables(); 
  }
-			
+	
+
+		
 			
 
 	

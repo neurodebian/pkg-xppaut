@@ -2,8 +2,8 @@ Source: xppaut
 Section: x11
 Priority: optional
 Maintainer: Debian QA Group <packages@qa.debian.org>
-Build-Depends: debhelper (>= 5), libx11-dev, xbitmaps
-Standards-Version: 3.7.2
+Build-Depends: debhelper (>= 5), quilt, libx11-dev, xbitmaps
+Standards-Version: 3.8.1
 
 Package: xppaut
 Architecture: any

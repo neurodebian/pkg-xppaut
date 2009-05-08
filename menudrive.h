@@ -162,6 +162,7 @@
 #define M_UAA 302
 #define M_UAO 303
 #define M_UAH 304
+#define M_UAP 305
 
 #define M_UCN 310
 #define M_UCV 311
@@ -186,6 +187,8 @@
 #define M_UHL 341
 #define M_UHA 342
 #define M_UHR 343
+#define M_UHE 344
+#define M_UH2 345
 
 #define M_UKE 350
 #define M_UKV 351

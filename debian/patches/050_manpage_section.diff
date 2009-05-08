@@ -1,0 +1,13 @@
+Index: xppaut-5.98/xppaut.1
+===================================================================
+--- xppaut-5.98.orig/xppaut.1	2009-05-09 10:06:44.000000000 -0400
++++ xppaut-5.98/xppaut.1	2009-05-09 10:06:55.000000000 -0400
+@@ -2,7 +2,7 @@
+ .\" First parameter, NAME, should be all caps
+ .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+ .\" other parameters are allowed: see man(7), man(1)
+-.TH XPPAUT SECTION "March  4, 2002"
++.TH XPPAUT 1 "March  4, 2002"
+ .\" Please adjust this date whenever revising the manpage.
+ .\"
+ .\" Some roff macros, for reference:

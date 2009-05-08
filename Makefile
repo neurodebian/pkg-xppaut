@@ -1,12 +1,12 @@
-# Copyright (C) 1990-2002 Bard Ermentrout
+# Copyright (C) 1990-2006 Bard Ermentrout
 # Edited for Debian GNU/Linux.
 DESTDIR =
-BINDIR = $(DESTDIR)/usr/bin
+BINDIR = $(DESTDIR)/usr/X11R6/bin
 DOCDIR = $(DESTDIR)/usr/share/doc/xppaut
 # End Debian Edit
 #################################
 #
-VERSION=5.85
+VERSION=5.98
 ODES=ode/*.ode ode/*.ani
 DOC=xpp_doc.ps xpp_doc.pdf xpp_sum.ps xpp_sum.pdf install.pdf
 HELP=help/*.html
@@ -20,21 +20,26 @@ OTHERLIBS= libcvode.a libf2cm.a
 ################################## 
 # Standard Linux distributions   #
 ##################################
-CFLAGS +=   -g -O -DAUTO -DCVODE_YES -DHAVEDLL -DMYSTR=$(VERSION)  -I/usr/X11R6/include
-LDFLAGS=  -L/usr/X11R6/lib
-LIBS= -lX11 -lm -ldl 
+#CFLAGS=   -g -O -DAUTO -DCVODE_YES -DHAVEDLL -DMYSTR=$(VERSION)  -I/usr/X11R6/include
+#CFLAGS=   -g -O -DAUTO -DCVODE_YES  -DHAVEDLL -DMYSTR=$(VERSION)  -I/usr/X11R6/include
+#LDFLAGS=  -L/usr/X11R6/lib
+#LIBS= -lX11 -lm -ldl 
 # NOTE: Recent (RedHat 8) versions of GCC seem to no longer have
 # the integer errno, so compile with the -DNOERRNO option as well
 #
 # some errors with ctype on newer machines HP ITANIUM, eg can be fixed
 # with the -DWCTYPE 
 #
+#   64 Bit machines must use a different parser code.
+#   In the OBJECTS section, replace parser2.o with parserslow2.o
+# it is not really that much slower so don't have a cow
+#
 #################################
 # MACOSX                        #
 #################################
-# CFLAGS=   -g -O -DMACOSX -DAUTO -DCVODE_YES  -DMYSTR=$(VERSION) -I/usr/X11R6/include
-# LIBS=  -lX11 -lm
-# LDFLAGS=  -L/usr/X11R6/lib
+CFLAGS=   -g -O -DMACOSX -DAUTO -DCVODE_YES  -DMYSTR=$(VERSION) -I/usr/X11R6/include
+LIBS=  -lX11 -lm
+LDFLAGS=  -L/usr/X11R6/lib
 #
 #################################
 # CYGWIN                        #
@@ -112,6 +117,10 @@ SOURCES = main.c ggets.c menu.c rubber.c derived.c init_condold.c \
         kinescope_avi.c aniparse_avi.c  nagroutines.c flowkm_small.c \
         homsup.c txtread.c menudrive.c rtsafe.c vector.c userbut.c \
         lbf_drive.c auto_nox.c auto_x11.c cli.c
+#
+# WARNING: For 64 bit machines replace parser2.o with parserslow2.o 
+#          in the OBJECTS section!
+#
 OBJECTS = main.o ggets.o menu.o  rubber.o derived.o\
 	many_pops.o  pop_list.o  graphics.o dialog_box.o \
 	numerics.o choice_box.o color.o init_conds.o \
@@ -181,19 +190,20 @@ install: xppaut
 	mkdir -p $(BINDIR)
 	mkdir -p $(DOCDIR)/html
 	mkdir -p $(DOCDIR)/examples
-	mkdir -p $(DESTDIR)/usr/share/man/man1
+	mkdir -p $(DESTDIR)/usr/X11R6/man/man1
 # Put everything home
+	strip xppaut
 	cp xppaut $(BINDIR)
 	cp -r ode* $(DOCDIR)/examples
 	cp -r help/* $(DOCDIR)/html
 	cp README *.pdf $(DOCDIR) 
-	cp xppaut.1 $(DESTDIR)/usr/share/man/man1
+	cp xppaut.1 $(DESTDIR)/usr/X11R6/man/man1
 # End Debian Ed
 uninstall: 
 # Remove everything you created
 	rm $(BINDIR)/xppaut
 	rm -r $(DOCDIR)
-	rm -r $(DESTDIR)/usr/share/man/man1/xppaut.1
+	rm -r $(DESTDIR)/usr/X11R6/man/man1/xppaut.1
 # End Debian Ed
 ##################################################
 #    Make s stand alone library -must link your rhs
@@ -210,7 +220,8 @@ tarfile:
         libI77/*.c libI77/*.h libI77/Makefile \
 	cvodesrc/*.c cvodesrc/*.h cvodesrc/Makefile xppaut.1\
         mkavi/*.cc mkavi/*.h mkavi/Makefile mkavi/drive.c help/*.html \
-	help/odes/*.ode help/odes/*.c install.pdf install.tex LICENSE HISTORY
+	help/odes/*.ode help/odes/*.c install.pdf install.tex LICENSE HISTORY \
+	Makefile.s2x sbml2xpp.c 
 	gzip xppaut$(VERSION).tar 
 ##############################################
 #  pack up a binary
@@ -221,7 +232,7 @@ binary:
 #  clean
 ##############################################
 clean:
-	rm -f *.o *.a libI77/*.o libI77/*.a cvodesrc/*.o cvodesrc/*.a ode/example.so xppaut
+	rm -f *.o *.a  libI77/*.o libI77/*.a cvodesrc/*.o cvodesrc/*.a xppaut
 #######################################################
 #  Documentation
 #######################################################

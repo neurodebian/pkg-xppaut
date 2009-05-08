@@ -1,5 +1,6 @@
 #include <stdlib.h> 
 #include <stdio.h>
+#include <string.h>
 #include <sys/time.h>
 #include <unistd.h>
 #include <X11/Xlib.h>
@@ -649,25 +650,26 @@ BROWSER b;
  my_browser.iend=length;
  if(Xup&&my_browser.xflag==1) draw_data(my_browser);
 }
- reset_browser()
+reset_browser()
 {
   my_browser.maxrow=0;
   my_browser.dataflag=0;
 }
- draw_data(b)
+ 
+draw_data(b)
  BROWSER b;
- {
-   int i,i0,j,j0;
+{
+  int i,i0,j,j0;
   int x0;
- char string[13];
- int dcol=DCURXs*14;
- int drow=(DCURYs+6);
- if(b.dataflag==0)return;  /*   no data  */
+  char string[50];
+  int dcol=DCURXs*14;
+  int drow=(DCURYs+6);
+  if(b.dataflag==0)return;  /*   no data  */
   XClearWindow(display,b.main);
   
- /* Do time data first  */
+  /* Do time data first  */
 
- for(i=0;i<b.nrow;i++){
+  for(i=0;i<b.nrow;i++){
 	i0=i+b.row0;
         if(i0<b.maxrow){
 		sprintf(string,"%.8g",b.data[0][i0]);

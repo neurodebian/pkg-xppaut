@@ -1,0 +1,10 @@
+v'=-gl*(v-el)-(gk*n+gks)*(v-ek)-gna*minf(v)*(v-ena)
+# na'=-mu*gna*minf(v)*(v-ena)-(na-namin)/tauna
+n'=(ninf(v)-n)/taun
+minf(v)=1/(1+exp(-(v-va)/vb))
+ninf(v)=1/(1+exp(-(v-vc)/vd))
+par va=-45,vb=8,vc=-35,vd=10
+par gl=.05,gk=5,gna=8
+par ena=55,ek=-85,el=-70
+par taun=25
+done

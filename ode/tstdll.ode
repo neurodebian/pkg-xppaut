@@ -1,6 +1,6 @@
-# test of dll
-# compile the C program funexample.c 
-# creating libexample.so 
+# EXAMPLE 2
+# compile the C program example.c 
+# creating example.so 
 # gcc -fpic -shared -o example.so example.c
 # In XPP click on File-Edit-Load Library
 # example.so
@@ -8,12 +8,15 @@
 # 
 x'=xp
 y'=yp
-xp=-y
-yp=x-y
+# these are dummies holding the RHS
+xp=0
+yp=0
 export {x,y,a,b,c,d,t} {xp,yp}
 par a=1,b=1,c=1,d=1
+init x=1
+@ dll_lib=example.so,dll_fun=vdp
 done
------------------- Cut here -------------------------
+------------------ Cut below, save as example.c  -------------------------
 #include <math.h>
 /*  
  some example functions

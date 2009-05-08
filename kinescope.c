@@ -4,7 +4,7 @@
 #include <X11/Xutil.h>
 #include <X11/Xos.h>
 #include <X11/Xatom.h>
-#include <X11/bitmaps/icon>
+/* #include <X11/bitmaps/icon> */
 #include <stdio.h>
 #include <sys/time.h>
 

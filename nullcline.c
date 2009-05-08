@@ -1,4 +1,5 @@
 #include <stdlib.h> 
+#include <string.h>
 #include <math.h>
 #include <stdio.h>
 #include <X11/Xlib.h>
@@ -234,6 +235,36 @@ get_nullcline_floats(float **v,int *n,int who,int type) /* type=0,1 */
     if(v==NULL)return 1;
     return 0;
 }   
+
+save_frozen_clines(fn)
+     char *fn;
+{
+   NCLINES *z;
+   FILE *fp;
+   char fnx[256];
+   char ch;
+   int i=1;
+   if(n_nstore==0)return;
+   ch=(char)TwoChoice("YES","NO","Save Frozen Clines?","yn");
+   if(ch=='n')return;
+    z=ncperm;
+    while(1){
+    if(z==NULL||(z->nmx==0&&z->nmy==0))return;
+    sprintf(fnx,"%s.%d",fn,i);
+    fp=fopen(fnx,"w");
+    if(fp==NULL){
+      err_msg("Cant open file!");
+      return;
+    }
+    dump_clines(fp,z->xn,z->nmx,z->yn,z->nmy);
+    fclose(fp);
+    i++;
+    	z=z->n;
+	if(z==NULL)break;
+    }
+    
+  
+}
 
 redraw_froz_cline(flag)
      int flag;
@@ -546,7 +577,9 @@ save_the_nullclines()
   }
   dump_clines(fp,X_n,num_x_n,Y_n,num_y_n);
   fclose(fp);
+  save_frozen_clines(filename);
 }
+
 
 restore_nullclines()
 {

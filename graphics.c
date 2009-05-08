@@ -1,6 +1,7 @@
 #include <stdlib.h> 
 #include <math.h>
 #include <stdio.h>
+#include <string.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include "struct.h"
@@ -108,7 +109,8 @@ set_scale(x1,y1,x2,y2)
 
 get_draw_area()
 {
- int x,y,w,h,bw,de;
+  int x,y;
+  unsigned int w,h,bw,de;
   Window root;
   XGetGeometry(display,draw_win,&root,&x,&y,&w,&h,&bw,&de);
   /* printf(" geom:+%d+%d:%dx%d\n",x,y,w,h); */

@@ -17,7 +17,8 @@ extern int DCURY,DCURX,CURY_OFF;
 
 get_command_width()
 {
-  int x,y,w,h,bw,de;
+  int x,y;
+  unsigned int w,h,bw,de;
  int xs,ys=2;
  Window root;
  XGetGeometry(display,command_pop,&root,&x,&y,&w,&h,&bw,&de);

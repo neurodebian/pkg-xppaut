@@ -1,5 +1,6 @@
 #include <stdlib.h> 
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 
 #include <X11/Xlib.h>
@@ -344,6 +345,69 @@ io_int(&MyStart,fp,f,"MyStart");
 io_int(&INFLAG,fp,f,"INFLAG");
 }
 
+io_parameter_file(char *fn,int flag)
+{
+  char fnx[256],c;
+  int i,j=0;
+  int np;
+  FILE *fp;
+  time_t ttt;
+  for(i=6;i<strlen(fn);i++){
+    c=fn[i];
+    if(c!=' '){
+      fnx[j]=c;
+      j++;
+    }
+  }
+  fnx[j]=0;
+  if(flag==READEM) {
+    fp=fopen(fnx,"r");
+      if(fp==NULL){
+	err_msg("Cannot open file");
+	return;
+      }
+      io_int(&np,fp,flag," ");
+      if(np!=NUPAR){
+	err_msg("Incompatible parameters");
+     fclose(fp);
+     return;
+      }
+      io_parameters(flag,fp);
+      fclose(fp);
+      redo_stuff();
+
+      return;
+  }
+  fp=fopen(fnx,"w");
+  if(fp==NULL){
+	err_msg("Cannot open file");
+	return;
+      }
+  io_int(&NUPAR,fp,flag,"Number params");
+  io_parameters(flag,fp);
+  ttt=time(0);
+  fprintf(fp,"\n\nFile:%s\n%s",this_file, ctime(&ttt));
+  fclose(fp);
+}
+  
+io_parameters(f,fp)
+int f;
+FILE *fp;
+{
+ int i;
+ char bob[256],temp[256];
+ double z;
+ for(i=0;i<NUPAR;i++){
+  if(f!=READEM){
+    get_val(upar_names[i],&z);
+    io_double(&z,fp,f,upar_names[i]);
+  }
+  else {
+    io_double(&z,fp,f," ");
+    set_val(upar_names[i],z);
+  }
+ }
+}
 
 io_exprs(f,fp)
 int f;

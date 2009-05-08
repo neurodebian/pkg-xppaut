@@ -1,8 +1,10 @@
+#include <stdlib.h>
+#include <string.h>
 #include	"sys/types.h"
 #include	"sys/stat.h"
 #include "f2c.h"
 #include "fio.h"
-extern char *mkstemp(), *malloc(), *strcpy();
+/* extern char *mkstemp(); */
 extern FILE *fdopen();
 extern integer f_clos();
 

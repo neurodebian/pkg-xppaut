@@ -1,4 +1,5 @@
 #include <stdlib.h> 
+#include <string.h>
 /* 
   n is the number of values to return
   ncon is the number of connections each guy gets
@@ -71,12 +72,21 @@ uses the fft to convolve v0 with the wgt which must be of
 length n if type=periodic
        2n if type=0
 
+special f=interp(type,n,root)
+        this produces an interpolated value of x for 
+        x \in [0,n)
+        type =0 for linear (all that works now)
+        root0,....rootn-1  are values at the integers
+        Like a table, but the integer values are variables
+        
  
 */
 
 
 #include <math.h>
 #include <stdio.h>
+
+extern int NODE;
 
 #define MAX_TAB 50
 #define IC 2
@@ -127,7 +137,8 @@ typedef struct {
 #define FFTCONP 5
 #define MMULT 6
 #define FMMULT 7 
-
+#define GILLTYPE 25
+#define INTERP 30 
 extern double variables[];
 #define MAXNET 50
 char *get_first(/* char *string,char *src */);
@@ -137,11 +148,26 @@ double evaluate();
 
 NETWORK my_net[MAXNET];
 int n_network=0;
+double net_interp(double x, int i)
+{
+  int jlo=(int)x;
+  double *y;
+  int n=my_net[i].n;
+  double dx=x-(double)jlo;
+  y=&variables[my_net[i].root];
+  if(jlo<0 || jlo>(n-1))return 0.0; /* out of range */
+  return (1-dx)*y[jlo]+dx*y[jlo+1];
+  
+
+}
 double network_value(x, i)
     double x;
     int i;
 {
   int j=(int)x;
+  if(my_net[i].type==INTERP){
+    return net_interp(x,i);
+  }
   if(j>=0&&j<my_net[i].n)
     return my_net[i].values[j];
   return 0.0;
@@ -154,6 +180,7 @@ init_net(double *v,int n)
   for(i=0;i<n;i++)
     v[i]=0.0;
 }
+
 add_spec_fun(name,rhs)
      char *name;
      char *rhs;
@@ -617,6 +644,63 @@ add_spec_fun(name,rhs)
     printf(" Added fmmult %s len=%d x %d using %s %s(var[%d],var[%d])\n",
 	   name,ntot,ncon,wgtname,fname,ivar,ivar2);
     return 1; 
+  case 30:
+    /* interpolation array 
+       z=INTERP(meth,n,root)
+    */
+    get_first(rhs,"(");
+    str=get_next(",");
+    ivar=atoi(str);
+    my_net[ind].type=INTERP;
+    my_net[ind].iwgt=ivar;
+    str=get_next(",");
+    ivar=atoi(str);
+    if(ivar<1){
+      printf("Need more than 1 entry for interpolate\n");
+      return 0;
+    }
+    my_net[ind].n=ivar; /* # entries in array */
+    str=get_next(")");
+    strcpy(rootname,str);
+    ivar=get_var_index(rootname);
+    if(ivar<0){
+      printf(" In %s , %s is not valid variable\n",
+	     name,rootname);
+      return 0;
+    }
+    my_net[ind].root=ivar;
+    printf("Added interpolator %s length %d on %s \n",name,my_net[ind].n,rootname); 
+    return 1;
+  case 10:
+    /* 
+       z=GILL(meth,rxn list)
+       e.g
+       z=GILL(meth,r{1-15})
+       GILL is different -
+       iwgt=evaluation method - 0 is standard
+                                1 - tau-leap
+       root=number of reactions
+       values[0]=time of next reaction
+       values[1..root]=number of times this rxn took place
+       gcom contains list of all the fixed holding the reactions
+    */ 
+       
+    get_first(rhs,"(");
+    str=get_next(",");
+    ivar=atoi(str);
+    str=get_next(")");
+    my_net[ind].type=GILLTYPE;
+    my_net[ind].iwgt=ivar;
+    my_net[ind].gcom=(int *)malloc(1000*sizeof(int));
+    if(gilparse(str,my_net[ind].gcom,&ivar2)==0)
+      return 0;
+    my_net[ind].root=ivar2;
+    my_net[ind].n=ivar2+1;
+    my_net[ind].ncon=-1;
+    my_net[ind].values=(double *)malloc((ivar2+2)*sizeof(double));
+    printf("Added gillespie chain with %d reactions \n",ivar2);
+    return 1;
+
     /*  case 8:  
     get_first(rhs,"(");
     str=get_next(",");
@@ -675,6 +759,8 @@ is_network(s)
    if(s[0]=='F' && s[1]=='F' && s[2]=='T' && s[3]=='C' )return 5; 
  if(s[0]=='M' &&s[1]=='M' &&s[2]=='U' && s[3]=='L')return 6;
   if(s[0]=='F'&& s[1]=='M' &&s[2]=='M' &&s[3]=='U' && s[4]=='L')return 7;
+  if(s[0]=='G'&& s[1]=='I' &&s[2]=='L' &&s[3]=='L')return 10;
+  if(s[0]='I' && s[1]=='N' &&s[2]=='T' && s[3]=='E' && s[4]=='R')return INTERP;
   /* if(s[0]=='G'&& s[1]=='R' && s[2]=='O' && s[3]=='U')return 8; */
   return 0;
 }
@@ -701,6 +787,16 @@ int ind;
    values=my_net[ind].values;
    y=&variables[my_net[ind].root];
    switch(my_net[ind].type){
+   case INTERP: /* do nothing! */ 
+     break;
+   case GILLTYPE:
+     if(my_net[ind].ncon==-1&&my_net[ind].iwgt>0){
+       my_net[ind].weight=(double *)malloc(my_net[ind].root*NODE*sizeof(double));
+       make_gill_nu(my_net[ind].weight,NODE,my_net[ind].root,my_net[ind].values);
+       my_net[ind].ncon=0;
+     }
+     one_gill_step(my_net[ind].iwgt,my_net[ind].root,my_net[ind].gcom,my_net[ind].values);
+     break;
    case CONVE:
      for(i=0;i<n;i++){
        sum=0.0;
@@ -965,8 +1061,110 @@ fft_conv(int it,int n,double *values,double *yy,double *fftr,double *ffti,double
   }
 }
 
+/* parsing stuff to get gillespie code quickly */
+
+gilparse(char *s,int *ind,int *nn)
+{
+  int i=0,n=strlen(s);
+  char piece[50],b[20],bn[25],c;
+  int i1,i2,jp=0,f;
+  int k=0,iv;
+  int id,m;
+  printf("s=|%s|",s);
+  while(1){
+    c=s[i];
+    if(c==','||i>(n-1)){
+      piece[jp]=0;
+      if(g_namelist(piece,b,&f,&i1,&i2)==0){
+	printf("Bad gillespie list %s\n",s);
+	return 0;
+      }
+      if(f==0)
+	{
+	  printf("added %s\n",b);
+	  iv=get_var_index(b);
+	  if(iv<0){
+	    printf("No such name %s\n",b);
+	    return 0;
+	  }
+	  ind[k]=iv;
+	  k++;
+	}
+      else 
+	{
+	  printf("added %s{%d-%d}\n",b,i1,i2);
+	  m=i2-i1+1;
+	  for(id=0;id<m;id++){
+	    sprintf(bn,"%s%d",b,id+i1);
+	     iv=get_var_index(bn);
+	     if(iv<0){
+	       printf("No such name %s\n",bn);
+	       return 0;
+	     }
+	     ind[k]=iv;
+	    k++;
+	  }
+	}
+      if(i>(n-1)){
+	*nn=k;
+	return 1;
+      }
+      jp=0;
+    }
+    else 
+      {
+	piece[jp]=c;
+	jp++;
+      }
+    i++;
+  }
+  *nn=k;
+  return 1;
+}
 
 
+/* plucks info out of  xxx{aa-bb}  or returns string */
+int g_namelist(char *s,char *root,int *flag,int *i1,int*i2)
+{
+  int i,n=strlen(s),ir=-1,j=0;
+  char c,num[20];
+  *flag=0;
+  for(i=0;i<n;i++)
+    if(s[i]=='{')ir=i;
+  if(ir<0){
+    strcpy(root,s);
+    return 1;
+  }
+  for(i=0;i<ir;i++)
+    root[i]=s[i];
+  root[ir]=0;
+  *flag=1;
+  j=0;
+  for(i=ir+1;i<n;i++){
+    c=s[i];
+    if(c=='-')break;
+    num[j]=c;
+    j++;
+  }
+  if(i==n){
+    printf("Illegal syntax %s\n",s);
+    return 0;
+  }
+  num[j]=0;
+  *i1=atoi(num);
+  ir=i+1;
+  j=0;
+  for(i=ir;i<n;i++){
+    c=s[i];
+    if(c=='}')break;
+    num[j]=c;
+    j++;
+  }
+  num[j]=0;
+  *i2=atoi(num);
+  return 1;
+}
+ 
 
 
 

@@ -2,6 +2,7 @@
 #include "fio.h"
 #include "fmt.h"
 #include "fp.h"
+#include <string.h>
 #ifndef VAX
 #ifndef WCTYPE
 #include <ctype.h>

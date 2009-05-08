@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "f2c.h"
 #include "fio.h"
 #include "fmt.h"
@@ -12,7 +13,7 @@
 #include "fp.h"
 
 extern char *fmtbuf;
-extern char *malloc(), *realloc();
+/* extern char *malloc(), *realloc(); */
 int (*lioproc)();
 
 #define isblnk(x) (ltab[x+1]&B)
@@ -347,7 +348,7 @@ l_CHAR()
 	ltype=0;
 	if(lchar!=NULL) free(lchar);
 	size=BUFSIZE;
-	p=lchar=malloc((unsigned int)size);
+	p=lchar=(char *)malloc((unsigned int)size);
 	if(lchar==NULL) err(elist->cierr,113,"no space");
 
 	GETC(ch);
@@ -383,7 +384,7 @@ l_CHAR()
 			*p++ = ch;
 			lcount = 10*lcount + ch - '0';
 			if (++i == size) {
-				lchar = realloc(lchar,
+			  lchar = (char *)realloc(lchar,
 					(unsigned int)(size += BUFSIZE));
 				p = lchar + i;
 				}
@@ -414,7 +415,7 @@ l_CHAR()
  noquote:
 			*p++ = ch;
 			if (++i == size) {
-				lchar = realloc(lchar,
+			  lchar = (char *)realloc(lchar,
 					(unsigned int)(size += BUFSIZE));
 				p = lchar + i;
 				}
@@ -427,7 +428,7 @@ l_CHAR()
 		if(i==size)
 		{
 		newone:
-			lchar= realloc(lchar, (unsigned int)(size += BUFSIZE));
+		  lchar= (char *)realloc(lchar, (unsigned int)(size += BUFSIZE));
 			p=lchar+i-1;
 			*p++ = ch;
 		}

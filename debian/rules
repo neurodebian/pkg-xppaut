@@ -13,13 +13,16 @@ else
 	CFLAGS += -O2
 endif
 
-ifneq (,$(shell perl -MConfig -e 'print $$Config{ptrsize} != $$Config{intsize};'))
-	MAKE += -f Makefile.64
-endif
+#Is this really necessary?
+#ifneq (,$(shell perl -MConfig -e 'print $$Config{ptrsize} != $$Config{intsize};'))
+#	MAKE += -f Makefile.64
+#endif
 
 build: build-stamp
 build-stamp:
 	dh_testdir
+
+	QUILT_PATCHES=debian/patches quilt push -a || test $$? = 2
 
 	# Compile the package.
 	$(MAKE)
@@ -34,6 +37,9 @@ clean:
 	# Clean up after the build process.
 	$(MAKE) clean
 
+	QUILT_PATCHES=debian/patches quilt pop -a -R || test $$? = 2
+	rm -rf .pc
+
 	dh_clean
 
 install: build
@@ -44,6 +50,9 @@ install: build
 
 	# Install the package into debian/xppaut.
 	$(MAKE) install DESTDIR=$(CURDIR)/debian/xppaut
+
+	#Remove shared objects from example dir.
+	rm -f $(CURDIR)/debian/xppaut/usr/share/doc/xppaut/examples/ode/*.so
 
 # Nothing to do by default for build architecture-independent:
 binary-indep: build install

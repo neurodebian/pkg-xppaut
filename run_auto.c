@@ -1,4 +1,5 @@
 #include <stdlib.h> 
+#include <stdio.h>
 #include "f2c.h"
 
 #define IRS blbcn_1.irs
@@ -217,7 +218,8 @@ run_aut(nfpar,itp)
 /*        Two parameter bifurcations         ISW = +/- 2        */ 
 
     aitp=abs(itp)/10;
-    if(IPS<=1&&aisw==2&&ITP==2){ /* limit points  */
+    if(IPS<=1&&aisw==2&&((ITP==2)||(ITP==1))){ /* limit points  */
+      /*  printf("I am here - ITP=%d\n,nfpar=%d",ITP,nfpar); */
       WAE;
       ALLOCW;
       ALLOCIW;
@@ -229,11 +231,12 @@ run_aut(nfpar,itp)
       BYE;
     }
     
-    if(IPS<=1&&aisw==2&&aitp==2){ /* limit points continued */
+    if(IPS<=1&&aisw==2&&((aitp==2)||(aitp==1))){ /* limit points continued */
       WAE;
       ALLOCW;
       ALLOCIW;
       cnstnt_();
+      printf("I am here - aitp=%d\n",aitp);
     dfinit_();
     set_auto();
     
@@ -284,7 +287,7 @@ run_aut(nfpar,itp)
     autoae_(w, iw, &itp, &nfpar, fnhd_, stpnae_);
     BYE;
    }
-    if(IPS==2&&aisw==2&&ITP==5){ /* Limits on periodics */
+    if(IPS==2&&aisw==2&&((ITP==5)||(ITP==6))){ /* Limits on periodics */
       WBV;
       ALLOCW;
       ALLOCIW;
@@ -296,7 +299,7 @@ run_aut(nfpar,itp)
       BYE;
     }
     
-    if(IPS==2&&aisw==2&&aitp==5){ /* More Limits on periodics */
+    if(IPS==2&&aisw==2&&((aitp==5)||(aitp==6))){ /* More Limits on periodics */
       WBV;
       ALLOCW;
       ALLOCIW;
@@ -309,7 +312,7 @@ run_aut(nfpar,itp)
     }
     
 
-  if(IPS==4&&aisw==2&&ITP==5){ /* Limits on bndry values */
+  if(IPS==4&&aisw==2&&((ITP==5)||(ITP==6))){ /* Limits on bndry values */
       WBV;
       ALLOCW;
       ALLOCIW;
@@ -321,7 +324,7 @@ run_aut(nfpar,itp)
       BYE;
     }
     
-    if(IPS==4&&aisw==2&&aitp==5){ /* More Limits on bndry values */
+    if(IPS==4&&aisw==2&&((aitp==5)||(aitp==6))){ /* More Limits on bndry values */
       WBV;
       ALLOCW;
       ALLOCIW;
