@@ -1,5 +1,7 @@
 * move copyright to DEP-5 format
-  mention ./macdirent.h with BSD-4/Apple copyright
+  http://dep.debian.net/deps/dep5/
+
+mention ./macdirent.h with BSD-4/Apple copyright
 
 main.c ./mainold.c: GPL (v2 or later) (with incorrect FSF address) 
   [Copyright: 2002-2011 Bard Ermentrout & Daniel Dougherty]
@@ -7,3 +9,30 @@ main.c ./mainold.c: GPL (v2 or later) (with incorrect FSF address)
 fftn.c
  * Copyright(c)1995,97 Mark Olesen <olesen@me.QueensU.CA>
  *      Queen's Univ at Kingston (Canada)
+
+MORE to check
+
+see examples in that page and other our packages
+
+* Boost policy compliance to 3.9.2
+  /usr/share/doc/debian-policy/upgrading-checklist.txt.gz
+
+* fix up the left over patches (may be could just be dropped)
+
+* inflitrate source tarballs:
+
+ - remove backup files *~
+ - remove *.jar?
+ - built materials install.pdf
+
+* add Git- fields to debian/control
+
+* at the end we aim to achieve lintian-free package
+
+ run recent lintian *.changes
+
+* git-buildpackage
+
+  git-pbuilder create
+
+  git-buildpackage --git-pbuilder
