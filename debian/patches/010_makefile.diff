@@ -1,63 +1,44 @@
-Index: xppaut-5.98/Makefile
-===================================================================
---- xppaut-5.98.orig/Makefile	2009-05-08 15:22:41.000000000 -0400
-+++ xppaut-5.98/Makefile	2009-05-08 15:26:13.000000000 -0400
-@@ -1,7 +1,7 @@
- # Copyright (C) 1990-2006 Bard Ermentrout
+--- a/Makefile
++++ b/Makefile
+@@ -2,9 +2,9 @@
  # Edited for Debian GNU/Linux.
+ #BINDIR = /usr/X11R6/bin
  DESTDIR =
--BINDIR = $(DESTDIR)/usr/X11R6/bin
-+BINDIR = $(DESTDIR)/usr/bin
- DOCDIR = $(DESTDIR)/usr/share/doc/xppaut
+-BINDIR = /usr/local/bin
++BINDIR = /usr/bin
+ DOCDIR = /usr/share/doc/xppaut
+-MANDIR = /usr/local/man/man1
++MANDIR = /usr/share/man/man1
  # End Debian Edit
  #################################
-@@ -21,9 +21,9 @@
- # Standard Linux distributions   #
- ##################################
- #CFLAGS=   -g -O -DAUTO -DCVODE_YES -DHAVEDLL -DMYSTR=$(VERSION)  -I/usr/X11R6/include
--#CFLAGS=   -g -O -DAUTO -DCVODE_YES  -DHAVEDLL -DMYSTR=$(VERSION)  -I/usr/X11R6/include
--#LDFLAGS=  -L/usr/X11R6/lib
--#LIBS= -lX11 -lm -ldl 
-+CFLAGS += -g -O -DAUTO -DCVODE_YES  -DHAVEDLL -DMYSTR=$(VERSION)  -I/usr/include
-+LDFLAGS = -L/usr/lib
-+LIBS = -lX11 -lm -ldl 
+ #
+@@ -20,7 +20,7 @@ HELP=help/*.html
+ # Use Gnu compiler
+ #CC= gcc
+ # Use c99 to compile according to newer ISO C standards (IEEE Std 1003.1-2001)
+-CC= gcc -std=c99 -pedantic -D_XOPEN_SOURCE=600 -Wall  
++CC= gcc -O -std=c99 -pedantic -D_XOPEN_SOURCE=600 -Wall  
+ #AUTLIBS=  -lsundials_cvode -lX11 -lm 
+ #These are the 32bit compat libraries.
+ AUTLIBS=  -lm 
+@@ -36,9 +36,9 @@ AUTLIBS=  -lm
+ #CFLAGS=   -g -O -m32 -DNON_UNIX_STDIO -DAUTO -DCVODE_YES  -DHAVEDLL -DMYSTR1=$(MAJORVER) -DMYSTR2=$(MINORVER)  -I/usr/X11R6/include
+ #CFLAGS=   -g -O -m64 -DNOERRNO -DNON_UNIX_STDIO -DAUTO -DCVODE_YES  -DHAVEDLL -DMYSTR1=$(MAJORVER) -DMYSTR2=$(MINORVER)  -I/usr/include/X11
+ 
+-CFLAGS= -g -pedantic -O -m32 -DNOERRNO -DNON_UNIX_STDIO -DAUTO -DCVODE_YES  -DHAVEDLL -DMYSTR1=$(MAJORVER) -DMYSTR2=$(MINORVER)  -I/usr/include/X11 
++CFLAGS = -g -pedantic -O -DNOERRNO -DNON_UNIX_STDIO -DAUTO -DCVODE_YES  -DHAVEDLL -DMYSTR1=$(MAJORVER) -DMYSTR2=$(MINORVER)  -I/usr/include/X11 
+ #LDFLAGS=  -m64 -L/usr/lib -L/usr/lib64
+-LDFLAGS=  -m32 -L/usr/X11R6/lib 
++LDFLAGS=  -L/usr/lib 
+ LIBS=  -lX11 -lm -ldl   
  # NOTE: Recent (RedHat 8) versions of GCC seem to no longer have
  # the integer errno, so compile with the -DNOERRNO option as well
- #
-@@ -37,9 +37,9 @@
- #################################
- # MACOSX                        #
- #################################
--CFLAGS=   -g -O -DMACOSX -DAUTO -DCVODE_YES  -DMYSTR=$(VERSION) -I/usr/X11R6/include
--LIBS=  -lX11 -lm
--LDFLAGS=  -L/usr/X11R6/lib
-+#CFLAGS=   -g -O -DMACOSX -DAUTO -DCVODE_YES  -DMYSTR=$(VERSION) -I/usr/X11R6/include
-+#LIBS=  -lX11 -lm
-+#LDFLAGS=  -L/usr/X11R6/lib
- #
- #################################
- # CYGWIN                        #
-@@ -190,20 +190,19 @@
- 	mkdir -p $(BINDIR)
- 	mkdir -p $(DOCDIR)/html
- 	mkdir -p $(DOCDIR)/examples
--	mkdir -p $(DESTDIR)/usr/X11R6/man/man1
-+	mkdir -p $(DESTDIR)/usr/share/man/man1
- # Put everything home
--	strip xppaut
- 	cp xppaut $(BINDIR)
- 	cp -r ode* $(DOCDIR)/examples
- 	cp -r help/* $(DOCDIR)/html
- 	cp README *.pdf $(DOCDIR) 
--	cp xppaut.1 $(DESTDIR)/usr/X11R6/man/man1
-+	cp xppaut.1 $(DESTDIR)/usr/share/man/man1
- # End Debian Ed
- uninstall: 
- # Remove everything you created
- 	rm $(BINDIR)/xppaut
- 	rm -r $(DOCDIR)
--	rm -r $(DESTDIR)/usr/X11R6/man/man1/xppaut.1
-+	rm -r $(DESTDIR)/usr/share/man/man1/xppaut.1
- # End Debian Ed
- ##################################################
- #    Make s stand alone library -must link your rhs
+@@ -266,7 +266,7 @@ install: xppaut
+ 	install -m 755 xppaut $(DESTDIR)$(BINDIR)
+ 	cp -r ode* $(DESTDIR)$(DOCDIR)/examples
+ 	cp -r help/* $(DESTDIR)$(DOCDIR)/html
+-	cp README *.pdf $(DESTDIR)$(DOCDIR)
++	#cp README *.pdf $(DESTDIR)$(DOCDIR)
+ 	cp *.xbm $(DESTDIR)$(DOCDIR)/xbm 
+ 	
+ 	cp xppaut.1 $(DESTDIR)$(MANDIR)
