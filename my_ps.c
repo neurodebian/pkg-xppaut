@@ -1,5 +1,6 @@
 #include <stdlib.h> 
 #include <stdio.h>
+#include <string.h>
 #define MAXPSLINE 100
 
 #define PS_XOFF 50
@@ -154,7 +155,7 @@ int color;
  fprintf(psfile,"%.3f %.3f scale\n", 1./PS_SC,1./PS_SC);
  if(!PS_Port)
    fprintf(psfile,"90 rotate\n0 %d translate\n", -PS_YMAX);
- fprintf(psfile,"0 setgray\n");
+ /* fprintf(psfile,"% 0 setgray\n"); */
  fprintf(psfile,"/%s findfont %d ",PS_FONT,PS_FONTSIZE*PS_SC);
  fprintf(psfile,"scalefont setfont\n");
  fprintf(psfile,"newpath\n");
@@ -167,16 +168,16 @@ ps_do_color(int color)
  /* this doesn work very well */
  if(PSFlag==0)return;
  if(color==0)
-   fprintf(psfile,"0 setgray\n");
+   /* fprintf(psfile,"0 setgray\n"); */
  /* printf("color=%d\n",color); */
  if(PSColorFlag==0)return;
  get_ps_color(color,&r,&g,&b);
- if(LastPtLine)
-  fprintf(psfile,"%f %f %f RGB\n",r,g,b);
-  else 
-fprintf(psfile,"%f %f %f RGb\n",r,g,b);  
+ /*  if(LastPtLine)
+   fprintf(psfile,"%f %f %f RGB\n",r,g,b);
+ else 
+   fprintf(psfile,"%f %f %f RGb\n",r,g,b);  
 		
-
+ */
 }
 
 ps_setcolor(color)

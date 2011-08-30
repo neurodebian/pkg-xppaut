@@ -1,4 +1,5 @@
 #include <stdlib.h> 
+#include <string.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <stdio.h>
@@ -182,7 +183,8 @@ XSetWMProperties(display,w,NULL,NULL,NULL,0,NULL,&wm_hints,NULL);
   else
   {
   int len=strlen(string);
-  int x,y,w,h,bw,de;
+  int x,y;
+  unsigned int w,h,bw,de;
  int xs,ys=2;
  Window root;
  XGetGeometry(display,win,&root,&x,&y,&w,&h,&bw,&de);

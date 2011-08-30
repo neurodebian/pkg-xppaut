@@ -438,6 +438,7 @@ special <name>=conv(type,npts,ncon,wgt,rootname)
                fsparse(npts,ncon,wgt,index,rootname,root2,function)
                mmult(n,m,w,root)
                fmmult(n,m,w,root1,root2,function)
+	       gill(0,rxnlist)
 ...
 only <name2>,<name2>,...
 ...	
@@ -1386,7 +1387,45 @@ returns
 \[
 k(j)=\sum_{i=0}^{n-1} w(i+nj)f(u(i),v(j)).
 \]
-
+\tc{Gillespie method} The command
+\begin{verbatim}
+special z=gill(0,rxnlist)
+\end{verbatim}
+sets up a list of reactions to implement the gillespie method. (The 0
+is superfluous at this point and serves as a place-holder for
+implementing faster approximations) The reactions are a set of fixed
+variable that you include. The vector {\tt z} returns the following
+information: $z(0)$ returns the time to the next reaction;
+$z(1,\ldots,m)$ returns a 0 or 1 according as to whether that reaction
+took place.  Here is an example from Gillespie
+\begin{verbatim}
+# gillesp_bruss.ode
+# gillespie algorithm for brusselator
+#
+# x1  -> y1 (c1)
+# x2+y1 -> y2+Z (c2)
+# 2 y1 + y2 -> 3 y1 (c3)
+# y1 -> Z2 (c4)
+par c1x1=5000,c2x2=50,c3=.00005,c4=5
+init y1=1000,y2=2000
+#  compute the reaction rates
+r1=c1x1
+r2=c2x2*y1
+r3=c3*y1*y2*(y1-1)/2
+r4=c4*y1
+special z=gill(0,r{1-4})
+tr'=tr+z(0)
+y1'=y1+z(1)-z(2)+z(3)-z(4)
+y2'=y2+z(2)-z(3)
+@ bound=100000000,meth=discrete,total=1000000,njmp=1000
+@ xp=y1,yp=y2
+@ xlo=0,ylo=0,xhi=10000,yhi=10000
+done
+\end{verbatim}
+Note the form of the reaction list.
+Other reactions can be added separated by commas. This appears to be
+easier to code that the way that I used in the XPP book before i
+implemented  this new algorithm.
 
 \TCC{Active comments}
 A line that starts with a quote mark {\tt " } is treated differently
@@ -2942,6 +2981,12 @@ The results are in the Browser.  The first column (labeled ``T'') is
 the mode.  The second, the cosine component and the third, the sine
 component. 
 \item[Power] computes the power spectrum and the phase using the FFT.   
+\item[Spec.dens] this uses welch windowing to compute a smoother
+power spectrum than the straight-up power method. You divide your
+data into windows of a certain length and then premultiply by a window
+(square, parabolic,cosine or triangular) before taking the power over
+that window. The windows are then normalized and the result is
+normalized so that the sum is 1. 
 \tcc{Curve Fitting} \item[fIt curve]  This is a routine based on
 Marquardt-Levenberg algorithm for nonlinear least squares fitting.
 A description of the method can be found in {\it Numerical Recipes in

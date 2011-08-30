@@ -1,4 +1,5 @@
 #include <stdlib.h> 
+#include <unistd.h>
 /* the menu for XPP commands 
    this calls any command
    it also has lots of the direct X Gui stuff
@@ -6,6 +7,7 @@
 */
 
 #include <stdio.h>
+#include <string.h>
 #include <X11/Xlib.h>
 #include "menudrive.h"
 extern char *info_message,*ic_hint[],*sing_hint[],
@@ -119,6 +121,7 @@ clr_all_scrns()
 
 run_the_commands(int com)
 {
+
   if(com<0)return;
   if(com<=MAX_M_I){
     do_init_data(com);
@@ -129,7 +132,6 @@ run_the_commands(int com)
     return;
   }
   if(com>=M_SG&&com<=M_SC){
-
     find_equilib_com(com-M_SG);
     return;
   }
@@ -224,10 +226,10 @@ run_the_commands(int com)
     return;
   }
   if(com>=M_V2&&com<=M_VT)change_view_com(com-M_V2);
-  if(com>=M_UAN&&com<=M_UAH)make_adj_com(com-M_UAN);
+  if(com>=M_UAN&&com<=M_UAP)make_adj_com(com-M_UAN);
   if(com>=M_UCN&&com<=M_UCA)set_col_par_com(com-M_UCN);
   if(com>=M_UPN&&com<=M_UPP)get_pmap_pars_com(com-M_UPN);
-  if(com>=M_UHN&&com<=M_UHR)do_stochast_com(com-M_UHN);
+  if(com>=M_UHN&&com<=M_UH2)do_stochast_com(com-M_UHN);
   if(com>=M_UT && com<=M_UC)quick_num(com-M_UT);
 }
 
@@ -235,17 +237,17 @@ do_stochast()
 {
 static char *n[]={"New seed","Compute","Data","Mean","Variance","Histogram",
 		  "Old hist","Fourier","Power","fIt data","Stat","Liapunov",
-		  "stAutocor","crosscoR"};
- static char key[]="ncdmvhofpislar";
+		  "stAutocor","crosscoR","spEc.dns","2D-hist"};
+ static char key[]="ncdmvhofpislare2";
  Window temp=main_win;
  char ch;
  int i;
- ch=(char)pop_up_list(&temp,"Stochastic",n,key,14,10,0,10,4*DCURY+8,
+ ch=(char)pop_up_list(&temp,"Stochastic",n,key,16,10,0,10,2*DCURY+8,
 		       stoch_hint,info_pop,info_message);
- for(i=0;i<14;i++)
+ for(i=0;i<16;i++)
    if(ch==key[i])break;
 
- if(i>=0&&i<14)run_the_commands(M_UHN+i);
+ if(i>=0&&i<16)run_the_commands(M_UHN+i);
 }
 get_pmap_pars()
 {
@@ -283,15 +285,15 @@ set_col_par()
 make_adj()
 {
  Window temp=main_win;
- static char *n[]={"(N)ew adj","(M)ake H","(A)djoint","(O)rbit","(H)fun"};
- static char key[]="nmaoh";
+ static char *n[]={"(N)ew adj","(M)ake H","(A)djoint","(O)rbit","(H)fun","(P)arameters"};
+ static char key[]="nmaohp";
  char ch;
  int i;
- ch=(char)pop_up_list(&temp,"Adjoint",n,key,5,10,0,10,10*DCURY+8,adj_hint,
+ ch=(char)pop_up_list(&temp,"Adjoint",n,key,6,10,0,10,11*DCURY+8,adj_hint,
 		      info_pop,info_message);
- for(i=0;i<5;i++)
+ for(i=0;i<6;i++)
    if(ch==key[i])break;
- if(i>=0&&i<5)
+ if(i>=0&&i<6)
    run_the_commands(M_UAN+i);
 }
 
@@ -671,6 +673,7 @@ Window temp=main_win;
     if(ch==key[i])
       break;
   }
+ 
  run_the_commands(i);
  
  

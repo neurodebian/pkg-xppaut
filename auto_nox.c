@@ -1,6 +1,7 @@
 #include <stdlib.h> 
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
 #ifndef WCTYPE
 #include <ctype.h>
 #else
@@ -25,7 +26,7 @@ extern int NoBreakLine;
 extern char *auto_hint[],*aaxes_hint[],*afile_hint[],*arun_hint[],*no_hint[];
 extern int BVP_FLAG;
 
-
+extern int AutoRedrawFlag;
 extern int FLOWK;
 #define PARAM_BOX 1
 
@@ -1602,7 +1603,8 @@ auto_torus()
   do_auto(OPEN_3,APPEND,Auto.itp);
 }
 
-auto_2p_branch()
+auto_2p_branch(ips)
+     int ips;
 {
  blrtn.torper=grabpt.torper;
   Auto.irs=grabpt.lab;
@@ -1611,15 +1613,15 @@ auto_2p_branch()
   Auto.ilp=1;
   Auto.isw=2;
   Auto.isp=2;
-  Auto.ips=1;
+  Auto.ips=ips;
   if(METHOD==DISCRETE)
     Auto.ips=-1;
   AutoTwoParam=1;
   do_auto(OPEN_3,APPEND,Auto.itp);
 }
 
-auto_branch_choice(ibr)
-     int ibr;
+auto_branch_choice(ibr,ips)
+     int ibr,ips;
 {
 
   static char *m[]={"Switch","Extend","New Point","Two Param"};
@@ -1628,10 +1630,13 @@ auto_branch_choice(ibr)
   ch=(char)auto_pop_up_list("Branch Pt",m,key,4,10,0,10,10,
 		       no_hint,Auto.hinttxt);
   if(ch=='s'){
-    if(ibr<0)
+    if(ibr<0&&ips==2)
       auto_switch_per();
-    else
-      auto_switch_ss();
+    else 
+      if(ips==4)
+	auto_switch_bvp();
+      else
+	auto_switch_ss();
     return;
   }
   if(ch=='e'){
@@ -1643,7 +1648,8 @@ auto_branch_choice(ibr)
     return;
   }
   if(ch=='t'){
-    auto_2p_branch();
+    auto_2p_branch(ips);
+    /* auto_2p_limit(ips); */
     return;
   }
   redraw_auto_menus();
@@ -1735,11 +1741,12 @@ auto_run()
     ping(); return;
   }
   if(itp1==6||itp2==6||itp1==1||itp2==1){ /* branch point  */ 
+
     
- /*   auto_branch_choice(grabpt.ibr);
+  auto_branch_choice(grabpt.ibr,ips);
     ping();
-    return; */
-   
+    return; /* 
+    
     if(grabpt.ibr<0&&ips==2)
       auto_switch_per();
     else 
@@ -1748,7 +1755,7 @@ auto_run()
       else
 	auto_switch_ss();
     ping();
-    return;   
+    return;   */
   }
   if(itp1==8||itp2==8){ /* Torus 2 parameter */
     torus_choice();
@@ -1909,7 +1916,7 @@ save_q_file(fp)
   while(!feof(fq)){
     fgets(string,500,fq);
     fputs(string,fp);
-    break;
+    /* break; */
   }
   fclose(fq);
 }
@@ -2019,10 +2026,10 @@ auto_file()
 {
  
   static char *m[]={"Import orbit","Save diagram","Load diagram","Postscript",
-		    "Reset diagram","Clear grab","Write pts","All info","init Data"};
-  static  char key[]="islprcwad";
+		    "Reset diagram","Clear grab","Write pts","All info","init Data","Toggle redraw"};
+  static  char key[]="islprcwadt";
   char ch;
-  ch=(char)auto_pop_up_list("File",m,key,9,13,0,10,10,afile_hint,
+  ch=(char)auto_pop_up_list("File",m,key,10,13,0,10,10,afile_hint,
 		       Auto.hinttxt);
   if(ch=='i'){
     load_auto_orbit();
@@ -2056,6 +2063,12 @@ auto_file()
   if(ch=='d'){
     write_init_data_file();
   }
+  if(ch=='t'){
+    AutoRedrawFlag=1-AutoRedrawFlag;
+    if(AutoRedrawFlag==1)err_msg("Redraw is ON");
+    else err_msg("Redraw is OFF");
+  }
+    
 
 
 

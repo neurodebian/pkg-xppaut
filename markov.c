@@ -1,13 +1,14 @@
 #include <stdlib.h> 
 #include <math.h>
 #include <stdio.h>
+#include <string.h>
 /* #include <X11/Xlib.h> */
 #include "xpplim.h"
 /* #include "browse.h" */
 
 extern int ConvertStyle;
 extern FILE *convertf;
-
+double get_ivar();
 #define MAXMARK 200
 #define IA 16807
 #define IM 2147483647
@@ -401,10 +402,81 @@ double new_state(old,index,dt)
      
   return(old);
 }
+
+make_gill_nu(double *nu,int n,int m,double *v)
+{
+  /* nu[j+m*i] = nu_{i,j} i=1,n-1 -- assume first eqn is tr'=tr+z(0)
+     i species j reaction
+    need this for improved tau stepper
+   */
+  double *y,*yp,*yold;
+  int ir,iy;
+
+  y=(double *)malloc(n*sizeof(double));
+  yold=(double *)malloc(n*sizeof(double));
+  yp=(double *)malloc(n*sizeof(double));
+  for(ir=0;ir<m;ir++)
+    v[ir+1]=0;
+    rhs_only(y,yold);
+  for(ir=0;ir<m;ir++){
+    v[ir+1]=1;
+    rhs_only(y,yp);
+    for(iy=0;iy<n;iy++){
+      nu[ir+m*iy]=yp[iy];
+      printf("ir=%d iy=%d nu=%g\n",ir+1,iy,yp[iy]-yold[iy]);  
+    }
+    v[ir+1]=0;
+  }
+
+  free(y);
+  free(yp);
+  free(yold);
+
+}
+one_gill_step(int meth,int nrxn,int *rxn,double *v)
+{
+  double rate=0,test;
+  double r[1000],rold[1000];
+  double *ap;
+  int i,ii;
+  switch(meth){
+  case 0: /* std gillespie method */
+    for(i=0;i<nrxn;i++){
+      v[i+1]=0.0;
+      r[i]=get_ivar(rxn[i]);
+      rate+=r[i];
+    }
+    if(rate<=0.0)return;
+    /* printf("rate=%g \n",rate); */
+    v[0]=-log(ndrand48())/rate; /* next step */
+    test=rate*ndrand48();
+    rate=r[0];
+    for(i=0;i<nrxn;i++){
+      if(test<rate){
+	v[i+1]=1.0;
+	break;
+      }
+      rate+=r[i+1];
+    }
+    break;
+  case 1: /* tau stepping method  */
+    for(i=0;i<nrxn;i++)
+      rold[i]=get_ivar(rxn[i]);
+
+    break;
+
+
+  }
+
+}
+    
+		     
+		     
+    
     
 do_stochast_com(int i)
 {
-  static char key[]="ncdmvhofpislar";
+  static char key[]="ncdmvhofpislare2";
   char ch=key[i];
   
   if(ch==27)return;
@@ -433,7 +505,7 @@ do_stochast_com(int i)
     hist_back();
     break;
   case 'f':
-    compute_fourier();
+    compute_fourier(); 
     break;
   case 'p':
     compute_power();
@@ -454,6 +526,12 @@ do_stochast_com(int i)
      break;
   case 'r':
     compute_correl();
+    break;
+  case 'e':
+    compute_sd();
+    break;
+  case '2':
+    new_2d_hist();
     break;
   }
   

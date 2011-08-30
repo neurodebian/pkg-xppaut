@@ -1,19 +1,20 @@
-# test of dll
-# compile the C program funexample.c 
-# creating libexample.so - use Makefile.lib
+# EXAMPLE 2
+# compile the C program example.c 
+# creating example.so 
 # gcc -fpic -shared -o example.so example.c
 # In XPP click on File-Edit-Load Library
-# and use the full path eg /home/fred/xpp/libexample.so
+# example.so
 # and pick either lv, vdp, duff as the function.
 # 
 x'=xp
 y'=yp
-xp=-y
-yp=x-y
+# these are dummies holding the RHS
+xp=0
+yp=0
 export {x,y,a,b,c,d,t} {xp,yp}
 par a=1,b=1,c=1,d=1
 done
-
+------------------ Cut below, save as example.c  -------------------------
 #include <math.h>
 /*  
  some example functions

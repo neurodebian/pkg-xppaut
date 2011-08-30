@@ -1,4 +1,5 @@
 #include <stdlib.h> 
+#include <string.h>
 /*********************************************************
      This is code for read-in tables in XPP  
      This should probably be accessible from within the program

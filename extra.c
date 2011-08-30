@@ -1,4 +1,5 @@
 #include <stdlib.h> 
+#include <string.h>
 /* this is a way to communicate XPP with other stuff
 
 # complex right-hand sides
@@ -20,6 +21,10 @@ export {x,y} {xp,yp}
 #include <stdio.h>
 #define PAR 0
 #define VAR 1
+char dll_lib[256];
+char dll_fun[256];
+int dll_flag=0;
+
 typedef struct
 {
   char *lin,*lout;
@@ -53,6 +58,19 @@ DLFUN dlf;
 
 void *dlhandle;
 double (*fun)();
+
+auto_load_dll()
+{
+  if(dll_flag==3){
+    get_directory(cur_dir);
+    printf("DLL lib %s/%s with function %s \n",cur_dir,dll_lib,dll_fun);
+    sprintf(dlf.libfile,"%s",dll_lib);
+    sprintf(dlf.libname,"%s/%s",cur_dir,dlf.libfile);
+    sprintf(dlf.fun,"%s",dll_fun);
+    dlf.loaded=0;
+  }
+}
+ 
 load_new_dll()
 {
   int status;
@@ -99,6 +117,10 @@ my_fun(double *in, double *out, int nin,int nout,double *v,double *c)
 
 }
 
+auto_load_dll()
+{
+
+}
 #endif
 
 

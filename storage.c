@@ -78,6 +78,7 @@ WORK=NULL;
  
  }
  /*  } */
+ /*  printf("col=%d\n",i); */
 err_msg("Cannot allocate sufficient storage");
    exit(0);
 }

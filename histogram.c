@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdio.h>
 #include <math.h>
-
+#include <string.h>
 #include "xpplim.h"
 
 #include "fftn.h"
@@ -15,12 +15,15 @@ float *get_data_col();
 extern int DCURY,MAXSTOR;
 extern char uvar_names[MAXODE][12];
 typedef struct {
-  int nbins,type,col,col2;
+  int nbins,nbins2,type,col,col2;
   double xlo,xhi;
+  double ylo,yhi;
   char cond[80];
 } HIST_INFO;
 
-HIST_INFO hist_inf = {10,0,0,0,1,1,""};
+int spec_col=1,spec_wid=256,spec_win=0;
+
+HIST_INFO hist_inf = {10,10,0,0,0,0,1,0,1,""};
 
 extern int NCON,NSYM,NCON_START,NSYM_START;
 
@@ -34,6 +37,51 @@ int HIST_HERE,FOUR_HERE;
 extern int NEQ,NODE,NMarkov,FIX_VAR;
 
 extern char *no_hint[],*info_message;
+
+int two_d_hist(int col1,int col2,int ndat,int n1,int n2,double xlo,double xhi,double ylo,double yhi)
+     /*
+       col1,2 are the data you want to histogram
+       ndat - number of points in the data
+       n1,2 number of bins for two data streams
+       xlo,xhi - range of first column
+       ylo,yhi - range of second column
+       val[0] = value of first data
+       val[1] = value of second data
+       val[3] = number of points - which will be normalized by ndat
+ EXAMPLE of binning
+       if xl0 = 0 and xhi=1 and nbin=10
+       dx=1/10
+       then bins are [0,1/10), [1/10,2/10), ....,[9/10,1)
+       thus  bin j = int ((x-xlo)/dx)
+             bin k = int ((y-ylo)/dy)
+	     if j<0 or j>=nxbin then skip etc
+     */
+{
+  int i,j,k;
+  double dx,dy,norm;
+  double x,y;
+  dx=(xhi-xlo)/(double) n1;
+  dy=(yhi-ylo)/(double) n2;
+  norm=1./(double)ndat;
+  /* now fill the data with the bin values - take the midpoints of 
+     each bin
+  */
+  for(i=0;i<n1;i++)
+    for(j=0;j<n2;j++){
+      my_hist[0][i+j*n1]=xlo + (i+.5)*dx;
+      my_hist[1][i+j*n1]=ylo + (j+.5)*dy;
+      my_hist[2][i+j*n1]=0.0;
+    }
+  for(k=0;k<ndat;k++){
+    x=(storage[col1][k]-xlo)/dx;
+    y=(storage[col2][k]-ylo)/dy;
+    i=(int)x;
+    j=(int)y;
+    if((i>=0)&&(i<n1)&&(j>=0)&&(j<n2))
+      my_hist[2][i+j*n1]+=norm;
+   }  
+  return 0;
+}
 
 four_back()
 {
@@ -90,6 +138,78 @@ new_four(nmodes,col)
   ping();
 }
 
+new_2d_hist()
+{
+  
+  int i,length;
+  if((NEQ<2)||(storind<3)){
+    err_msg("Need more data and at least 3 columns");
+    return 0;
+  }
+  if(get_col_info(&hist_inf.col,"Variable 1 ")==0)return;  
+  new_int("Number of bins ",&hist_inf.nbins);
+  new_float("Low ",&hist_inf.xlo);
+  new_float("Hi ",&hist_inf.xhi);
+  if(hist_inf.nbins<2){
+    err_msg("At least 2 bins\n");
+    return(0);
+  }
+  if(hist_inf.xlo>=hist_inf.xhi){
+    err_msg("Low must be less than hi");
+    return(0);
+  }
+  
+  if(get_col_info(&hist_inf.col2,"Variable 2 ")==0)return;  
+  new_int("Number of bins ",&hist_inf.nbins2);
+  new_float("Low ",&hist_inf.ylo);
+  new_float("Hi ",&hist_inf.yhi);
+
+if(hist_inf.nbins2<2){
+    err_msg("At least 2 bins\n");
+    return(0);
+  }
+  if(hist_inf.ylo>=hist_inf.yhi){
+    err_msg("Low must be less than hi");
+    return(0);
+  }
+
+  length=hist_inf.nbins*hist_inf.nbins2;
+   if(length>=MAXSTOR)
+    length=MAXSTOR-1;
+
+  if(HIST_HERE){
+    data_back();
+    free(my_hist[0]);
+    free(my_hist[1]);
+    if(HIST_HERE==2)
+      free(my_hist[2]);
+    HIST_HERE=0;
+  }
+
+   hist_len=length;
+  my_hist[0]=(float *)malloc(sizeof(float)*length);
+  my_hist[1]=(float *)malloc(sizeof(float)*length);
+  my_hist[2]=(float *)malloc(sizeof(float)*length);
+  if(my_hist[2]==NULL){
+    free(my_hist[0]);
+    free(my_hist[1]);
+    err_msg("Cannot allocate enough...");
+    return;
+  }
+
+  HIST_HERE=2;
+  for(i=3;i<=NEQ;i++)my_hist[i]=storage[i];
+  hist_len=length;
+  two_d_hist(hist_inf.col,hist_inf.col2,storind,
+	     hist_inf.nbins,hist_inf.nbins2,
+	     hist_inf.xlo,hist_inf.xhi,hist_inf.ylo,hist_inf.yhi);
+
+  hist_back();
+
+      ping();
+ 
+}
+  
 new_hist(nbins,zlo,zhi,col,col2,condition,which)
      int nbins;
      int col,col2,which;
@@ -111,6 +231,8 @@ new_hist(nbins,zlo,zhi,col,col2,condition,which)
     data_back();
     free(my_hist[0]);
     free(my_hist[1]);
+    if(HIST_HERE==2)
+      free(my_hist[2]);
     HIST_HERE=0;
   }
   hist_len=length;
@@ -201,7 +323,7 @@ column_mean()
    err_msg("Need at least 2 data points!");
    return;
  }
- if(get_col_info(&hist_inf.col)==0)return;
+ if(get_col_info(&hist_inf.col,"Variable ")==0)return;
  sum=0.0;
  sum2=0.0;
  for(i=0;i<storind;i++){
@@ -214,15 +336,17 @@ column_mean()
  sprintf(bob,"Mean=%g Std. Dev. = %g ",mean,sdev);
  err_msg(bob);
 }
-get_col_info(col)
+
+get_col_info(col,prompt)
  int *col;
+ char *prompt;
 {
  char variable[20];
  if(*col==0)
    strcpy(variable,"t");
  else
    strcpy(variable,uvar_names[*col-1]);
- new_string("Variable ",variable);
+ new_string(prompt,variable);
  find_variable(variable,col);
  if(*col<0){
    err_msg("No such variable...");
@@ -235,7 +359,7 @@ compute_power()
 {
   int i;
   double s,c;
-  float *datx,*daty;
+  float *datx,*daty,ptot=0;
   compute_fourier();
   if((NEQ<2)||(storind<=1))return;
   datx=get_data_col(1);
@@ -246,10 +370,106 @@ compute_power()
     s=daty[i];
     datx[i]=sqrt(s*s+c*c);
     daty[i]=atan2(s,c);
+    ptot+=(datx[i]*datx[i]);
   }
+  printf("a0=%g L2norm= %g \n",datx[0],sqrt(ptot));
+}
+/* short-term fft 
+   first apply a window
+   give data, window size, increment size,
+   window type - 0-square, 1-hamming,2-hanning,3-
+   returns a two vectors, real and imaginary
+   which have each of the data appended to them
+  data is data (not destroyed)
+  nr=number of points in data
+  win=window size
+  w_type=windowing
+  pow returns the power 
+      size = win/2
+*/
+
+
+   
+   
+spectrum(float *data,int nr,int win,int w_type,float *pow)
+{
+  int shift=win/2;
+ int kwin=(nr-win)/shift;
+ int i,j;
+ float *ct,*st,*f,*d,x,sum;
+ if(nr<2)return(0);
+ if(kwin<1)return(0);
+ ct=(float *)malloc(sizeof(float)*win);
+ d=(float *)malloc(sizeof(float)*win);
+ st=(float *)malloc(sizeof(float)*win);
+ f=(float *)malloc(sizeof(float)*win);
+ /*  printf("nr=%d,win=%d,type=%d,data[10]=%g,kwin=%d\n",
+     nr,win,w_type,data[10],kwin); */
+ for(i=0;i<win;i++){
+   x=(float)i/((float)win);
+   switch(w_type){
+   case 0: f[i]=1; break;
+   case 1: f[i]=x*(1-x)*4.0; break;
+   case 2: f[i]=.5*(1-cos(2*M_PI*x));break;
+   case 3: f[i]=1-2*fabs(x-.5);break;
+   }
+   /* printf("f[%d]=%g\n",i,f[i]); */
+ }
+ for(i=0;i<shift;i++)pow[i]=0.0;
+ sum=0;
+ for(j=0;j<=kwin;j++){
+   for(i=0;i<win;i++){
+     d[i]=f[i]*data[i+j*shift];
+     /* if(j==kwin)printf("d[%d]=%g\n",i,d[i]); */
+   }
+   fft(d,ct,st,shift,win);
+   for(i=0;i<shift;i++){
+     x=sqrt(ct[i]*ct[i]+st[i]*st[i]);
+     pow[i]=pow[i]+x;
+     sum+=x;
+   }
+ }
+ for(i=0;i<shift;i++)
+   pow[i]=pow[i]/sum;
+ free(f);
+ free(ct);
+ free(st);
+ free(d);
+ 
  
 }
 
+compute_sd()
+{
+  int length,i,j;
+  if(get_col_info(&spec_col,"Variable ")==0)return;
+  new_int("Window length ",&spec_wid);
+  new_int("0:sqr 1:wel 2:ham 3:par",&spec_win);
+   if(HIST_HERE){
+    data_back();
+    free(my_hist[0]);
+    free(my_hist[1]);
+    if(HIST_HERE==2)
+      free(my_hist[2]);
+    HIST_HERE=0;
+  }  
+   hist_len=spec_wid/2;
+   length=hist_len+2;
+   my_hist[0]=(float *)malloc(sizeof(float)*length);
+   my_hist[1]=(float *)malloc(sizeof(float)*length);
+  if(my_hist[1]==NULL){
+    free(my_hist[0]);
+    err_msg("Cannot allocate enough...");
+    return;
+  }
+  HIST_HERE=1;
+  for(i=2;i<=NEQ;i++)my_hist[i]=storage[i];
+  for(j=0;j<hist_len;j++)my_hist[0][j]=j;
+  spectrum(storage[spec_col],storind,spec_wid,spec_win,my_hist[1]);
+  hist_back();
+  ping();
+}
+  
 compute_fourier()
 {
   int nmodes=10,col=0;
@@ -262,7 +482,7 @@ compute_fourier()
     err_msg("No data!");
     return;
   }
-  if(get_col_info(&col)==1)
+  if(get_col_info(&col,"Variable ")==1)
     nmodes=storind/2-1;
     new_four(nmodes,col);
 }
@@ -273,8 +493,8 @@ compute_correl()
   new_int("Number of bins ",&hist_inf.nbins);
   new_float("Low ",&hist_inf.xlo);
   new_float("Hi ",&hist_inf.xhi);
-  if(get_col_info(&hist_inf.col)==0)return;
-  if(get_col_info(&hist_inf.col2)==0)return;
+  if(get_col_info(&hist_inf.col,"Variable 1 ")==0)return;
+  if(get_col_info(&hist_inf.col2,"Variable 2 ")==0)return;
   new_hist(hist_inf.nbins,hist_inf.xlo,
 	   hist_inf.xhi,hist_inf.col,hist_inf.col2,hist_inf.cond,2);
 }
@@ -283,7 +503,7 @@ compute_stacor()
   new_int("Number of bins ",&hist_inf.nbins);
   new_float("Low ",&hist_inf.xlo);
   new_float("Hi ",&hist_inf.xhi);
-  if(get_col_info(&hist_inf.col)==0)return;
+  if(get_col_info(&hist_inf.col,"Variable ")==0)return;
    new_hist(hist_inf.nbins,hist_inf.xlo,
 	   hist_inf.xhi,hist_inf.col,0,hist_inf.cond,1);
 }
@@ -325,7 +545,7 @@ compute_hist()
   new_int("Number of bins ",&hist_inf.nbins);
   new_float("Low ",&hist_inf.xlo);
   new_float("Hi ",&hist_inf.xhi);
-  if(get_col_info(&hist_inf.col)==0)return;
+  if(get_col_info(&hist_inf.col,"Variable ")==0)return;
   new_string("Condition ",hist_inf.cond);
   new_hist(hist_inf.nbins,hist_inf.xlo,
 	   hist_inf.xhi,hist_inf.col,0,hist_inf.cond,0);
@@ -375,6 +595,7 @@ fft(data,ct,st,nmodes,length)
   for(i=0;i<length;i++){
     im[i]=0.0;
     re[i]=data[i];
+
   }
 
    fftn(1,dim,re,im,1,-1);

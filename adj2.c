@@ -1,4 +1,5 @@
 #include <stdlib.h> 
+#include <string.h>
 /*
   this has a bunch of numerical routines
   averaging
@@ -25,6 +26,7 @@ int (*rhs)();
 extern float **storage;
 extern int storind,FOUR_HERE;
 extern int NODE,INFLAG,NEQ,NJMP,FIX_VAR,NMarkov,nvec;
+extern double TEND;
 extern char uvar_names[MAXODE][12];
 float **my_adj;
 int adj_len;
@@ -46,7 +48,7 @@ int LIAP_FLAG=0;
 int LIAP_N,LIAP_I;
 extern double NEWT_ERR;
 double ADJ_EPS=1.e-8,ADJ_ERR=1.e-3;
-int ADJ_MAXIT=6,ADJ_HERE=0,H_HERE=0,h_len,HODD_EV=0;
+int ADJ_MAXIT=20,ADJ_HERE=0,H_HERE=0,h_len,HODD_EV=0;
 extern double DELTA_T,BOUND;
 int *coup_fun[MAXODE];
 char *coup_string[MAXODE];
@@ -176,10 +178,10 @@ alloc_h_stuff()
 data_back()
 {
  FOUR_HERE=0;
- set_browser_data(storage,1);
+ set_browser_data(storage,1); 
  /*  my_browser.data=storage;
      my_browser.col0=1; */
- refresh_browser(storind);
+ refresh_browser(storind); 
 }
 
 adj_back()
@@ -207,7 +209,7 @@ h_back()
 
 make_adj_com(int com)
 {
-static char key[]="nmaoh";
+static char key[]="nmaohp";
  switch(key[com]){
  case 'n': 
    new_adjoint();
@@ -224,12 +226,19 @@ static char key[]="nmaoh";
  case 'h':
    h_back();
    break;
+ case 'p':
+   adjoint_parameters();
+   break;
  
  }
 }
+adjoint_parameters()
+{
+  new_int("Maximum iterates :",&ADJ_MAXIT);
+  new_float("Adjoint error tolerance :",&ADJ_ERR);
+}
 
-  
- new_h_fun()
+new_h_fun()
 {
  int i,n=2;
  if(!ADJ_HERE){
@@ -366,11 +375,30 @@ new_adjoint()
  }
  ping();
 }
-   
+/* this computes the periodic orbit and stores it in 
+   the usual place  given initial data and period */
+  
 
 
+test_test()
+{
+  double x[2];
+  x[0]=.35249;
+  x[1]=.2536;
+  compute_one_orbit(x,14.6);
+ 
+}
 
-
+compute_one_orbit(double *ic,double per)
+{
+  double oldtotal=TEND;
+  TEND=per;
+  /*   printf(" %g %g \n",ic[0],ic[1]); */
+  run_from_x(ic);
+  new_adjoint();
+  TEND=oldtotal;
+}
+  
 
 
 
@@ -672,6 +700,7 @@ do_this_liaprun(int i,double p)
  my_liap[0][i]=p;
  hrw_liapunov(&liap,1,NEWT_ERR);
  my_liap[1][i]=liap;
+ /* printf("p=%g lambda=%g \n",p,liap); */
  LIAP_I++;
 }
 norm_vec(v,mu,n) /* returns the length of the vector and the unit vector */

@@ -680,8 +680,9 @@ integer *itp,*igenwts;
 
     } else if (blbcn_1.irs > 0 && abs(blcde_1.isw) == 2) {
 /*        ** Two parameter continuation of singular points */
-
-	if ((*itp == 2 || abs(*itp) / 10 == 2) && abs(blbcn_1.ips) <= 1) {
+/* Bard !!! */
+	if ((*itp == 2 || abs(*itp) / 10 == 2 
+             || *itp == 1 || abs(*itp) /10 == 1) && abs(blbcn_1.ips) <= 1) {
 /*          ** Limit point continuation (Algebraic Problems) */
 	    blbcn_1.ndim = (blbcn_1.ndim << 1) + 1;
 	    blicn_1.nfpar = 2;
@@ -693,8 +694,11 @@ integer *itp,*igenwts;
 	    blbcn_1.ndim = blbcn_1.ndim * 3 + 2;
 	    blicn_1.nfpar = 2;
 
-	} else if ((*itp == 5 || abs(*itp) / 10 == 5) && blbcn_1.ips == 2) {
+	} else if ((*itp == 5 || abs(*itp) / 10 == 5
+		    || *itp ==6 || abs(*itp) /10 ==6
+           ) && blbcn_1.ips == 2) {
 /*          ** Limit point continuation (Periodic solutions) */
+	  /* printf("Limit point continuatio of per %d %d \n",*itp,blbcn_1.ips);*/
 	    blbcn_1.ndim <<= 1;
 	    blcde_1.nbc = blbcn_1.ndim;
 	    blcde_1.nint = 3;
@@ -721,7 +725,8 @@ integer *itp,*igenwts;
 	    blbcn_1.icp[2] = 11;
 	    blbcn_1.icp[3] = 12;
 
-	} else if ((*itp == 5 || abs(*itp) / 10 == 5) && (blbcn_1.ips == 4 || 
+	} else if ((*itp == 5 || abs(*itp) / 10 == 5 
+           || *itp == 6 || abs(*itp) /10 ==6 ) && (blbcn_1.ips == 4 || 
 		blbcn_1.ips == 6)) {
 /*          ** Continuation of limit points (Boundary Value Proble
 ms) */

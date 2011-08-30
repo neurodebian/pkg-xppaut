@@ -127,6 +127,7 @@ KBS kbs[400]={
   M_UAA,"uaa",
   M_UAO,"uao",
   M_UAH,"uah",
+  M_UAP,"uap",
   M_UCN,"ucn",
   M_UCV,"ucv",
   M_UCA,"uca",

@@ -1,4 +1,5 @@
 #include <stdlib.h> 
+#include <string.h>
 /* OSX note:
 
 IGNORE THIS -- I have included the relevant files !!  July 2002

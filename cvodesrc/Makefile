@@ -6,7 +6,7 @@
 # to ranlib from the commands to create lib/libcvode.a.
 .SUFFIXES: .c .o
 CC = gcc
-CFLAGS = -O
+CFLAGS += -O
 
 SRCS = cvode.c  cvdense.c  dense.c  cvband.c \
         band.c  cvdiag.c  cvspgmr.c  spgmr.c  \

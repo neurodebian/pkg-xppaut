@@ -2,6 +2,7 @@
 #include "fio.h"
 #include "fmt.h"
 #include "lio.h"
+#include <string.h>
 extern int l_write();
 int t_putc();
 

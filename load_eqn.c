@@ -1,5 +1,5 @@
 #include <stdlib.h> 
-
+#include <string.h>
 #include <stdio.h>
 #include "xpplim.h"
 
@@ -12,6 +12,10 @@
 #define READEM 1
 char *interopt[MAXOPT];
 int Nopts=0;
+int RunImmediately=0;
+extern char dll_lib[256];
+extern char dll_fun[256];
+extern int dll_flag;
 
 
 typedef struct {
@@ -643,6 +647,17 @@ if(msc("UMC",s1)){
     NPltV=atoi(s2);
     return;
   }
+
+   if(msc("DLL_LIB",s1)){
+     sprintf(dll_lib,"%s",s2);
+     dll_flag+=1;
+     return;
+   }
+   if(msc("DLL_FUN",s1)){
+     sprintf(dll_fun,"%s",s2);
+     dll_flag+=2;
+     return;
+   }
    /* can now initialize several plots */
  for(j=2;j<=8;j++){
       sprintf(xx,"XP%d",j);
@@ -874,7 +889,7 @@ if(msc("UMC",s1)){
    POIPLN=atof(s2);
    return;
  }
- 
+  
  
 
  if(msc("RANGEOVER",s1)){
@@ -982,6 +997,10 @@ if(msc("EPSU",s1)){
  }
 if(msc("EPSS",s1)){
    auto_epss=atof(s2);
+   return;
+ }
+ if(msc("RUNNOW",s1)){
+   RunImmediately=atoi(s2);
    return;
  }
  if(msc("AUTOEVAL",s1)){

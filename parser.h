@@ -1,7 +1,7 @@
 #include "volterra.h"
 #include "xpplim.h"
 #define MAX_SYMBS 10000
-
+#define MAXARG 20
 #define NEGATE 9
 #define MINUS 4
 #define LPAREN 0
@@ -32,7 +32,7 @@
 #define NUMSYM 987
 #define NUMTOK 59
 #define CONV 2
-#define FIRST_ARG 32
+#define FIRST_ARG 73
 #define ENDDELSHFT 986
 #define ENDISHIFT 985
 #define DELSHFTSYM 65
@@ -40,17 +40,25 @@
 #define ENDSET 981
 /* #define EQSYM 68 */
 #define INDXVAR 984
-#define STDSYM 73
 #define INDXCOM 922
 #define INDX  68
 #define STARTINDX 70
 #define ENDINDX 69
 #define MAX_TAB 50
+/* #define MXLEN 32 */
+#define MXLEN 10 
+
+/* number of standard symbols */
+
+#define STDSYM 92
+
+#define NEXT1VAR  25
+#define NEXT2VAR  120 
 
 
 typedef struct
         {
-         char name[10];
+         char name[MXLEN+1];
          int len;
          int com;
          int arg;
@@ -92,14 +100,14 @@ SYMBOL my_symb[MAX_SYMBS]=
    "SQRT",4,13,0,10,0,
    "HEAV",4,16,0,10,  0,/*  30 */
    "SIGN",4,17,0,10,0,
-   "ARG1",4,800,0,10,0,
-   "ARG2",4,801,0,10,0,
-   "ARG3",4,802,0,10,0,
-   "ARG4",4,803,0,10,0,
-   "ARG5",4,804,0,10,0,
-   "ARG6",4,805,0,10,0,
-   "ARG7",4,806,0,10,0,
-   "ARG8",4,807,0,10,0,
+   "#$%1",4,800,0,10,0,
+   "#$%2",4,801,0,10,0,
+   "#$%3",4,802,0,10,0,
+   "#$%4",4,803,0,10,0,
+   "#$%5",4,804,0,10,0,
+   "#$%6",4,805,0,10,0,
+   "#$%7",4,806,0,10,0,
+   "#$%8",4,807,0,10,0,
    "FLR",3,18,0,10, 0, /*  40 */
    "MOD",3,108,2,10, 0,/*  41 */
    "DELAY",5,ENDDELAY,2,10,0,      /*  42 */   /*  Delay symbol */
@@ -133,6 +141,26 @@ SYMBOL my_symb[MAX_SYMBS]=
    "[",1,ENDSHIFT,0,10,0, /*70 */
    "POISSON",7,24,0,10,0, /* 71 */
    "SET",3,ENDSET,3,10,0, /* 72 */
+   "ARG1",4,800,0,10,0,
+   "ARG2",4,801,0,10,0,
+   "ARG3",4,802,0,10,0,
+   "ARG4",4,803,0,10,0,
+   "ARG5",4,804,0,10,0,
+   "ARG6",4,805,0,10,0,
+   "ARG7",4,806,0,10,0,
+   "ARG8",4,807,0,10,0,
+  "ARG9",4,808,0,10,0,
+   "ARG10",5,809,0,10,0,
+   "ARG11",5,810,0,10,0,
+   "ARG12",5,811,0,10,0,
+   "ARG13",5,812,0,10,0,
+   "ARG14",5,813,0,10,0,
+   "ARG15",5,814,0,10,0,
+   "ARG16",5,815,0,10,0,
+   "ARG17",5,816,0,10,0,
+   "ARG18",5,817,0,10,0,
+   "ARG19",5,818,0,10,0,
+   "ARG20",5,819,0,10,0,/* 92 */
       };
 
 
@@ -221,7 +249,7 @@ int NTable;
 
 typedef struct {
   int narg;
-  char args[10][11];
+  char args[MAXARG][11];
 } UFUN_ARG;
 
 UFUN_ARG ufun_arg[MAXUFUN];

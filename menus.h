@@ -214,7 +214,9 @@ char *stoch_hint[]={
 "Get mean/variance of single trajectory",
 "Compute maximal Liapunov exponent",
 "Compute spike-time autocorrel",
-"Compute correlations - subtracting mean"
+"Compute correlations - subtracting mean",
+"Compute windowed spectral density",
+"Compute two-variable histograms"
 };
 
 char *bvp_hint[]={
@@ -230,7 +232,9 @@ char *adj_hint[]={
 "Compute averaging interaction function",
 "Load computed adjoint",
 "Load computed orbit",
-"Load computed interaction function"};
+"Load computed interaction function",
+"Adjoint numerical parameters"
+};
 
 char *map_hint[]={
 "Turn off Poincare map",
@@ -347,7 +351,8 @@ char *afile_hint[]={
 "Clear grab point to allow start from new point",
 "Write the x-y values of the current diagram to file",
 "Write all the info for the whole diagram!",
-"Save initial data for whole diagram"
+"Save initial data for whole diagram",
+"Toggle automatic redraw"
 };
 
 char *arun_hint[]={

@@ -1,4 +1,6 @@
 #include <stdlib.h> 
+#include <string.h>
+#include <stdio.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
@@ -40,7 +42,7 @@
 extern Display *display;
 
 
-
+int AutoRedrawFlag=1;
 
 extern int screen,storind,NODE;
 extern GC gc, small_gc;
@@ -389,7 +391,7 @@ display_auto(w)
 Window w;
 {
   if(Auto.exist==0)return;
-  if(w==AutoW.canvas)redraw_diagram();
+  if(w==AutoW.canvas){if(AutoRedrawFlag==1)redraw_diagram();};
   if(w==AutoW.stab)clr_stab();
   if(w==AutoW.axes)xds("Axes");
   if(w==AutoW.numerics)xds("Numerics");

@@ -1,4 +1,5 @@
 #include <stdlib.h> 
+#include <stdio.h>
 #include <math.h>
 #include "xpplim.h"
 #define MAX(a,b) ((a)>(b)?(a):(b))
@@ -174,7 +175,9 @@ one_step_discrete(y,dt,yp,neq,t)
    set_wieners(dt,y,*t);
      rhs(*t,y,yp,neq);
      *t=*t+dt;
-   for(j=0;j<neq;j++)y[j]=yp[j];
+     for(j=0;j<neq;j++){y[j]=yp[j];
+       /*                  printf("%g %d %g \n",*t,j,y[j]); */
+     }
 
 }
 

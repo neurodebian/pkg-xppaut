@@ -335,7 +335,69 @@ void zz_rndom()
     SM1=rndom(SM1);
 }
 
+/* How to add a new hardcoded function to XPP
+   because only 1 and 2 variable functions can be hard coded
+   there are limitations:
 
+   Suppose the function is
+   hill(x,n)=x^n/(1+x^n)  
+   
+   1.  In parser2.c  add the c-code for the function. 
+   
+       double hill(double x,double n)
+       {
+         double y=pow(x,n);
+	 return y/(1+y);
+	 }
+
+	 at the top of the file also add
+
+	 double hill();
+
+
+   2.  In parser.h add the name of the function at the end of the structure
+       my_symb
+
+       "HILL",4,120,2,10,0,
+
+       name, length of name,command,args,priority,0
+       priority is always 10 for functions
+       command = LAST2VAR (in parser.c) or LAST1VAR for 1 variable funs 
+       increment LAST2VAR or LAST1VAR
+       
+       increment STDSYM - tells XPP how many standard symbols there are
+
+ 3.   in parser.c add the C code
+           for 2 variable funs:
+
+           void zz_hill()
+	   {
+	   SP--;
+	   SM1=hill(SM1,S0);
+	   }    
+
+
+	   for 1 variable funs
+
+	   void zz_myfun()
+	   {
+	   SM1=myfun(SM1);
+	   }
+
+4.  in parser2.c add the code
+      for 2 variable funs:
+
+    fun2[20]=zz_hill;  in the subroutine two_args()
+    note that 20 is because LAST2VAR = 120 
+
+    for 1 variable funs
+    fun1[25]=zz_myfun;   in subroutine one_arg();
+
+    since 25 was LAST1VAR
+
+5. Recompile!  
+    
+*/
 
 /*****************************
 *      PARSER.C              *
@@ -453,7 +515,7 @@ char *junk;
    printf("Empty parameter - remove spaces\n");
    return 1;
  }
- if(len>9)len=9;
+ if(len>MXLEN){ len=MXLEN; printf("Error: name %s too long \n",string); }
  strncpy(my_symb[NSYM].name,string,len);
  my_symb[NSYM].name[len]='\0';
  my_symb[NSYM].len=len;
@@ -506,7 +568,7 @@ add_kernel(name,mu,expr)
   }
   convert(name,string);
   len=strlen(string);
-  if(len>9)len=9;
+  if(len>MXLEN){ len=MXLEN; printf("Error: name %s too long \n",string); };
   strncpy(my_symb[NSYM].name,string,len);
   my_symb[NSYM].name[len]='\0';
   my_symb[NSYM].len=len;
@@ -564,7 +626,7 @@ double value;
  }
  convert(junk,string);
  len=strlen(string);
- if(len>9)len=9;
+ if(len>MXLEN){ len=MXLEN; printf("Error: name %s too long \n",string); };
  strncpy(my_symb[NSYM].name,string,len);
  my_symb[NSYM].name[len]='\0';
  my_symb[NSYM].len=len;
@@ -651,7 +713,7 @@ add_vect_name(index,name)
   printf(" Adding vector %s %d \n",name,index);
   if(duplicate_name(name)==1)return(1);  
   convert(name,string);
-  if(len>9)len=9;
+  if(len>MXLEN){ len=MXLEN; printf("Error: name %s too long \n",string); };
   strncpy(my_symb[NSYM].name,string,len);
   my_symb[NSYM].name[len]='\0';
   my_symb[NSYM].len=len;
@@ -672,7 +734,7 @@ add_net_name(index,name)
   printf(" Adding net %s %d \n",name,index);
   if(duplicate_name(name)==1)return(1);  
   convert(name,string);
-  if(len>9)len=9;
+  if(len>MXLEN){ len=MXLEN; printf("Error: name %s too long \n",string); };
   strncpy(my_symb[NSYM].name,string,len);
   my_symb[NSYM].name[len]='\0';
   my_symb[NSYM].len=len;
@@ -715,7 +777,7 @@ add_table_name(index,name)
      int len=strlen(name);
      if(duplicate_name(name)==1)return(1);  
      convert(name,string);
-     if(len>9)len=9;
+     if(len>MXLEN){ len=MXLEN; printf("Error: name %s too long \n",string); };
      strncpy(my_symb[NSYM].name,string,len);
      my_symb[NSYM].name[len]='\0';
      my_symb[NSYM].len=len;
@@ -793,7 +855,7 @@ add_ufun_name(name,index,narg)
  }
   printf(" Added user fun %s \n",name);
   convert(name,string);
-  if(len>9)len=9;
+  if(len>MXLEN){ len=MXLEN; printf("Error: name %s too long \n",string); };
   strncpy(my_symb[NSYM].name,string,len);
   my_symb[NSYM].name[len]='\0';
   my_symb[NSYM].len=len;
@@ -806,13 +868,17 @@ add_ufun_name(name,index,narg)
 }
 
 add_ufun_new(index,narg,rhs,args)
-     char *rhs,args[10][11];
+     char *rhs,args[MAXARG][11];
      int narg,index;
 {
   
   int i,l;
   int end;
   /*  printf(" compiling function %s \n",rhs); */
+  if(narg>MAXARG){
+    printf("Maximal arguments exceeded \n");
+    return(1);
+  }
   if((ufun[index]=(int *)malloc(1024))==NULL)
     {
       if(ERROUT)printf("not enough memory!!\n");
@@ -884,7 +950,7 @@ int narg;
  convert(junk,string);
  if(add_expr(expr,ufun[NFUN],&end)==0)
  {
-  if(len>9)len=9;
+  if(len>MXLEN){ len=MXLEN; printf("Error: name %s too long \n",string); };
   strncpy(my_symb[NSYM].name,string,len);
   my_symb[NSYM].name[len]='\0';
   my_symb[NSYM].len=len;
