@@ -1,9 +1,12 @@
 Source: xppaut
 Section: x11
 Priority: optional
-Maintainer: Debian QA Group <packages@qa.debian.org>
-Build-Depends: debhelper (>= 5), quilt, libx11-dev, xbitmaps
-Standards-Version: 3.8.1
+Maintainer: Jakub Nowacki <j.s.nowacki@gmail.com>
+Uploaders: Yaroslav Halchenko <debian@onerussian.com>, Michael Hanke <michael.hanke@gmail.com>
+Build-Depends: debhelper (>= 7), quilt, libx11-dev, xbitmaps
+Standards-Version: 3.9.2
+Homepage: http://www.math.pitt.edu/~bard/xpp/xpp.html
+
 
 Package: xppaut
 Architecture: any

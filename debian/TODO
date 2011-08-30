@@ -1,0 +1,9 @@
+* move copyright to DEP-5 format
+  mention ./macdirent.h with BSD-4/Apple copyright
+
+main.c ./mainold.c: GPL (v2 or later) (with incorrect FSF address) 
+  [Copyright: 2002-2011 Bard Ermentrout & Daniel Dougherty]
+
+fftn.c
+ * Copyright(c)1995,97 Mark Olesen <olesen@me.QueensU.CA>
+ *      Queen's Univ at Kingston (Canada)
