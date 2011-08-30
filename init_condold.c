@@ -197,23 +197,23 @@ redraw_scroll_list(SCROLL_LIST sl)
 c_hints()
 {
   int i,index;
-  printf("#include <math.h>\n\n extern double constants[]; \n");
-  printf("main(argc,argv)\n char **argv; \n int argc;\n{\n do_main(argc,argv);\n }\n");
+  plintf("#include <math.h>\n\n extern double constants[]; \n");
+  plintf("main(argc,argv)\n char **argv; \n int argc;\n{\n do_main(argc,argv);\n }\n");
 
-  printf("/* defines for %s  */ \n",this_file);
+  plintf("/* defines for %s  */ \n",this_file);
   for(i=0;i<NUPAR;i++){
     index=get_param_index(upar_names[i]);
-    printf("#define %s constants[%d]\n",upar_names[i],index);
+    plintf("#define %s constants[%d]\n",upar_names[i],index);
   }
   for(i=0;i<NODE;i++){
-    printf("#define %s y[%d]\n",uvar_names[i],i);
-    printf("#define %sDOT ydot[%d]\n",uvar_names[i],i);
+    plintf("#define %s y[%d]\n",uvar_names[i],i);
+    plintf("#define %sDOT ydot[%d]\n",uvar_names[i],i);
   }
   for(i=NODE;i<NEQ;i++)
-    printf("#define %s y[%d]\n",uvar_names[i],i);
-  printf("my_rhs(t,y,ydot,neq)\n double t,*y,*ydot; \n int neq;\n{\n  }\n");
-  printf("set_fix_rhs(t,y,neq)\n double y,*y;\n int neq;\n{\n }\n");
-  printf("extra(y,t,nod,neq)\n double t,*y; \n int nod,neq;\n{\n  }\n");
+    plintf("#define %s y[%d]\n",uvar_names[i],i);
+  plintf("my_rhs(t,y,ydot,neq)\n double t,*y,*ydot; \n int neq;\n{\n  }\n");
+  plintf("set_fix_rhs(t,y,neq)\n double y,*y;\n int neq;\n{\n }\n");
+  plintf("extra(y,t,nod,neq)\n double t,*y; \n int nod,neq;\n{\n  }\n");
 
 }
     
@@ -598,7 +598,7 @@ int n,type,use;
      break;
    }
  }
- base=make_window(RootWindow(display,screen),0,0,width,height,4);
+ base=make_plain_window(RootWindow(display,screen),0,0,width,height,4);
  b->base=base;
  XStringListToTextProperty(&wname,1,&winname);
  XStringListToTextProperty(&iname,1,&iconame);
@@ -1200,7 +1200,7 @@ prt_focus()
   Window focus;
   int rev;
    XGetInputFocus(display,&focus,&rev);
-   printf(" focus=%d\n",focus);
+   plintf(" focus=%d\n",focus);
 }
 	
 to_float(s,z)

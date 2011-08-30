@@ -1,7 +1,13 @@
+#include "odesol2.h"
+#include "gear.h"
 #include <stdlib.h> 
 #include <stdio.h>
 #include <math.h>
 #include "xpplim.h"
+#include "flags.h"
+#include "markov.h"
+#include "delay_handle.h"
+
 #define MAX(a,b) ((a)>(b)?(a):(b))
 #define MIN(a,b) ((a)<(b)?(a):(b))
 
@@ -112,13 +118,13 @@ int nt,neq,*istart;
     return(0);
 }
 
-one_bak_step(y,t,dt,neq,yg,yp,yp2,ytemp,errvec,jac,istart)
+int one_bak_step(y,t,dt,neq,yg,yp,yp2,ytemp,errvec,jac,istart)
      double *y,*t,dt,*yg,*yp,*yp2,*ytemp,*errvec,*jac;
      int neq,*istart;
 {
-  int i,j;
+  int i;
   double err=0.0,err1=0.0;
-  double yold,del,h;
+  
   int iter=0,info,ipivot[MAXODE1];
   int ml=cv_bandlower,mr=cv_bandupper,mt=ml+mr+1;
   set_wieners(dt,y,*t);
@@ -166,7 +172,7 @@ one_bak_step(y,t,dt,neq,yg,yp,yp2,ytemp,errvec,jac,istart)
 }
 	
   
-one_step_discrete(y,dt,yp,neq,t)
+void one_step_discrete(y,dt,yp,neq,t)
      double dt,*t;
      double *y,*yp;
      int neq;
@@ -176,7 +182,7 @@ one_step_discrete(y,dt,yp,neq,t)
      rhs(*t,y,yp,neq);
      *t=*t+dt;
      for(j=0;j<neq;j++){y[j]=yp[j];
-       /*                  printf("%g %d %g \n",*t,j,y[j]); */
+       /*                  plintf("%g %d %g \n",*t,j,y[j]); */
      }
 
 }
@@ -184,7 +190,7 @@ one_step_discrete(y,dt,yp,neq,t)
 
 
 
-one_step_symp(y,h,f,n,t)
+void one_step_symp(y,h,f,n,t)
      double h,*t,*y,*f;
      int n;
 {
@@ -204,7 +210,7 @@ one_step_symp(y,h,f,n,t)
 
 
 
-one_step_euler(y,dt,yp,neq,t)
+void one_step_euler(y,dt,yp,neq,t)
      double dt,*t;
      double *y,*yp;
      int neq;
@@ -219,7 +225,7 @@ one_step_euler(y,dt,yp,neq,t)
    for(j=0;j<neq;j++)y[j]=y[j]+dt*yp[j];
 }
 
-one_step_rk4(y,dt,yval,neq,tim)
+void one_step_rk4(y,dt,yval,neq,tim)
      double dt,*tim,*yval[3],*y;
      int neq;
 {
@@ -251,7 +257,7 @@ one_step_rk4(y,dt,yval,neq,tim)
  *tim=t2;
 }
 
-one_step_heun(y,dt,yval,neq,tim)
+void one_step_heun(y,dt,yval,neq,tim)
      double dt,*tim,*yval[2],*y;
      int neq;
 {
@@ -273,7 +279,7 @@ int euler(y,tim,dt,nt,neq,istart,work)
 double *y,*tim,dt,*work;
 int nt,neq,*istart;
 {
-  int i,j;
+  int i;
   if(NFlags==0){ 
     for(i=0;i<nt;i++)
       {
@@ -297,8 +303,8 @@ double *y,*tim,dt,*work;
 int nt,neq,*istart;
 {
  double *yval[2];
- int i,j;
- double t=*tim,t1;
+ int j;
+
  yval[0]=work;
  yval[1]=work+neq;
  if(NFlags==0){
@@ -323,9 +329,9 @@ int rung_kut(y,tim,dt,nt,neq,istart,work)
 double *y,*tim,dt,*work;
 int nt,neq, *istart;
 {
- register i,j;
+ register int j;
  double *yval[3];
- double t=*tim,t1,t2;
+ 
  yval[0]=work;
  yval[1]=work+neq;
  yval[2]=work+neq+neq;
@@ -428,7 +434,7 @@ n1000:
  return(0);
 }
 
-abmpc(y,t,dt,neq)
+int abmpc(y,t,dt,neq)
 double *t,*y,dt;
 int neq;
 {
@@ -454,6 +460,9 @@ int neq;
  }
    *t=x1;
  rhs(x1,y,y_p[0],neq);
+ 
+ return(1);
+ 
 }
 
 /* this is rosen  - rosenbock step 
@@ -461,12 +470,16 @@ int neq;
 int rb23(double *y,double *tstart,double tfinal,
  int *istart,int n,double *work,int *ierr)
 {
- int ok;
+int out =-1;
  if(NFlags==0)
-   rosen(y,tstart,tfinal,istart,n,work,ierr);
+ {
+   out = rosen(y,tstart,tfinal,istart,n,work,ierr);
+ }
  else
-   one_flag_step_rosen(y,tstart,tfinal,istart,n,work,ierr);
- 
+ {
+   out = one_flag_step_rosen(y,tstart,tfinal,istart,n,work,ierr);
+ }
+ return(out);
 }
  
 int rosen(double *y,double *tstart,double tfinal,
@@ -480,7 +493,7 @@ int *istart,int n,double *work,int *ierr)
  double sqrteps=sqrt(eps);
  double thresh=atol/rtol,absh,h;
  double d=1/(2.+sqrt(2.)),e32=6.+sqrt(2.),tnew,ninf;
- int i,j,n2=n*n,done=0,info,ml=cv_bandlower,mr=cv_bandupper,mt=ml+mr+1;
+ int i,n2=n*n,done=0,info,ml=cv_bandlower,mr=cv_bandupper,mt=ml+mr+1;
  int ipivot[MAXODE1],nofailed;
  double temp,err,tdel;
  double *ypnew,*k1,*k2,*k3,*f0,*f1,*f2,*dfdt,*ynew,*dfdy;
@@ -568,34 +581,34 @@ int *istart,int n,double *work,int *ierr)
 	 if(err<temp)err=temp;
        }
        err=err*(absh/6);
-       /* printf(" err=%g hmin=%g absh=%g \n",err,hmin,absh);
+       /* plintf(" err=%g hmin=%g absh=%g \n",err,hmin,absh);
 	  wait_for_key(); */
        if(err>rtol){
 	 if(absh<hmin){
-	   /* printf("rosen failed at t=%g. Step size too small \n",t);*/
+	   /* plintf("rosen failed at t=%g. Step size too small \n",t);*/
            *ierr=-1;
 	   return(-1);
 	 }
 	 absh = MAX(hmin, absh * MAX(0.1, pow(0.8*(rtol/err),1./3.)));
-         /* printf(" absh=%g  %g  \n",absh,0.8*(rtol/err)); */
+         /* plintf(" absh=%g  %g  \n",absh,0.8*(rtol/err)); */
 	 h = tdir * absh;
 	 nofailed=0;
 	 done=0;
        }
        else {
-	 /* printf(" successful step -- nofail=%d absh=%g \n",nofailed,absh); */
+	 /* plintf(" successful step -- nofail=%d absh=%g \n",nofailed,absh); */
 	 break;
        }
      }
      if(nofailed==1){
-       /* printf(" I didn't fail! \n"); */
+       /* plintf(" I didn't fail! \n"); */
        temp=1.25*pow(err/rtol,1./3.);
        if(temp>0.2)
 	 absh=absh/temp;
        else
 	 absh=5*absh;
      }
-     /* printf("  absh=%g \n",absh); */
+     /* plintf("  absh=%g \n",absh); */
      t=tnew;
      for(i=0;i<n;i++){
        y[i]=ynew[i];
@@ -611,13 +624,13 @@ int *istart,int n,double *work,int *ierr)
 /* wait_for_key()
 {
   char bob[256];
-  printf(" Pause:");
+  plintf(" Pause:");
   gets(bob);
 }
 */
 
  /* this assumes that yp is already computed */
-get_the_jac(double t,double *y,double *yp,
+void get_the_jac(double t,double *y,double *yp,
 	    double *ypnew,double *dfdy,int neq,double eps,double scal)
 {
   int i,j;
@@ -641,7 +654,7 @@ get_the_jac(double t,double *y,double *yp,
 
 
 
-get_band_jac(a,y,t,ypnew,ypold,n,eps,scal)
+void get_band_jac(a,y,t,ypnew,ypold,n,eps,scal)
      double *a,*y,*ypnew,*ypold,eps,t,scal;
      int n;
 {
@@ -650,7 +663,7 @@ get_band_jac(a,y,t,ypnew,ypold,n,eps,scal)
   double yhat;
   double dy;
   double dsy;
-  /* printf("Getting banded! \n"); */
+  /* plintf("Getting banded! \n"); */
   for(i=0;i<(n*mt);i++)
     a[i]=0.0;
   for(i=0;i<n;i++){
@@ -670,13 +683,12 @@ get_band_jac(a,y,t,ypnew,ypold,n,eps,scal)
 }
 
 
-bandfac(a,ml,mr,n)   /*   factors the matrix    */
+int bandfac(a,ml,mr,n)   /*   factors the matrix    */
      int ml,mr,n;
      double *a;
 {
   int i,j,k;
   int n1=n-1,mt=ml+mr+1,row,rowi,m,r0,ri0;
-  int mlo;
   double al;
   for(row=0;row<n;row++){
     r0=row*mt+ml;
@@ -702,14 +714,13 @@ bandfac(a,ml,mr,n)   /*   factors the matrix    */
 	return(0);
 }
 
-bandsol(a,b,ml,mr,n)  /* requires that the matrix be factored   */
+void bandsol(a,b,ml,mr,n)  /* requires that the matrix be factored   */
      double *a,*b;
      int ml,mr,n;
 {
   int i,j,k,r0;
   int mt=ml+mr+1;
   int m,n1=n-1,row;
-  double sum;
   for(i=0;i<n;i++){
     r0=i*mt+ml;
     m=MAX(-ml,-i);

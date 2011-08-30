@@ -1,3 +1,5 @@
+#include "choice_box.h"
+
 #include <stdlib.h> 
 #include <string.h>
 #include <X11/Xlib.h>
@@ -11,6 +13,13 @@
 #define FORGET_ALL   0
 #define FORGET_THIS 3
 #include "struct.h"
+#include "pop_list.h"
+#include "ggets.h"
+
+
+
+
+
 #define EV_MASK (ButtonPressMask 	|\
 		KeyPressMask		|\
 		ExposureMask		|\
@@ -23,14 +32,15 @@ extern int screen;
 extern GC gc;
 extern int xor_flag,DCURY,DCURX,CURY_OFF,CURS_X,CURS_Y;
 
-destroy_choice(p)
+
+void destroy_choice(p)
 CHOICE_BOX p;
 {
   XDestroySubwindows(display,p.base);
   XDestroyWindow(display,p.base);
  }
 
-display_choice(w,p)
+void display_choice(w,p)
 Window w;
 CHOICE_BOX p;
 {
@@ -53,7 +63,7 @@ CHOICE_BOX p;
   set_fore();
 }
 
-do_checks(p)
+void do_checks(p)
 CHOICE_BOX p;
 {
  int i;
@@ -68,7 +78,7 @@ CHOICE_BOX p;
  set_fore();
 }
 
-base_choice(wname,n,mcc,names,check,type)
+void base_choice(wname,n,mcc,names,check,type)
 int type,mcc,n,*check;
 char **names,*wname;
 {
@@ -78,14 +88,14 @@ char **names,*wname;
 
  
 
-do_choice_box(root,wname,n,mcc,names,check,type)
+int do_choice_box(root,wname,n,mcc,names,check,type)
 Window root;
 int type,mcc,n,*check;
 char **names,*wname;
 {
    CHOICE_BOX p;
-   char *s;
-   int ihot,i;
+
+   int i;
    int width,height;
    int maxchar;
    int oldcheck[MAXENTRY];
@@ -93,12 +103,12 @@ char **names,*wname;
    int xstart,ystart;
      XTextProperty winname;
    XSizeHints size_hints;
-   Window base,w;
+   Window base;
    maxchar=mcc;
    if(mcc<10)maxchar=10;
    width=(maxchar+5)*DCURX;
    height=(n+4)*(DCURY+16);
-   base=make_window(root,0,0,width,height,4);
+   base=make_plain_window(root,0,0,width,height,4);
  XStringListToTextProperty(&wname,1,&winname);
  size_hints.flags=PPosition|PSize|PMinSize|PMaxSize;
  size_hints.x=0;
@@ -145,7 +155,7 @@ for(i=0;i<n;i++){
 
 
  
- choice_box_event_loop(p)
+int choice_box_event_loop(p)
  CHOICE_BOX p;
  
  {

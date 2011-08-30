@@ -345,7 +345,7 @@ nfcnRead    Number of function calls.
 */
 
 
-
+#include "my_rhs.h"
 #include <stdio.h>
 #include <limits.h>
 
@@ -425,6 +425,21 @@ extern double contd5
 
 
 
+
+void dprhs(unsigned n, double t, double *y, double *f);
+void dp_err(int k);
+int dp(int *istart, double *y, double *t, int n, double tout, double *tol, double *atol, int flag, int *kflag);
+int dormprin(int *istart, double *y, double *t, int n, double tout, double *tol, double *atol, int flag, int *kflag);
+long nfcnRead(void);
+long nstepRead(void);
+long naccptRead(void);
+long nrejctRead(void);
+double hRead(void);
+double xRead(void);
+int dop853(unsigned n, FcnEqDiff fcn, double x, double *y, double xend, double *rtoler, double *atoler, int itoler, SolTrait solout, int iout, FILE *fileout, double uround, double safe, double fac1, double fac2, double beta, double hmax, double h, long nmax, int meth, long nstiff, unsigned nrdens, unsigned *icont, unsigned licont, double *work);
+double contd8(unsigned ii, double x);
+int dopri5(unsigned n, FcnEqDiff fcn, double x, double *y, double xend, double *rtoler, double *atoler, int itoler, SolTrait solout, int iout, FILE *fileout, double uround, double safe, double fac1, double fac2, double beta, double hmax, double h, long nmax, int meth, long nstiff, unsigned nrdens, unsigned *icont, unsigned licont, double *work);
+double contd5(unsigned ii, double x);
 
 
 

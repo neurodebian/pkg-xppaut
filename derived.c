@@ -1,6 +1,12 @@
+#include "derived.h"
+
 #include <stdlib.h> 
 #include <stdio.h>
 #include <string.h>
+#include "ggets.h"
+#include "parserslow.h"
+#include "calc.h"
+
 /* Derived parameter stuff !!  */
 #define MAXDERIVED 200
 extern double constants[];
@@ -16,7 +22,7 @@ DERIVED derived[MAXDERIVED];
 int nderived=0; 
 
 /* clean up derived stuff */
-free_derived()
+void free_derived()
 {
   int i;
   for(i=0;i<nderived;i++){
@@ -29,13 +35,13 @@ free_derived()
 /* This compiles all of the formulae 
 It is called only once during the session
 */
-compile_derived()
+int compile_derived()
 {
   int i,k;
   int f[256],n;
   for(i=0;i<nderived;i++){
     if(add_expr(derived[i].rhs,f,&n)==1){
-    printf(" Bad right-hand side for derived parameters \n");
+    plintf(" Bad right-hand side for derived parameters \n");
     return(1);
     }
     derived[i].form=(int *)malloc(sizeof(int)*(n+2));
@@ -50,7 +56,7 @@ compile_derived()
 called before any integration or numerical computation
 and after changing parameters and constants
 */
-evaluate_derived()
+void evaluate_derived()
 {
   int i;
   for(i=0;i<nderived;i++){
@@ -61,13 +67,13 @@ evaluate_derived()
 }
 
 /* this adds a derived quantity  */
-add_derived(name,rhs)
+int add_derived(name,rhs)
      char *name,*rhs;
 {
   int n=strlen(rhs)+2;
   int i0;
   if(nderived>=MAXDERIVED){
-    printf(" Too many derived constants! \n");
+    plintf(" Too many derived constants! \n");
     return(1);
   }
   i0=nderived;
@@ -77,7 +83,7 @@ add_derived(name,rhs)
   /* this is the constant to which it addresses */
   derived[i0].index=NCON;
   /* add the name to the recognized symbols */
-  printf(" derived constant[%d] is %s = %s\n",NCON,name,rhs);
+  plintf(" derived constant[%d] is %s = %s\n",NCON,name,rhs);
   nderived++;
   return(add_con(name,0.0));
 }

@@ -6,6 +6,18 @@
 #include <X11/keysym.h>
 #include <X11/keysymdef.h>
 #include <math.h>
+
+#include "ggets.h"
+#include "graphics.h"
+#include "load_eqn.h"
+#include "numerics.h"
+#include "pop_list.h"
+#include "init_conds.h"
+#include "many_pops.h"
+
+#include "txtread.h"
+
+
 #ifndef WCTYPE
 #include <ctype.h>
 #else
@@ -17,7 +29,7 @@
 #define MAXLINES 5000
 #define MAXCOMMENTS 500
 
-#define xds(a) { XDrawString(display,w,small_gc,0,CURY_OFFs,a,strlen(a));\
+#define xds(a) { XDrawString(display,w,small_gc,5,CURY_OFFs,a,strlen(a));\
 		return;}
 typedef struct {
   char *text,*action;
@@ -50,10 +62,9 @@ TXTVIEW txtview;
   [Up]   [Down]  [PgUp]  [PgDn] [Kill]
   [Home] [End]   [Src]   [Actn]
 */
-int txt_view_events(XEvent ev)
+void txt_view_events(XEvent ev)
 {
   int x,y;
- Window w;
  if(txtview.here==0)return;
  switch(ev.type){
  case Expose:
@@ -83,12 +94,10 @@ int txt_view_events(XEvent ev)
 }
 
 
-txtview_keypress(XEvent ev)
+void txtview_keypress(XEvent ev)
 {
 
  Window w=ev.xkey.window;
-
- int maxlen=64;
  char ks;
  if(w==txtview.base||w==txtview.text){
    ks=(char)get_key_press(&ev);
@@ -101,7 +110,8 @@ txtview_keypress(XEvent ev)
    
  }
 }
-enter_txtview(Window w,int val) 
+
+void enter_txtview(Window w,int val) 
 {
   if(w==txtview.up||w==txtview.down||w==txtview.pgup||
      w==txtview.pgdn||w==txtview.home||w==txtview.end||
@@ -110,7 +120,7 @@ enter_txtview(Window w,int val)
 }
  
 
-do_txt_action(char *s)
+void do_txt_action(char *s)
 {
 
  get_graph();
@@ -124,14 +134,15 @@ do_txt_action(char *s)
 
 
 
-resize_txtview(int w,int h)
+void resize_txtview(int w,int h)
 {
   int hgt=h-8-3*DCURYs;
   XMoveResizeWindow(display,txtview.text,2,3*DCURYs+5,w-4,hgt);
   txtview.nlines=(int)(hgt/DCURY);
-  /*   printf(" nlines=%d \n",txtview.nlines); */
+  /*   plintf(" nlines=%d \n",txtview.nlines); */
 }
-txtview_press(Window w,int x,int y)
+
+void txtview_press(Window w,int x,int y)
 { 
   int j;
   int nt;
@@ -211,7 +222,7 @@ txtview_press(Window w,int x,int y)
 
 
 
-redraw_txtview(Window w)
+void redraw_txtview(Window w)
 {
   if(w==txtview.text)
     redraw_txtview_text();
@@ -235,12 +246,12 @@ redraw_txtview(Window w)
     xds("Action");
 }
 
-redraw_txtview_text()
+void redraw_txtview_text()
 {
  int i,j;
  XClearWindow(display,txtview.text);
  for(i=0;i<txtview.nlines;i++){
-   /* printf("lines=%d NLINES=%d first=%d \n",
+   /* plintf("lines=%d NLINES=%d first=%d \n",
       txtview.nlines,NLINES,txtview.first); */
    j=i+txtview.first;
    switch(txtview.which){
@@ -248,7 +259,7 @@ redraw_txtview_text()
      if(j<NLINES){
        XDrawString(display,txtview.text,gc,txtview.dw,i*txtview.dh+CURY_OFFs,
 		   save_eqn[j],strlen(save_eqn[j]));
-       /* printf("line: %d\n",j); */
+       /* plintf("line: %d\n",j); */
      }
      break;
    case 1:
@@ -261,7 +272,7 @@ redraw_txtview_text()
  }
 }
 
-init_txtview()
+void init_txtview()
 {
   txtview.here=0;
   txtview.dh=DCURY;
@@ -269,18 +280,20 @@ init_txtview()
   txtview.which=0;
   txtview.first=0;
 }
-make_txtview()
+
+
+void make_txtview()
 {
-  int minwid=DCURXs*40,minlen=3*DCURYs+8+10*DCURY;
-  Window base,w;
- int ww=7*DCURXs,hh=DCURYs+4;
+  int minwid=DCURXs*60,minlen=3*DCURYs+8+10*DCURY;
+  Window base;
+ int ww=9*DCURXs,hh=DCURYs+4;
   static char *wname[]={"Text Viewer"},*iname[]={"Txtview"};
   
   XWMHints wm_hints;
   XTextProperty winname,iconname;
   XSizeHints size_hints;
   if(txtview.here==1)return;
-  base=make_window(RootWindow(display,screen),0,0,minwid,minlen,4);
+  base=make_plain_window(RootWindow(display,screen),0,0,minwid,minlen,4);
   txtview.base=base;
   XSelectInput(display,base,ExposureMask|KeyPressMask|ButtonPressMask|
 	       StructureNotifyMask);
@@ -296,17 +309,17 @@ make_txtview()
   wm_hints.flags=StateHint; 
   XSetWMProperties(display,base,&winname,&iconname,
 		   NULL,0,&size_hints,NULL,NULL);
-  make_icon(txtview_bits,txtview_width,txtview_height,base);
-  txtview.up=make_window(base,DCURXs,2,2*DCURXs,DCURYs,1);
-  txtview.down=make_window(base,DCURXs+ww,2,4*DCURXs,DCURYs,1);
-  txtview.pgup=make_window(base,DCURXs+2*ww,2,4*DCURXs,DCURYs,1);
-  txtview.pgdn=make_window(base,DCURXs+3*ww,2,4*DCURXs,DCURYs,1);
-  txtview.kill=make_window(base,DCURXs+4*ww,2,4*DCURXs,DCURYs,1);
-  txtview.home=make_window(base,DCURXs,2+hh,4*DCURXs,DCURYs,1);
-  txtview.end=make_window(base,DCURXs+ww,2+hh,3*DCURXs,DCURYs,1);
-  txtview.src=make_window(base,DCURXs+2*ww,2+hh,6*DCURXs,DCURYs,1);
-  txtview.action=make_window(base,DCURXs+3*ww,2+hh,6*DCURXs,DCURYs,1);
-  txtview.text=make_window(base,2,3*DCURYs+5,minwid-4,10*DCURY,1);
+  make_icon((char*)txtview_bits,txtview_width,txtview_height,base);
+  txtview.up=make_window(base,DCURXs,2,8*DCURXs,DCURYs,1);
+  txtview.down=make_window(base,DCURXs+ww,2,8*DCURXs,DCURYs,1);
+  txtview.pgup=make_window(base,DCURXs+2*ww,2,8*DCURXs,DCURYs,1);
+  txtview.pgdn=make_window(base,DCURXs+3*ww,2,8*DCURXs,DCURYs,1);
+  txtview.kill=make_window(base,DCURXs+4*ww,2,8*DCURXs,DCURYs,1);
+  txtview.home=make_window(base,DCURXs,2+hh,8*DCURXs,DCURYs,1);
+  txtview.end=make_window(base,DCURXs+ww,2+hh,8*DCURXs,DCURYs,1);
+  txtview.src=make_window(base,DCURXs+2*ww,2+hh,8*DCURXs,DCURYs,1);
+  txtview.action=make_window(base,DCURXs+3*ww,2+hh,8*DCURXs,DCURYs,1);
+  txtview.text=make_plain_window(base,2,3*DCURYs+5,minwid-4,10*DCURY,1);
   txtview.here=1;
   txtview.nlines=10;
   txtview.which=0;

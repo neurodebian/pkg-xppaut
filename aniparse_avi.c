@@ -1,3 +1,5 @@
+#include "aniparse_avi.h"
+
 #include <stdlib.h> 
 /*  A simple animator
    
@@ -100,6 +102,7 @@ double ani_xlo=0,ani_xhi=1,ani_ylo=0,ani_yhi=1;
 double ani_lastx,ani_lasty;
 Pixmap ani_pixmap;
 
+/*
 typedef struct {
   int nframe,wid,hgt,fps;
   unsigned char *image;
@@ -131,6 +134,10 @@ typedef struct {
   double zcol,zx1,zy1,zx2,zy2,zrad,zval;
   int zthick,tfont,tsize,tcolor;  
 } ANI_COM;
+*/
+
+
+MPEG_SAVE mpeg;
 
 ANI_COM my_ani[MAX_ANI_LINES];
 
@@ -250,7 +257,7 @@ create_vcr(name)
  XWMHints wm_hints;
  XTextProperty winname,iconname;
 
- base=make_window(RootWindow(display,screen),0,0,300,300,1);
+ base=make_plain_window(RootWindow(display,screen),0,0,300,300,1);
  vcr.base=base;
 
  XStringListToTextProperty(&name,1,&winname);
@@ -694,7 +701,7 @@ getppmbits(Window window,int *wid,int *hgt, unsigned char *out)
     CSHIFT=bbc;       /*  how far to shift to get the next color */
     CMULT=8-bbc;       /* multiply 5 bit color to get to 8 bit */
   }
-  /* printf("CMULT=%d CMSK=%d CSHIFT=%d \n",CMULT,CMSK,CSHIFT); */
+  /* plintf("CMULT=%d CMSK=%d CSHIFT=%d \n",CMULT,CMSK,CSHIFT); */
   *wid=ximage->width;
   *hgt=ximage->height;
   pixel=(unsigned char*)ximage->data;
@@ -718,7 +725,7 @@ getppmbits(Window window,int *wid,int *hgt, unsigned char *out)
 	value=value>>CSHIFT;
 	hibits=value&CMSK;
 	/*	       if(y==200&&(x>200)&&(x<400))
-	 printf("(%d,%d): %x %x %x %x \n",x,y,vv,MY_RED,MY_GREEN,MY_BLUE);
+	 plintf("(%d,%d): %x %x %x %x \n",x,y,vv,MY_RED,MY_GREEN,MY_BLUE);
 	*/
 	 /* store them for ppm dumping  */
 	*dst++=(MY_RED<<CMULT);
@@ -784,7 +791,7 @@ writeframe(filename,window,wid,hgt)
     CMSK=(1<<bbc)-1;  /*  make a mask  2^bbc  -1  */
     CSHIFT=bbc;       /*  how far to shift to get the next color */
     CMULT=8-bbc;       /* multiply 5 bit color to get to 8 bit */
-   /* printf(" bbp=%d CMSK=%d CSHIFT=%d CMULT=%d \n",
+   /* plintf(" bbp=%d CMSK=%d CSHIFT=%d CMULT=%d \n",
       bbp,CMSK,CSHIFT,CMULT); */
   }
   sprintf(head,"P6\n%d %d\n255\n",ximage->width,ximage->height);
@@ -862,7 +869,7 @@ get_ani_file()
   err=ani_new_file(vcr.file);
   if(err>=0){
     vcr.ok=1; /* loaded and compiled */
-      printf("Loaded %d lines successfully!\n",n_anicom);
+      plintf("Loaded %d lines successfully!\n",n_anicom);
      
       /* err_msg(bob); */
   }
@@ -904,13 +911,13 @@ FILE *fp;
     for(jj=jj1;jj<=jj2;jj++){
       subsk(new,big,jj,flag);
       /* strupr(big); */
-/*      printf(" %s \n",big); */
+/*      plintf(" %s \n",big); */
       ans=parse_ani_string(big);
     }
 
     if(ans==0||feof(fp))break;
     if(ans<0){ /* error occurred !! */
-      printf(" error at line %d\n",ani_line);
+      plintf(" error at line %d\n",ani_line);
       free_ani();
       return 0;
     }
@@ -1123,7 +1130,7 @@ parse_ani_string(s)
    set_ani_dimension(x1,x2,x3,x4);
    return 1;
  }
-/*  printf(" %d %s %s %s %s %s %s\n",
+/*  plintf(" %d %s %s %s %s %s %s\n",
 	type,x1,x2,x3,x4,col,thick);  */
  return(add_ani_com(type,x1,x2,x3,x4,col,thick));
 
@@ -1281,15 +1288,15 @@ add_ani_expr(x,c)
   int com[300];
   int err;
   double z;
-  /* printf(" n_ani=%d exp=%s \n",n_anicom,x); */
+  /* plintf(" n_ani=%d exp=%s \n",n_anicom,x); */
   err=add_expr(x,com,&n);
   if(err==1)return 1;
   for(i=0;i<n;i++){
     c[i]=com[i];
-    /* printf(" %d %d \n",i,c[i]); */
+    /* plintf(" %d %d \n",i,c[i]); */
   }
  /*  z=evaluate(c);
- printf(" evaluated to %g \n",z); */
+ plintf(" evaluated to %g \n",z); */
   return 0;
 }
   
@@ -1364,7 +1371,7 @@ add_ani_comet(a,x1,y1,x2,y2,col,thick)
  int com[300];
  double z;
  int err,n,index;
- /* printf("<<%s>>\n",col); */
+ /* plintf("<<%s>>\n",col); */
  err=chk_ani_color(col,&index);
  if(err==1)
    {
@@ -1378,7 +1385,7 @@ add_ani_comet(a,x1,y1,x2,y2,col,thick)
  a->zthick=atoi(thick);
  n=atoi(x2);
  if(n<=0){
-   printf("4th argument of comet must be positive integer!\n");
+   plintf("4th argument of comet must be positive integer!\n");
    return(-1);
  }
  err=add_ani_expr(x1,a->x1);
@@ -1422,7 +1429,7 @@ add_ani_line(a,x1,y1,x2,y2,col,thick)
  if(err)return -1;
  err=add_ani_expr(y2,a->y2);
  if(err)return -1;
-/*  printf(" added line %s %s %s %s \n",
+/*  plintf(" added line %s %s %s %s \n",
 	x1,y1,x2,y2); */
  
  return 0;
@@ -1527,7 +1534,7 @@ add_ani_vtext(a,x1,y1,x2,y2)
   err=add_ani_expr(y1,a->y1);
   if(err)return -1;
   err=add_ani_expr(x2,a->x2);
-  /* printf(" txt=%s com1=%d \n",x2,a->x2[0]); */
+  /* plintf(" txt=%s com1=%d \n",x2,a->x2[0]); */
   if(err)return -1;
   s=(char *)(a->y2);
   strcpy(s,y2);
@@ -1561,7 +1568,7 @@ render_ani()
   for(i=0;i<n_anicom;i++){
     type=my_ani[i].type;
     flag=my_ani[i].flag;
-   /* printf("type=%d flag=%d i=%d \n",
+   /* plintf("type=%d flag=%d i=%d \n",
 	  type,flag,i); */
     if(type==LINE||type==RLINE||type==RECT||type==FRECT||type==CIRC||
        type==FCIRC||type==ELLIP||type==FELLIP||type==COMET)
@@ -1674,7 +1681,7 @@ eval_ani_com(j)
     double z;
         
      my_ani[j].zx1=evaluate(my_ani[j].x1);
-    /* printf(" %d %g \n",my_ani[j].x1[0],my_ani[j].zx1); */
+    /* plintf(" %d %g \n",my_ani[j].x1[0],my_ani[j].zx1); */
 	
     my_ani[j].zy1=evaluate(my_ani[j].y1);
     switch(my_ani[j].type)
@@ -1732,7 +1739,7 @@ set_ani_col(j)
     icol=-c;
   else
     icol=(int)(color_total*my_ani[j].zcol)+FIRSTCOLOR;
-  /* printf(" t=%d j=%d col=%d \n",vcr.pos,j,icol); */
+  /* plintf(" t=%d j=%d col=%d \n",vcr.pos,j,icol); */
   if(icol==0) 
     XSetForeground(display,ani_gc,BlackPixel(display,screen));
   else
@@ -1890,7 +1897,7 @@ draw_ani_fcirc(j)
   ani_xyscale(x1,y1,&i1,&j1);
   ani_radscale(rad,&i2,&j2);
   ir=(i2+j2)/2;
-/*  printf(" arc %d %d %d %d \n",i1,j1,i2,j2); */
+/*  plintf(" arc %d %d %d %d \n",i1,j1,i2,j2); */
 /*  XFillArc(display,ani_pixmap,ani_gc,i1-i2,j1-j2,2*i2,2*j2,0,360*64); */
   XFillArc(display,ani_pixmap,ani_gc,i1-ir,j1-ir,2*ir,2*ir,0,360*64);
 }
@@ -2013,7 +2020,7 @@ tst_pix_draw()
  }
   XSetForeground(display,ani_gc,BlackPixel(display,screen));
   XDrawString(display,ani_pixmap,ani_gc,10,200,"THIS SPACE FOR RENT",20);
-  printf(" color_tot=%d \n",color_total);
+  plintf(" color_tot=%d \n",color_total);
 }
    
 

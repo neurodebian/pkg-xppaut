@@ -49,7 +49,7 @@ int mkavi(int nframes, int fps, int w, int h,
     avif = fopen("new.avi", "w+b");
     cd=new cram16;
     static chunkstream avistr(avif);
-    riff=new riffchunk(&avistr, "AVI RIFF", 0, "AVI ");
+    riff=new riffchunk(&avistr, (char *)"AVI RIFF", 0, (char *)"AVI ");
           
       cd->start(&avistr, w, h, nframes);
    
@@ -58,7 +58,7 @@ int mkavi(int nframes, int fps, int w, int h,
         avih = new avi_header(&avistr, cd,w,h, nframes, fps);
 	avih->write();
 
-	movi = new listchunk(&avistr, "movi chunk", 1, "movi");
+	movi = new listchunk(&avistr,(char *) "movi chunk", 1,(char *) "movi");
 	movi->write();
     printf("Task 1 is done \n");
     return 1;

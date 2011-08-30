@@ -1,5 +1,6 @@
-#include <stdlib.h> 
+#include "homsup.h"
 
+#include <stdlib.h> 
 #include "f2c.h"
 #include <math.h>
 #define MAX(a,b) ((a)>(b)?(a):(b))
@@ -30,10 +31,11 @@ HOMOCLIN my_hom;
 
 static integer c__1 = 1;
 static integer c__2 = 2;
-static integer c__5 = 5;
+/*static integer c__5 = 5;
 static integer c_n1 = -1;
 static integer c__9 = 9;
 static integer c__0 = 0;
+*/
 static integer c__20 = 20;
 
 
@@ -44,17 +46,17 @@ double hom_bcs(double x)
   return my_hom.fb[i];
 }
 
-do_projection(double *x0,double t0,double *x1,double t1)
+void do_projection(double *x0,double t0,double *x1,double t1)
 {
   double y[400],f[400],fnew[400];
   double bound[400];
   double eps=NEWT_ERR,del,dsy,yold;
-  double *fb;
+  
   int i,j,n=my_hom.n,nunstab=my_hom.nunstab,nstab=my_hom.nstab;
   int imfld=-1,itrans=2,is=1;  /* stored in transpose form 
 				  so dont transpose */
   /* first we take care of the left */
-  /* printf("n=%d nu=%d ns=%d no=%d \n", 
+  /* plintf("n=%d nu=%d ns=%d no=%d \n", 
      n,nunstab,nstab,NODE); */
   for(i=0;i<n;i++){
     y[i]=x0[i+my_hom.eleft];
@@ -74,7 +76,7 @@ do_projection(double *x0,double t0,double *x1,double t1)
     rhs(t0,y,fnew,NODE);
     for(j=0;j<n;j++){
       my_hom.a[j*n+i]=dsy*(fnew[j]-f[j]);
-      /* printf("%d %d a=%g \n",i,j,my_hom.a[j*n+i]); */
+      /* plintf("%d %d a=%g \n",i,j,my_hom.a[j*n+i]); */
     }
     y[i]=yold;
   }
@@ -129,7 +131,8 @@ int pdfdu_(double *a,int n)
      a[i+j*20]=my_hom.a[i+j*n];
     
    }
-
+  
+  return(1);
 }
 
 
@@ -264,7 +267,7 @@ integer *imfd, *is, *itrans;
 		my_hom.cprev[i__ + (j + (*is + (*itrans << 1)) * 20) * 20 - 
 			1221] = cnow[i__ + j * 20 - 21];
 		bound[i__ + j * 20] = cnow[i__ + j * 20 - 21];
-		/* printf(" i=%d j=%d b=%g \n",i__,j,bound[i__ + j * 20]); */
+		/* plintf(" i=%d j=%d b=%g \n",i__,j,bound[i__ + j * 20]); */
    	    }
 	}
 	my_hom.iflag[*is + (*itrans << 1) - 3] = 1;

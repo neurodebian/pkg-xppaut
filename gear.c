@@ -1,3 +1,12 @@
+#include "gear.h"
+#include "ggets.h"
+#include "menudrive.h"
+#include "eig_list.h"
+#include "graphics.h"
+#include "flags.h"
+#include "integrate.h"
+#include "abort.h"
+
 #include <stdlib.h> 
 #include <math.h>
 #include <stdio.h>
@@ -6,7 +15,7 @@
 int UnstableManifoldColor=5;
 int StableManifoldColor=8;
 double ndrand48();
-extern (*rhs)();
+extern int (*rhs)();
 
 
 extern double DELTA_T;
@@ -41,20 +50,17 @@ double pertst[7][2][3]={{{2,3,1},{2,12,1}},
 
 
 
-silent_fixpt(double *x,double eps,double err,double big,int maxit,int n,
+void silent_fixpt(double *x,double eps,double err,double big,int maxit,int n,
 	     double *er,double *em,int *ierr)
 {
-  int kmem,i,j,ipivot[MAXODE],iter;
- int oldcol,dummy;
- int rp=0,rn=0,cp=0,cn=0,im=0;
- int pose,nege,pr;
+  int kmem,i,j;
+
+
+ 
  double *work,*eval,*b,*bp,*oldwork,*ework;
- double temp,oldt,old_x[MAXODE];
- char bob[80];
- char tempstring[80];
- char ch;
- double real,imag;
- float xl[MAXODE];
+ double temp,old_x[MAXODE];
+
+ 
  kmem=n*(2*n+5)+50;
  *ierr=0;
  if((work=(double *)malloc(sizeof(double)*kmem))==NULL)
@@ -109,19 +115,19 @@ silent_fixpt(double *x,double eps,double err,double big,int maxit,int n,
 
 
 /* main fixed point finder */ 
-do_sing(x,eps, err,big,maxit, n,ierr,stabinfo)
+void do_sing(x,eps, err,big,maxit, n,ierr,stabinfo)
 double *x,eps, err, big;
 float *stabinfo;
 int maxit, n,*ierr;
 {
- int kmem,i,j,ipivot[MAXODE],iter;
+ int kmem,i,j,ipivot[MAXODE];
  int oldcol,dummy;
  int rp=0,rn=0,cp=0,cn=0,im=0;
- int pose,nege,pr;
+ int pose=0,nege=0,pr;
  double *work,*eval,*b,*bp,*oldwork,*ework;
  double temp,oldt=DELTA_T,old_x[MAXODE];
- char bob[80];
- char tempstring[80];
+
+ 
  char ch;
  double real,imag;
  double bigpos=-1e10,bigneg=1e10;
@@ -154,7 +160,7 @@ int maxit, n,*ierr;
  
  for(i=0;i<n*n;i++){
   oldwork[i]=work[i];
-  /* printf("dm=%g\n",oldwork[i]); */
+  /* plintf("dm=%g\n",oldwork[i]); */
  }
 /* Transpose for Eigen        */
   for(i=0;i<n;i++)
@@ -184,7 +190,7 @@ if(!PAR_FOL)
 
  if(ch=='y')
  {
-  printf("\n Eigenvalues:\n");
+  plintf("\n Eigenvalues:\n");
   pr=1;
 }
  for(i=0;i<n;i++)
@@ -193,7 +199,7 @@ if(!PAR_FOL)
   imag=eval[2*i+1];
   if(pr==1)
   {
-   printf(" %f  +  i  %f \n",real,imag);
+   plintf(" %f  +  i  %f \n",real,imag);
 
   }
   if(METHOD==0)real=real*real+imag*imag-1.00;
@@ -259,7 +265,7 @@ if(!PAR_FOL)
   
    if(rp==1)
    {
-     /* printf(" One real positive -- pos=%d lam=%g \n",pose,eval[2*pose]); */
+     /* plintf(" One real positive -- pos=%d lam=%g \n",pose,eval[2*pose]); */
      /*     for(i=0;i<n*n;i++)printf(" w=%g o=%g \n",work[i],oldwork[i]); */
      get_evec(work,oldwork,b,bp,n,maxit,err,ipivot,eval[2*pose],ierr);
      if(*ierr==0)
@@ -312,7 +318,7 @@ if(!PAR_FOL)
       
 	 if((rp>1)&&(bpos>=0)) /* then there is a strong unstable */
 	 {
-	   printf("strong unstable %g \n",bigpos);
+	   plintf("strong unstable %g \n",bigpos);
 	   get_evec(work,oldwork,b,bp,n,maxit,err,ipivot,bigpos,ierr);
 	   if(*ierr==0)
 	     {
@@ -330,7 +336,7 @@ if(!PAR_FOL)
 	 
      if((rn>1)&&(bneg>=0)) /* then there is a strong stable */
 	 {
-	   printf("strong stable %g \n",bigneg);
+	   plintf("strong stable %g \n",bigneg);
 	   get_evec(work,oldwork,b,bp,n,maxit,err,ipivot,bigneg,ierr);
 	   if(*ierr==0)
 	     {
@@ -356,12 +362,12 @@ if(!PAR_FOL)
  return;
 }
 
-pr_evec(x,ev,n,pr,eval)
+void pr_evec(x,ev,n,pr,eval)
 double *x, *ev;
 int n,pr;
 double eval;
 {
- char bob[80];
+
  int i;
  double d=fabs(DELTA_T)*.1;
  ShootICFlag=1;
@@ -373,17 +379,17 @@ double eval;
    ShootIndex+=2;
  }
  if(pr==0)return;
- /* printf("Initial conditions for %f \n",eval);
+ /* plintf("Initial conditions for %f \n",eval);
 
  for(i=0;i<n;i++)
  {
-  printf(" %.16g   %.16g   %.16g \n",ev[i],x[i]+d*ev[i],x[i]-d*ev[i]);
+  plintf(" %.16g   %.16g   %.16g \n",ev[i],x[i]+d*ev[i],x[i]-d*ev[i]);
 
  }
  */
 }
 
-get_complex_evec(m,evr,evm,br,bm,n,maxit,err,ierr)
+void get_complex_evec(m,evr,evm,br,bm,n,maxit,err,ierr)
      double *m,*br,*bm;
      double evr,evm,err;
      int n,maxit,*ierr;
@@ -424,7 +430,7 @@ get_complex_evec(m,evr,evm,br,bm,n,maxit,err,ierr)
   free(ipivot);
 }
 
-get_evec(a,anew,b,bp, n, maxit,
+void get_evec(a,anew,b,bp, n, maxit,
      err,ipivot,eval, ierr)
  double *a,*anew, *b,*bp,err,eval;
  int n,maxit,  *ipivot, *ierr;
@@ -436,14 +442,14 @@ get_evec(a,anew,b,bp, n, maxit,
     *ierr=0;
     for(j=0;j<n*n;j++){
     anew[j]=a[j];
-    /*  printf(" %d %g \n",j,a[j]);   */
+    /*  plintf(" %d %g \n",j,a[j]);   */
     }
     for(j=0;j<n;j++)
     anew[j*(1+n)]=anew[j*(1+n)]-eval-err*err*zz;
 
     sgefa(anew,n,n,ipivot,ierr);
     if(*ierr!=-1) {
-      printf(" Pivot failed\n");
+      plintf(" Pivot failed\n");
       return;
     }
     for(j=0;j<n;j++)
@@ -482,7 +488,7 @@ get_evec(a,anew,b,bp, n, maxit,
       iter++;
       if(iter>maxit)
       {
-       printf(" max iterates exceeded\n");
+       plintf(" max iterates exceeded\n");
 
        *ierr=1;
        break;
@@ -509,22 +515,22 @@ get_evec(a,anew,b,bp, n, maxit,
 
 
 
-      eigen( n,a,ev,work,ierr)
+      void eigen( n,a,ev,work,ierr)
 	int n,*ierr;
 	double *a,*ev,*work;   
    {
-       int i;
+
       orthes(n,1,n,a,work);
       hqr(n,1,n,a,ev,ierr);
       }
 
 
-      hqr( n, low, igh,h,ev,ierr)
+     void hqr( n, low, igh,h,ev,ierr)
       int n,low,igh,*ierr;
       double *h,*ev;
       {
-      int i,j,k,l,m,en,ll,mm,na,its,mp2,enm2;
-      double p,q,r,s,t,w,x,y,zz,norm,machep=1.e-10;
+      int i,j,k,l=0,m=0,en,ll,mm,na,its,mp2,enm2;
+      double p=0.0,q=0.0,r=0.0,s,t,w,x,y,zz,norm,machep=1.e-10;
       int notlas;
       *ierr = 0;
       norm = 0.0;
@@ -566,7 +572,7 @@ l70:   for( ll = low;ll<= en;ll++)
       x = 0.75 * s;
       y = x;
       w = -0.4375 * s * s;
-l130:  its = its++;
+l130:  its++; /*its = its++; This may be undefined. Use its++ instead.*/
       for(mm = l;mm <= enm2;mm++)
       {
 	 m = enm2 + l - mm;
@@ -670,7 +676,7 @@ l330:
 l1000:
      *ierr = en;
 }
-      orthes(n,low,igh,a,ort)
+      void orthes(n,low,igh,a,ort)
       int n,low,igh;
       double *a,*ort;
       {
@@ -732,7 +738,7 @@ double x,y;
  return(-fabs(x));
 }
 
-imin( x, y)
+int imin( x, y)
 int x,y;
 {
  if(x<y)return(x);
@@ -746,7 +752,7 @@ double u,v;
  return(v);
 }
 
-getjac(x,y,yp,xp,
+void getjac(x,y,yp,xp,
  eps,dermat, n)
 double *x,*y,*yp,*xp,eps,*dermat;
 int n;
@@ -760,14 +766,14 @@ int n;
 
   for(i=0;i<n;i++)
   {
-    /*    printf(" y=%g x=%g\n",y[i],x[i]); */
+    /*    plintf(" y=%g x=%g\n",y[i],x[i]); */
     for(k=0;k<n;k++) xp[k]=x[k];
     r=eps*amax(eps,fabs(x[i]));
     xp[i]=xp[i]+r;
     rhs(0.0,xp,yp,n);
     /* 
        for(j=0;j<n;j++)
-       printf(" r=%g yp=%g xp=%g\n",r,yp[j],xp[j]);
+       plintf(" r=%g yp=%g xp=%g\n",r,yp[j],xp[j]);
     */
     if(METHOD==0){
      for(j=0;j<n;j++)yp[j]=yp[j]-xp[j];
@@ -775,20 +781,20 @@ int n;
     for(j=0;j<n;j++)
     {
     dermat[j*n+i]=(yp[j]-y[j])/r;
-    /*    printf("dm=%g \n",dermat[j*n+i]); */
+    /*    plintf("dm=%g \n",dermat[j*n+i]); */
     }
 
   }
 }
 
 
-rooter(x, err, eps, big,
+void rooter(x, err, eps, big,
 work,ierr,maxit, n)
 
 double *x, err, eps, big,*work;
 int *ierr,maxit, n;
 {
- int i,j,k,iter,ipivot[MAXODE],info;
+ int i,iter,ipivot[MAXODE],info;
  char ch;
  double *xp,*yp,*y,*xg,*dermat,*dely;
  double r;
@@ -883,14 +889,14 @@ double *t, tout, *y, hmin, hmax, eps,*work,*error;
 
 {
  /* int ipivot[MAXODE]; */
-  double deltat,hnew,hold,h,racum,told,r,d;
+  double deltat=0.0,hnew=0.0,hold=0.0,h=0.0,racum=0.0,told=0.0,r=0.0,d=0.0;
   double *a,pr1,pr2,pr3,r1;
   double *dermat,*save[8],*save9,*save10,*save11,*save12;
-   double enq1,enq2,enq3,pepsh,e,edwn,eup,bnd;
+   double enq1=0.0,enq2=0.0,enq3=0.0,pepsh=0.0,e=0.0,edwn=0.0,eup=0.0,bnd=0.0;
   double *ytable[8],*ymax,*work2;
-  int i,iret,maxder,j,k,iret1,nqold,nq,newq;
-  int idoub,mtyp,iweval,j1,j2,l,info,job,nt;
- /* printf("entering gear ... with start=%d \n",*jstart); */
+  int i,iret=0,maxder=0,j=0,k=0,iret1=0,nqold=0,nq=0,newq=0;
+  int idoub=0,mtyp=0,iweval=0,j1=0,j2=0,l=0,info=0,job=0,nt=0;
+/* plintf("entering gear ... with start=%d \n",*jstart);*/ 
    for(i=0;i<8;i++)
   {
   save[i]=work+i*n;
@@ -942,6 +948,7 @@ double *t, tout, *y, hmin, hmax, eps,*work,*error;
   for(i=0;i<n;i++)ytable[0][i]=y[i];
 
 L70:
+	
   iret=1;
   *kflag=1;
   if((h>0.0)&&((*t+h)>tout))h=tout-*t;
@@ -974,7 +981,9 @@ L110:
 L120:
 
     if(*jstart==-1)goto L140;
-    nq=1;
+   
+    nq=1;	
+	
         rhs(*t,ytable[0],save11,n);
 
     for(i=0;i<n;i++)
@@ -1046,7 +1055,8 @@ L150:
 	  break;
        }
  
-L310:
+/*L310:*/
+	
     k=nq+1;
     idoub=k;
     mtyp=(4-mf)/2;
@@ -1059,12 +1069,14 @@ L310:
     edwn=sqr2(pertst[nq-1][0][2]*pepsh);
     if(edwn==0.0)goto L850;
     bnd=eps*enq3/(double)n;
-L320:
 
+/*L320:*/
+	
     iweval=2;
     if(iret==2)goto L750;
 
 L330:
+	
     *t=*t+h;
     for(j=2;j<=k;j++)
      for(j1=j;j1<=k;j1++)
@@ -1079,7 +1091,7 @@ L330:
       rhs(*t,ytable[0],save11,n);
       if(iweval<1)
 	{ 
-       /*  printf("iweval=%d \n",iweval);
+       /*  plintf("iweval=%d \n",iweval);
          for(i=0;i<n;i++)printf("up piv = %d \n",gear_pivot[i]);*/
 	  goto L460;
        }
@@ -1098,7 +1110,7 @@ L330:
       }
       for(i=0;i<n;i++)dermat[n*i+i]+=1.0;
       iweval=-1;
-/*      printf(" Jac = %f %f %f %f \n",dermat[0],dermat[1],dermat[2],dermat[3]);
+/*      plintf(" Jac = %f %f %f %f \n",dermat[0],dermat[1],dermat[2],dermat[3]);
 */      sgefa(dermat,n,n,gear_pivot,&info);
         /* for(i=0;i<n;i++)printf("gear_pivot[%d]=%d \n",i,gear_pivot[i]);*/
       if(info==-1)j1=1;
@@ -1223,20 +1235,20 @@ L710:
     goto L150;
 
 L720:
-
+	
     if(pr2>pr1) goto L670;
     newq=nq;
     r=1.0/Max(pr2,.0001);
     goto L680;
 
 L730:
-
+	
     r=1.0/Max(pr3,.0001);
     newq=nq+1;
     goto L680;
 
 L740:
-
+	
     iret=2;
     h=h*r;
     hnew=h;
@@ -1245,7 +1257,7 @@ L740:
     goto L150;
 
 L750:
-
+	
     r1=1.0;
     for(j=2;j<=k;j++)
     {
@@ -1256,7 +1268,7 @@ L750:
     idoub=k;
 
 L770:
-
+	
     for(i=0;i<n;i++)ymax[i]=Max(ymax[i],fabs(ytable[0][i]));
     *jstart=nq;
     if((h>0.0)&&(*t>=tout))goto L860;
@@ -1264,7 +1276,7 @@ L770:
     goto L70;
 
 L790:
-
+	
     if(nq==1)goto L850;
     rhs(*t,ytable[0],save11,n);
     r=h/hold;
@@ -1279,14 +1291,14 @@ L790:
     goto L150;
 
 L810:
-
+	
    *kflag=-1;
    hnew=h;
    *jstart=nq;
    goto L860;
 
 L820:
-
+	
     racum=Max(fabs(hmin/hold),racum);
     racum=Min(racum,fabs(hmax/hold));
     r1=1.0;
@@ -1305,13 +1317,12 @@ L820:
     if(iret1==3)goto L710;
 
 L850:
-
+	
    *kflag=-4;
 
    goto L540;
 
 L860:
-
    for(i=0;i<n;i++)y[i]=ytable[0][i];
   iwork[0]=k;
   iwork[1]=nq;
@@ -1334,7 +1345,7 @@ L860:
   iwork[5]=iret;
   iwork[6]=newq;
   iwork[7]=iweval;
-
+	
   return(1);
 
 }
@@ -1361,7 +1372,7 @@ double x,y;
  return(y);
 }
 
-sgefa(a,lda, n,ipvt,info)
+void sgefa(a,lda, n,ipvt,info)
 double *a;
 int lda, n, *ipvt, *info;
 {
@@ -1404,7 +1415,7 @@ int lda, n, *ipvt, *info;
  if(a[(n-1)*lda+n-1]==0.0)*info=n-1;
 }
 
-sgesl(a,lda, n,ipvt,b,job)
+void sgesl(a,lda, n,ipvt,b,job)
 double *a,*b;
 int lda,n,*ipvt,job;
 {
@@ -1462,11 +1473,11 @@ int lda,n,*ipvt,job;
    }
 }
 
-saxpy(n, sa,sx,incx,sy,incy)
+void saxpy(n, sa,sx,incx,sy,incy)
 int n,incx,incy;
 double sa,*sx, *sy;
 {
- int i,ix,iy,m;
+ int i,ix,iy;
  if(n<=0)return;
  if(sa==0.0)return;
   ix=0;
@@ -1479,7 +1490,7 @@ double sa,*sx, *sy;
 
 
 
-isamax(n,sx,incx)
+int isamax(n,sx,incx)
 double *sx;
 int incx,n;
 {
@@ -1521,7 +1532,7 @@ double sdot( n,sx,incx,sy,incy)
 int n,incx,incy;
 double *sx, *sy;
 {
-int i,ix,iy,m;
+int i,ix,iy;
 double stemp=0.0;
 if(n<=0)return(0.0);
  ix=0;
@@ -1533,11 +1544,11 @@ if(n<=0)return(0.0);
  return(stemp);
 }
 
-sscal( n, sa,sx,incx)
+void sscal( n, sa,sx,incx)
 int n,incx;
 double sa,*sx;
 {
- int i,m,mp1,nincx;
+ int i,nincx;
  if(n<=0)return;
   nincx=n*incx;
   for(i=0;i<nincx;i+=incx)

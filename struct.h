@@ -1,3 +1,6 @@
+#ifndef _struct_h_
+#define _struct_h_
+
 #include "xpplim.h"
 #define MAXCHAR 60
 #define MAXENTRY 20
@@ -154,7 +157,7 @@ typedef struct {
 
 
 
-
+#endif
 
 
 

@@ -1,5 +1,16 @@
+#include "tabular.h"
+
+#include "browse.h"
+#include "ggets.h"
+#include "init_conds.h"
+#include "many_pops.h"
+#include "simplenet.h"
+
+#include "parserslow.h"
+
 #include <stdlib.h> 
 #include <string.h>
+
 /*********************************************************
      This is code for read-in tables in XPP  
      This should probably be accessible from within the program
@@ -83,25 +94,25 @@ extern int NCON,NSYM,NCON_START,NSYM_START;
 
 extern int MAXSTOR;
 extern float **storage;
-set_auto_eval_flags(int f)
+void set_auto_eval_flags(int f)
 {
  int i;
   for(i=0;i<MAX_TAB;i++) 
     my_table[i].autoeval=f;
 }
-set_table_name(name,index)
+void set_table_name(name,index)
      char *name;
      int index;
 {
   strcpy(my_table[index].name,name);
 }
 
-view_table(int index)
+void view_table(int index)
 {
   int i;
   int n=my_table[index].n,len;
   double *y=my_table[index].y;
-  double xlo=my_table[index].xlo,xhi=my_table[index].xhi,dx=my_table[index].dx;
+  double xlo=my_table[index].xlo,dx=my_table[index].dx;
   len=n;
   if(len>=MAXSTOR)len=MAXSTOR-1;
   for(i=0;i<len;i++){
@@ -111,7 +122,7 @@ view_table(int index)
   refresh_browser(len);
 }
 
-new_lookup_com(int i)
+void new_lookup_com(int i)
 {
   char file[128];
  int index,ok,status;
@@ -151,7 +162,7 @@ new_lookup_com(int i)
    
 }
     
-new_lookup_ok()
+void new_lookup_ok()
 {
  char file[128];
  char name[10];
@@ -242,7 +253,7 @@ double lookup(x,index)
      double x;
 {
   double xlo=my_table[index].xlo,xhi=my_table[index].xhi,dx=my_table[index].dx;
-  double *y,*xv;
+  double *y;
   double x1,y1,y2;
   int i1,i2,n=my_table[index].n;
   y=my_table[index].y;
@@ -264,17 +275,20 @@ double lookup(x,index)
     else
       {
 #ifdef DEBUG
-   	  printf("index=%d; x=%lg; i1=%d; i2=%d; x1=%lg; y1=%lg; y2=%lg\n",index,x,i1,i2,x1,y1,y2);
+   	  plintf("index=%d; x=%lg; i1=%d; i2=%d; x1=%lg; y1=%lg; y2=%lg\n",index,x,i1,i2,x1,y1,y2);
 #endif
 	    return(y1);
 	};
   }
   if(i1<0)return(y[0]+(y[1]-y[0])*(x-xlo)/dx);
   if(i2>=n)return(y[n-1]+(y[n-1]-y[n-2])*(x-xhi)/dx);
+  
+  
+  return(0.0);
 }
   
  
-init_table()
+void init_table()
 {
   int i;
   for(i=0;i<MAX_TAB;i++) {
@@ -284,7 +298,7 @@ init_table()
   }
 }
 
-redo_all_fun_tables()
+void redo_all_fun_tables()
 {
   int i;
   for(i=0;i<NTable;i++){
@@ -295,14 +309,14 @@ redo_all_fun_tables()
   update_all_ffts();
 }
 
-eval_fun_table(n,xlo,xhi,formula,y)
+int eval_fun_table(n,xlo,xhi,formula,y)
      int n;
      char *formula;
      double xlo,xhi,*y;
 {
   int i;
-  int ok=0;
-  double dx,x;
+  
+  double dx;
   double oldt;
   int command[200],ncold=NCON,nsym=NSYM;
   if(add_expr(formula,command,&i)){
@@ -324,13 +338,13 @@ eval_fun_table(n,xlo,xhi,formula,y)
 }
  
  
-create_fun_table(npts,xlo,xhi,formula,index)
+int create_fun_table(npts,xlo,xhi,formula,index)
      int npts;
      int index;
      double xlo,xhi;
      char *formula;
 {
-  int i,length=npts;
+  int length=npts;
 
    if(my_table[index].flag==1){
     err_msg("Not a function table...");
@@ -371,7 +385,7 @@ create_fun_table(npts,xlo,xhi,formula,index)
 
 
 
-load_table(filename,index)
+int load_table(filename,index)
      char *filename;
      int index; 
 {
@@ -460,7 +474,7 @@ load_table(filename,index)
   return(1);
 }
    
-get_lookup_len(int i)
+int get_lookup_len(int i)
 {
   return my_table[i].n;
 }

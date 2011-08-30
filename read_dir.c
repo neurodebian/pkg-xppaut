@@ -1,5 +1,11 @@
+#include "read_dir.h"
+
+#include <unistd.h>
+#include "ggets.h"
 #include <stdlib.h> 
 #include <string.h>
+
+
 /* OSX note:
 
 IGNORE THIS -- I have included the relevant files !!  July 2002
@@ -52,19 +58,16 @@ and save the file.
 
 #define SYSV
 
-#define put_msg printf
+#define put_msg plintf
 
-static int	file_entry_cnt, dir_entry_cnt;
+/*static int	file_entry_cnt, dir_entry_cnt;
 static char   **file_list, **dir_list;
 static char   **filelist, **dirlist;
 static char    *dirmask;
 static char	CurrentSelectionName[MAXPATHLEN];
+*/
 char cur_dir[MAXPATHLEN];
 
-typedef struct {
-  char **dirnames,**filenames;
-  int nfiles,ndirs;
-} FILEINFO;
 
 FILEINFO my_ff;
  /*
@@ -73,16 +76,16 @@ main()
   int i;
   change_directory("../xtc");
   get_directory(cur_dir);
-  printf("direct = %s \n",cur_dir);
+  plintf("direct = %s \n",cur_dir);
   get_fileinfo("*.c",cur_dir,&my_ff);
   for(i=0;i<my_ff.ndirs;i++)
-    printf("%s\n",my_ff.dirnames[i]);
+    plintf("%s\n",my_ff.dirnames[i]);
   for(i=0;i<my_ff.nfiles;i++)
-    printf("%s\n",my_ff.filenames[i]);
+    plintf("%s\n",my_ff.filenames[i]);
   free_finfo(&my_ff);
 }
 */
-free_finfo(ff)
+void free_finfo(ff)
      FILEINFO *ff;
 {
   int i;
@@ -93,7 +96,73 @@ free_finfo(ff)
     free(ff->filenames[i]);
   free(ff->filenames);
 }
-get_fileinfo(wild,direct,ff)
+
+
+int cmpstringp(const void *p1, const void *p2)
+{
+    /* The actual arguments to this function are "pointers to
+       pointers to char", but strcmp(3) arguments are "pointers
+       to char", hence the following cast plus dereference */
+
+    return strcmp(* (char * const *) p1, * (char * const *) p2);
+}
+
+
+int get_fileinfo_tab(wild,direct,ff)
+     char *wild,*direct;
+     FILEINFO *ff;
+{
+  int i,ans;
+  DIR *dirp;
+  int mlf,mld;
+  int nf,nd;
+  struct dirent *dp;
+  ans=fil_count(direct,&nd,&nf,wild,&mld,&mlf);
+  if(ans==0)return 0;
+  ff->nfiles=nf;
+  ff->ndirs=nd;
+  ff->dirnames=(char **)malloc(nd*sizeof(char *));
+  ff->filenames=(char **)malloc(nf*sizeof(char *));
+  for(i=0;i<nd;i++)
+    ff->dirnames[i]=(char *)malloc(mld+2);
+  for(i=0;i<nf;i++)
+    ff->filenames[i]=(char *)malloc(mlf+2);
+  dirp=opendir(direct);
+  dp=readdir(dirp);
+  nf=0;
+  nd=0;
+  while(dp != NULL){
+     if(IsDirectory(direct,dp->d_name)){
+      if(wild_match(dp->d_name,wild)){
+	 strcpy(ff->dirnames[nd],dp->d_name);
+         nd++;
+       }
+     }
+     else {
+       if(wild_match(dp->d_name,wild)){
+	 strcpy(ff->filenames[nf],dp->d_name);
+	 nf++;
+       }
+     }
+     dp=readdir(dirp);
+   }
+   ff->nfiles=nf;
+   ff->ndirs=nd;
+   if (nd > 0)
+   {	
+   	qsort(&(ff->dirnames[0]),nd, sizeof(char *), cmpstringp);
+   }
+   
+   if (nf > 0)
+   {
+   	qsort(&(ff->filenames[0]),nf, sizeof(char *), cmpstringp);
+   }
+   closedir(dirp);
+  return 1;
+}
+
+
+int get_fileinfo(wild,direct,ff)
      char *wild,*direct;
      FILEINFO *ff;
 {
@@ -129,11 +198,23 @@ get_fileinfo(wild,direct,ff)
      }
      dp=readdir(dirp);
    }
+   
+   if (nd > 0)
+   {	
+   	qsort(&(ff->dirnames[0]),nd, sizeof(char *), cmpstringp);
+   }
+   
+   if (nf > 0)
+   {
+   	qsort(&(ff->filenames[0]),nf, sizeof(char *), cmpstringp);
+   }
    closedir(dirp);
   return 1;
 }
 
-fil_count(direct,ndir,nfil,wild,mld,mlf)
+
+
+int fil_count(direct,ndir,nfil,wild,mld,mlf)
      char *wild,*direct;
      int *ndir,*nfil,*mld,*mlf;
 {
@@ -144,7 +225,7 @@ fil_count(direct,ndir,nfil,wild,mld,mlf)
   *mlf=0;
   dirp=opendir(direct);
   if(dirp==NULL){
-    printf(" % is not a directory \n",direct);
+    plintf(" % is not a directory \n",direct);
     return 0;
   }
   dp=readdir(dirp);
@@ -171,8 +252,7 @@ fil_count(direct,ndir,nfil,wild,mld,mlf)
 }
 
 
-int
-change_directory(path)
+int change_directory(path)
     char	   *path;
 {
     if (path == NULL) {
@@ -189,7 +269,7 @@ change_directory(path)
 	return (1);
 }
 
-get_directory(direct)
+int get_directory(direct)
     char	   *direct;
 {
 #if defined(SYSV) || defined(SVR4)
@@ -216,7 +296,7 @@ get_directory(direct)
 
 
 
- IsDirectory(root, path)
+int IsDirectory(root, path)
     char	   *root;
     char	   *path;
 {
@@ -243,7 +323,7 @@ get_directory(direct)
  */
 
 
-MakeFullPath(root, filename, pathname)
+void MakeFullPath(root, filename, pathname)
     char	   *root;
     char	   *filename;
     char	   *pathname;
@@ -296,8 +376,7 @@ static int	star();
 /* Return nonzero if `string' matches Unix-style wildcard pattern
    `pattern'; zero if not. */
 
-int
-wild_match(string, pattern)
+int wild_match(string, pattern)
     char	   *string, *pattern;
 {
     int		    prev;	/* Previous character in character class. */

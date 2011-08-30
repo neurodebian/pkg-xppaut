@@ -9,4 +9,5 @@ z'=-b*z+x*y
 @ xlo=-1.5,ylo=-2,xhi=1.5,yhi=2
 @ maxstor=20000
 @ phi=60
+@ runnow=1
 done

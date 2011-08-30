@@ -1,3 +1,6 @@
+
+#include "storage.h"
+#include "ggets.h"
 #include <stdlib.h> 
 #include <stdio.h>
 #include "xpplim.h"
@@ -22,18 +25,18 @@ typedef struct
 
 extern XPPVEC xpv;
 
-init_alloc_info()
+void init_alloc_info()
 {
   int i;
   xpv.node=NODE+NMarkov;
   xpv.nvec=0; /* this is just for now */
   xpv.x=(double *)malloc((xpv.nvec+xpv.node)*sizeof(double));
-  /* printf(" node=%d nvec=%d \n",xpv.node,xpv.nvec); */
+  /* plintf(" node=%d nvec=%d \n",xpv.node,xpv.nvec); */
   for(i=xpv.node;i<(xpv.nvec+xpv.node);i++)
     xpv.x[i]=0.0;
 }
 
-alloc_meth()
+void alloc_meth()
 {
   int nn=xpv.node+xpv.nvec;
   int sz=30*nn;
@@ -56,10 +59,10 @@ alloc_meth()
   if(WORK)
     free(WORK);
   WORK=(double *)malloc(sz*sizeof(double));
-  /* printf(" I have allocated %d doubles \n",sz); */
+  /* plintf(" I have allocated %d doubles \n",sz); */
 }
     
-init_stor(nrow,ncol)
+void init_stor(nrow,ncol)
 int nrow,ncol;
 {
  int i;
@@ -78,13 +81,13 @@ WORK=NULL;
  
  }
  /*  } */
- /*  printf("col=%d\n",i); */
+ /*  plintf("col=%d\n",i); */
 err_msg("Cannot allocate sufficient storage");
    exit(0);
 }
 
 
-free_storage(ncol)
+void free_storage(ncol)
 int ncol;
 {
   int i;

@@ -1,3 +1,21 @@
+
+#include "graf_par.h"
+
+#include "integrate.h"
+
+#include "menudrive.h"
+#include "aniparse.h"
+#include "arrayplot.h"
+#include "auto_x11.h"
+#include "color.h"
+#include "init_conds.h"
+#include "rubber.h"
+
+#include "auto_x11.h"
+#include "ggets.h"
+#include "graphics.h"
+#include "menu.h"
+#include "pop_list.h"
 #include <stdlib.h> 
 #include <string.h>
 #include <X11/Xlib.h>
@@ -8,14 +26,13 @@
 #include "struct.h"
 #include "browse.h"
 #include "mykeydef.h"
-#define RUBBOX 0
-#define RUBLINE 1
+#include "many_pops.h"
+#include "kinescope.h"
+#include "nullcline.h"
+#include "axes2.h"
+#include "my_ps.h"
 
 
-#define REAL_SMALL 1.e-6
-#define MAX_LEN_SBOX 25
-#define MAXBIFCRV 100
-#define max(a,b) ((a>b) ? a : b)
 double atof();
 NCLINE nclines[MAXNCLINE];
 extern CURVE frz[MAXFRZ];
@@ -28,6 +45,8 @@ extern int PS_FONTSIZE;
 extern int PS_Port;
 extern char PS_FONT[100];
 extern double PS_LW;
+extern BROWSER my_browser;
+extern double x_3d[2],y_3d[2],z_3d[2];
 int PS_Color=0;
 #define SPER 3
 #define UPER 4
@@ -39,21 +58,11 @@ int PS_Color=0;
 #define lsSPER 8
 #define lsUPER 9
 
-typedef struct {
-  char angle[20];
-  char yes[3];
-  double start;
-  double incr;
-  int nclip;
-} MOV3D;
+
 
 MOV3D mov3d = { "theta","N",45,45,7};
 
-typedef struct {
-  float *x[MAXBIFCRV],*y[MAXBIFCRV];
-  int color[MAXBIFCRV],npts[MAXBIFCRV],nbifcrv;
-  Window w;
-} BD;
+
 
 BD my_bd;
 
@@ -78,7 +87,7 @@ char *color_names[]={"WHITE","RED","REDORANGE","ORANGE","YELLOWORANGE",
 		      "BLUE","PURPLE","BLACK"};
 
 
-change_view_com(int com)
+void change_view_com(int com)
 {
  
  if(com==2){
@@ -100,7 +109,7 @@ change_view_com(int com)
 
  
 
- ind_to_sym(ind,str)
+void ind_to_sym(ind,str)
  char *str;
  int ind;
 {
@@ -108,7 +117,7 @@ change_view_com(int com)
  else strcpy(str,uvar_names[ind-1]);
 } 
 
-check_flags()
+void check_flags()
 {
   if(MyGraph->grtype>4)MyGraph->ThreeDFlag=1;
   else MyGraph->ThreeDFlag=0;
@@ -118,7 +127,7 @@ check_flags()
 }
   
 
-get_2d_view(ind)
+void get_2d_view(ind)
 int ind;
 {
  static char *n[]={"*0X-axis","*0Y-axis","Xmin", "Ymin",
@@ -159,7 +168,7 @@ int ind;
 	     sprintf(MyGraph->xlabel,"%s",values[6]);
 	     sprintf(MyGraph->ylabel,"%s",values[7]);
 	      check_windows();
-/*	      printf(" x=%d y=%d xlo=%f ylo=%f xhi=%f yhi=%f \n",
+/*	      plintf(" x=%d y=%d xlo=%f ylo=%f xhi=%f yhi=%f \n",
 		     MyGraph->xv[ind],MyGraph->yv[ind],MyGraph->xlo,
 		     MyGraph->ylo,MyGraph->xhi,MyGraph->yhi);
 */
@@ -168,7 +177,7 @@ int ind;
 }
 	      
 
-axes_opts()
+void axes_opts()
 {
   static char *n[]={"X-origin","Y-origin","Z-origin",
 		   "X-org(1=on)","Y-org(1=on)","Z-org(1=on",
@@ -195,7 +204,9 @@ axes_opts()
  }
    
 }
-get_3d_view(ind)
+
+
+void get_3d_view(ind)
 int ind;
 {
  static char *n[]={"*0X-axis","*0Y-axis", "*0Z-axis",
@@ -253,7 +264,7 @@ int ind;
 	      MyGraph->xhi=atof(values[10]);
 	      MyGraph->yhi=atof(values[12]);
               check_windows();
-	/*      printf("%f %f %f %f %f %f \n %f %f %f %f",
+	/*      plintf("%f %f %f %f %f %f \n %f %f %f %f",
 		     MyGraph->xmin,MyGraph->xmax,
 		     MyGraph->ymin,MyGraph->ymax,
 		     MyGraph->zmin,MyGraph->zmax,
@@ -265,7 +276,7 @@ int ind;
 }
 	      
 
-check_val(x1,x2,xb,xd)
+void check_val(x1,x2,xb,xd)
  double *x1,*x2,*xb,*xd;
 {
  double temp;
@@ -275,7 +286,7 @@ check_val(x1,x2,xb,xd)
 */   
       
  if(*x1==*x2){
-   temp=.05*max(fabs(*x1),1.0);
+   temp=.05*lmax(fabs(*x1),1.0);
    *x1=*x1-temp;
    *x2=*x2+temp;
  }
@@ -291,7 +302,7 @@ check_val(x1,x2,xb,xd)
 }
 
 
-  get_max(index, vmin,vmax)
+void  get_max(index, vmin,vmax)
   double *vmax,*vmin;
   int index;
   {
@@ -309,21 +320,21 @@ check_val(x1,x2,xb,xd)
    *vmin=(double)x0;
    *vmax=(double)x1;
     if(fabs(*vmin-*vmax)<REAL_SMALL){
-      temp=.05*max(fabs(*vmin),1.0);
+      temp=.05*lmax(fabs(*vmin),1.0);
      *vmin=*vmin-temp;
      *vmax=*vmax+temp;
     }
  
  }
  
- pretty(x1,x2)   /* this was always pretty ugly */
+void pretty(x1,x2)   /* this was always pretty ugly */
  double *x1,*x2;
 {
 /* if(fabs(*x1-*x2)<1.e-12)
  *x2=*x1+max(.1*fabs(*x2),1.0); */
 }
 
- corner_cube(xlo,xhi,ylo,yhi)
+void corner_cube(xlo,xhi,ylo,yhi)
  double *xlo,*ylo,*xhi,*yhi;
 {
  float x,y;
@@ -376,10 +387,47 @@ check_val(x1,x2,xb,xd)
  
  
  
+void default_window()
+{
+ 	if(MyGraph->ThreeDFlag){
+	      MyGraph->xmax=x_3d[1];
+    	      MyGraph->ymax=y_3d[1];
+    	      MyGraph->zmax=z_3d[1];
+              MyGraph->xmin=x_3d[0];
+              MyGraph->ymin=y_3d[0];
+              MyGraph->zmin=z_3d[0];  
+	      
+	      pretty(&(MyGraph->ymin),&(MyGraph->ymax));
+	      pretty(&(MyGraph->xmin),&(MyGraph->xmax));
+	      pretty(&(MyGraph->zmin),&(MyGraph->zmax));
+	      corner_cube(&(MyGraph->xlo),&(MyGraph->xhi),&(MyGraph->ylo),&(MyGraph->yhi));
+	      pretty(&(MyGraph->xlo),&(MyGraph->xhi));
+	      pretty(&(MyGraph->ylo),&(MyGraph->yhi));
+	      check_windows(); 
+	}
+	else  
+    	{
+	      MyGraph->xmax=x_3d[1];
+    	      MyGraph->ymax=y_3d[1];
+    	      
+              MyGraph->xmin=x_3d[0];
+              MyGraph->ymin=y_3d[0];
+	      
+	      pretty(&(MyGraph->ymin),&(MyGraph->ymax)); 
+	      pretty(&(MyGraph->xmin),&(MyGraph->xmax));
+	      MyGraph->xlo=MyGraph->xmin;
+	      MyGraph->ylo=MyGraph->ymin;
+	      MyGraph->xhi=MyGraph->xmax;
+	      MyGraph->yhi=MyGraph->ymax;
+	      check_windows();
+	}
+	
+	redraw_the_graph();
+             
+}
 
 
-
- fit_window()
+void fit_window()
 {
   double Mx=-1.e25,My=-1.e25,Mz=-1.e25,mx=-Mx,my=-My,mz=-Mz;
   int i,n=MyGraph->nvars;
@@ -388,16 +436,16 @@ check_val(x1,x2,xb,xd)
     for(i=0;i<n;i++){
       
       get_max(MyGraph->xv[i],&(MyGraph->xmin),&(MyGraph->xmax));
-      Mx=max(MyGraph->xmax,Mx);
-      mx=-max(-MyGraph->xmin,-mx);
+      Mx=lmax(MyGraph->xmax,Mx);
+      mx=-lmax(-MyGraph->xmin,-mx);
       
       get_max(MyGraph->yv[i],&(MyGraph->ymin),&(MyGraph->ymax));
-      My=max(MyGraph->ymax,My);
-      my=-max(-MyGraph->ymin,-my);
+      My=lmax(MyGraph->ymax,My);
+      my=-lmax(-MyGraph->ymin,-my);
       
       get_max(MyGraph->zv[i],&(MyGraph->zmin),&(MyGraph->zmax));
-      Mz=max(MyGraph->zmax,Mz);
-      mz=-max(-MyGraph->zmin,-mz);
+      Mz=lmax(MyGraph->zmax,Mz);
+      mz=-lmax(-MyGraph->zmin,-mz);
       
     }
     MyGraph->xmax=Mx;
@@ -420,12 +468,12 @@ check_val(x1,x2,xb,xd)
     {
       for(i=0;i<n;i++){
 	get_max(MyGraph->xv[i],&(MyGraph->xmin),&(MyGraph->xmax));
-	Mx=max(MyGraph->xmax,Mx);
-	mx=-max(-MyGraph->xmin,-mx);
+	Mx=lmax(MyGraph->xmax,Mx);
+	mx=-lmax(-MyGraph->xmin,-mx);
 	
        get_max(MyGraph->yv[i],&(MyGraph->ymin),&(MyGraph->ymax));
-	My=max(MyGraph->ymax,My);
-	my=-max(-MyGraph->ymin,-my);
+	My=lmax(MyGraph->ymax,My);
+	my=-lmax(-MyGraph->ymin,-my);
 	
       }
       MyGraph->xmax=Mx;
@@ -452,7 +500,7 @@ check_val(x1,x2,xb,xd)
 
 
 
-check_windows()
+void check_windows()
 {
  double zip,zap;
  check_val(&MyGraph->xmin,&MyGraph->xmax,&MyGraph->xbar,&MyGraph->dx);
@@ -462,7 +510,7 @@ check_windows()
  check_val(&MyGraph->ylo,&MyGraph->yhi,&zip,&zap);
 } 
 	
-user_window()
+void user_window()
 {
  static char *n[]={"X Lo","X Hi","Y Lo","Y Hi"};
  char values[4][MAX_LEN_SBOX];
@@ -489,7 +537,7 @@ user_window()
  redraw_the_graph();
 }
 
-xi_vs_t() /*  a short cut   */
+void xi_vs_t() /*  a short cut   */
 {
  char name[20],value[20];
  int i=MyGraph->yv[0];
@@ -530,7 +578,7 @@ xi_vs_t() /*  a short cut   */
 
 
 
-redraw_the_graph()
+void redraw_the_graph()
 {
  blank_screen(draw_win);
  set_normal_scale();
@@ -543,7 +591,7 @@ redraw_the_graph()
  if(MyGraph->Nullrestore)restore_nullclines();
 }
 
-movie_rot(start,increment,nclip,angle)
+void movie_rot(start,increment,nclip,angle)
      int nclip,angle;
      double start,increment;
 {
@@ -563,7 +611,7 @@ movie_rot(start,increment,nclip,angle)
   MyGraph->Phi=phiold;
 }
 
-test_rot()
+void test_rot()
 {
  int done=0;
  int kp;
@@ -607,16 +655,17 @@ test_rot()
  redraw_the_graph();
    
 }
-get_3d_par_com()
+
+void get_3d_par_com()
 {
   
 
  static char *n[]={"Persp (1=On)","ZPlane","ZView","Theta","Phi","Movie(Y/N)",
                    "Vary (theta/phi)","Start angle", "Increment",
 		   "Number increments"};
- char values[10][MAX_LEN_SBOX],anglename[20],ch;
+ char values[10][MAX_LEN_SBOX];
  int status;
- Window temp=main_win;
+ 
  int nclip=8,angle=0;
  double start,increment=45; 
   if(MyGraph->grtype<5)return;
@@ -665,15 +714,15 @@ get_3d_par_com()
 }
 
 
-get_3d_par_noper()
+void get_3d_par_noper()
 {
   
  static char *n[]={"Theta","Phi","Movie(Y/N)",
                    "Vary (theta/phi)","Start angle", "Increment",
 		   "Number increments"};
- char values[10][MAX_LEN_SBOX],anglename[20],ch;
+ char values[10][MAX_LEN_SBOX];
  int status;
- Window temp=main_win;
+
  int nclip=8,angle=0;
  double start,increment=45; 
   if(MyGraph->grtype<5)return;
@@ -719,18 +768,31 @@ get_3d_par_noper()
 }
 
 
-window_zoom_com(int c)
+void window_zoom_com(int c)
 {
  int i1,i2,j1,j2;
   switch(c){
 	    case 0:user_window(); break;
-	    case 1:if(rubber(&i1,&j1,&i2,&j2,draw_win,RUBBOX)==0)break;
+	    case 1:
+	    
+	   /*  XSelectInput(display,w,
+   KeyPressMask|ButtonPressMask|ButtonReleaseMask|
+		PointerMotionMask|ButtonMotionMask|ExposureMask);
+	    	   while(1)
+		   {
+		   	XNextEvent(display,&ev);
+   			switch(ev.type){ 
+		   } */
+	    	if(rubber(&i1,&j1,&i2,&j2,draw_win,RUBBOX)==0)break;
 		     zoom_in(i1,j1,i2,j2);
+		 
 		     break;
        	    case 2: if(rubber(&i1,&j1,&i2,&j2,draw_win,RUBBOX)==0)break;
 		     zoom_out(i1,j1,i2,j2);
 		     break;
  	    case 3: fit_window();
+		      break; 
+	    case 4: default_window();
 		      break;
             }
  set_normal_scale();
@@ -738,18 +800,39 @@ window_zoom_com(int c)
 
 
 
-zoom_in(i1,j1,i2,j2)
+void zoom_in(i1,j1,i2,j2)
 int i1,j1,i2,j2;
 {
  float x1,y1,x2,y2;
+ float dx=MyGraph->xhi-MyGraph->xlo;
+ float dy=MyGraph->yhi-MyGraph->ylo;
  scale_to_real(i1,j1,&x1,&y1);
  scale_to_real(i2,j2,&x2,&y2);
-             
+   if(x1==x2||y1==y2)
+   {
+   
+   	if (dx < 0){dx=-dx;}
+	if (dy < 0){dy=-dy;}
+	dx = dx/2;
+	dy = dy/2;
+	
+	/*Shrink by thirds and center (track) about the point clicked*/
+	MyGraph->xlo=x1-dx/2;
+	MyGraph->xhi=x1+dx/2;
+
+	MyGraph->ylo=y1-dy/2;
+	MyGraph->yhi=y1+dy/2;
+ 	
+
+ }
+ else
+ {           
 	      MyGraph->xlo=x1;
 	      MyGraph->ylo=y1;
 	      MyGraph->xhi=x2;
 	      MyGraph->yhi=y2;
-	      if(MyGraph->grtype<5){
+  }
+  	if(MyGraph->grtype<5){
 	      MyGraph->xmin=MyGraph->xlo;
 	      MyGraph->xmax=MyGraph->xhi;
 	      MyGraph->ymin=MyGraph->ylo;
@@ -760,38 +843,62 @@ int i1,j1,i2,j2;
 	      draw_help(); 
 }
 
-zoom_out(i1,j1,i2,j2)
+void zoom_out(i1,j1,i2,j2)
+int i1,j1,i2,j2;
 {
+ 
  float x1,y1,x2,y2;
  float bx,mux,by,muy;
  float dx=MyGraph->xhi-MyGraph->xlo;
  float dy=MyGraph->yhi-MyGraph->ylo;
  scale_to_real(i1,j1,&x1,&y1);
  scale_to_real(i2,j2,&x2,&y2);
- if(x1>x2){bx=x1;x1=x2;x2=bx;}
- if(y1>y2){by=y1;y1=y2;y2=by;}
- if(x1==x2||y1==y2)return;
+
  /*
- printf("%f %f %f %f \n ",x1,y1,x2,y2);
- printf("%f %f %f %f \n",MyGraph->xlo,MyGraph->ylo,MyGraph->xhi,MyGraph->yhi);
-
+ if(x1==x2||y1==y2)return;
  */
- bx=dx*dx/(x2-x1);
- mux=(x1-MyGraph->xlo)/dx;
- MyGraph->xlo=MyGraph->xlo-bx*mux;
- MyGraph->xhi=MyGraph->xlo+bx;
+ /*
+ plintf("%f %f %f %f \n ",x1,y1,x2,y2);
+ plintf("%f %f %f %f \n",MyGraph->xlo,MyGraph->ylo,MyGraph->xhi,MyGraph->yhi);
+*/
+ if(x1==x2||y1==y2)
+ {
  
- by=dy*dy/(y2-y1);
- muy=(y1-MyGraph->ylo)/dy;
- MyGraph->ylo=MyGraph->ylo-by*muy;
- MyGraph->yhi=MyGraph->ylo+by;
+ 	if (dx < 0){dx=-dx;}
+	if (dy < 0){dy=-dy;}
+	/*Grow by thirds and center (track) about the point clicked*/
+	dx = dx*2;
+	dy = dy*2;
+	
+	MyGraph->xlo=x1-dx/2;
+	MyGraph->xhi=x1+dx/2;
 
-    if(MyGraph->grtype<5){
-	      MyGraph->xmin=MyGraph->xlo;
-	      MyGraph->xmax=MyGraph->xhi;
-	      MyGraph->ymin=MyGraph->ylo;
-	      MyGraph->ymax=MyGraph->yhi;
-	      }
+	MyGraph->ylo=y1-dy/2;
+	MyGraph->yhi=y1+dy/2;
+ }
+ else
+ {
+  	if(x1>x2){bx=x1;x1=x2;x2=bx;}
+ 	if(y1>y2){by=y1;y1=y2;y2=by;}
+	
+	 bx=dx*dx/(x2-x1);
+	 mux=(x1-MyGraph->xlo)/dx;
+	 MyGraph->xlo=MyGraph->xlo-bx*mux;
+	 MyGraph->xhi=MyGraph->xlo+bx;
+
+	 by=dy*dy/(y2-y1);
+	 muy=(y1-MyGraph->ylo)/dy;
+	 MyGraph->ylo=MyGraph->ylo-by*muy;
+	 MyGraph->yhi=MyGraph->ylo+by;
+
+	    
+}
+	if(MyGraph->grtype<5){
+		      MyGraph->xmin=MyGraph->xlo;
+		      MyGraph->xmax=MyGraph->xhi;
+		      MyGraph->ymin=MyGraph->ylo;
+		      MyGraph->ymax=MyGraph->yhi;
+		      }
 	      check_windows();
               redraw_the_graph();
               draw_help(); 
@@ -800,7 +907,7 @@ zoom_out(i1,j1,i2,j2)
 
 
 
-graph_all(list,n,type)
+void graph_all(list,n,type)
      int *list,n,type;
 {
   int i;
@@ -833,7 +940,8 @@ graph_all(list,n,type)
 }
 
 
-find_color(in)
+int find_color(in)
+int in;
 {
  int i;
  for(i=0;i<=10;i++)
@@ -841,7 +949,7 @@ find_color(in)
  return(0);
 }
 
-alter_curve(title,in_it,n)
+int alter_curve(title,in_it,n)
 char *title;
 int in_it,n;
 {
@@ -884,7 +992,7 @@ int in_it,n;
 }
 
 
-edit_curve()
+void edit_curve()
 {
  char bob[20];
  int crv=0;
@@ -898,14 +1006,14 @@ edit_curve()
    }
 }
 
-new_curve()
+void new_curve()
 {
  if(alter_curve("New Curve",0,MyGraph->nvars))
    MyGraph->nvars=MyGraph->nvars+1;
   
  }  
 
-create_ps()
+void create_ps()
 {
  char filename[256];
  static char *nn[]={"BW-0/Color-1","Land(0)/Port(1)","Axes fontsize","Font","Linewidth"};
@@ -948,12 +1056,13 @@ ps_test()
 */
 
 
-change_cmap_com(int i)
+void change_cmap_com(int i)
 {
       NewColormap(i);
 
 }
-freeze_com(int c)
+
+void freeze_com(int c)
 {
 
  switch(c){
@@ -985,7 +1094,7 @@ freeze_com(int c)
  }
 }
 
-set_key(x,y)
+void set_key(x,y)
      int x,y;
 {
   float xp,yp;
@@ -995,7 +1104,7 @@ set_key(x,y)
   FreezeKeyFlag=1;
 }
 
-draw_freeze_key()
+void draw_freeze_key()
 {
   int ix,iy;
   int i,y0;
@@ -1017,7 +1126,7 @@ draw_freeze_key()
   }
 }
 
-key_frz_com(int c)
+void key_frz_com(int c)
 {
   int x,y;
   switch(c){
@@ -1034,7 +1143,7 @@ key_frz_com(int c)
   }
 }
   
-edit_frz()
+void edit_frz()
 {
  int i;
  i=get_frz_index(draw_win);
@@ -1043,7 +1152,7 @@ edit_frz()
 }
 
 
-delete_frz_crv(i)
+void delete_frz_crv(i)
      int i;
 {
   if(frz[i].use==0)return;
@@ -1056,7 +1165,7 @@ delete_frz_crv(i)
     free(frz[i].zv);
 }
 
-delete_frz()
+void delete_frz()
 {
  int i;
  i=get_frz_index(draw_win);
@@ -1065,7 +1174,7 @@ delete_frz()
 }
 
 
-kill_frz()
+void kill_frz()
 {
   int i;
   for(i=0;i<MAXFRZ;i++){
@@ -1073,26 +1182,29 @@ kill_frz()
       delete_frz_crv(i);
   }
 }
-freeze_crv(ind)
+
+int freeze_crv(ind)
      int ind;
 {
  int i;
  i=create_crv(ind);
  if(i<0)return(-1);
  edit_frz_crv(i);
+ return(1);
 }
 
-auto_freeze_it()
+void auto_freeze_it()
 {
   if(AutoFreezeFlag==0)return;
   create_crv(0);
 }
-create_crv(ind)
+
+int create_crv(ind)
 int ind;
 {
-  int i,flag=0,type,j;
+  int i,type,j;
   int ix,iy,iz;
-  char name[20];
+
   for(i=0;i<MAXFRZ;i++){
     if(frz[i].use==0){
       ix=MyGraph->xv[ind];
@@ -1106,7 +1218,7 @@ int ind;
       frz[i].yv=(float *) malloc(sizeof(float)*my_browser.maxrow);
       if((type=MyGraph->grtype)>0)
 	frz[i].zv=(float *)malloc(sizeof(float)*my_browser.maxrow);
-      if(type>0&&frz[i].zv==NULL|| type==0&&frz[i].yv==NULL){
+      if ((type>0&&frz[i].zv==NULL)|| (type==0&&frz[i].yv==NULL)){
 	err_msg("Cant allocate storage for curve");
 	return(-1);
       }
@@ -1130,7 +1242,7 @@ int ind;
 }	
 	
 
-edit_frz_crv(i)
+void edit_frz_crv(i)
      int i;
 {
  static char *nn[]={"*4Color","Key","Name"};
@@ -1147,7 +1259,7 @@ edit_frz_crv(i)
  }
 }
 
-draw_frozen_cline(index,w)
+void draw_frozen_cline(index,w)
      int index;
      Window w;
 {
@@ -1155,7 +1267,7 @@ draw_frozen_cline(index,w)
     return;
 }
 
-draw_freeze(w)
+void draw_freeze(w)
 Window w;
 {
   int i,j,type=MyGraph->grtype,lt=0;
@@ -1208,15 +1320,15 @@ Window w;
 
 /*  Bifurcation curve importing */
 
-init_bd()
+void init_bd()
 {
  my_bd.nbifcrv=0;
 }
 
-draw_bd(w)
+void draw_bd(w)
      Window w;
 {
- int i,j,type=MyGraph->grtype,len;
+ int i,j,len;
  float oldxpl,oldypl,xpl,ypl,*x,*y;
  if(w==my_bd.w&&my_bd.nbifcrv>0){
    for(i=0;i<my_bd.nbifcrv;i++){
@@ -1237,7 +1349,7 @@ draw_bd(w)
  }
 }
 
-free_bd()
+void free_bd()
 {
   int i;
   if(my_bd.nbifcrv>0){
@@ -1250,7 +1362,7 @@ free_bd()
 }
 
 
-add_bd_crv(x,y,len,type,ncrv)
+void add_bd_crv(x,y,len,type,ncrv)
      float *x,*y;
      int len,ncrv,type;
 {
@@ -1270,7 +1382,7 @@ add_bd_crv(x,y,len,type,ncrv)
   my_bd.color[ncrv]=i;
 }
 
-frz_bd()
+void frz_bd()
 {
   FILE *fp;
   char filename[256];
@@ -1284,10 +1396,10 @@ frz_bd()
   }
   read_bd(fp);
 }
-read_bd(fp)
+void read_bd(fp)
      FILE *fp;
 {
-  int oldtype,type,oldbr,br,ncrv=0,len,i,j;
+  int oldtype,type,oldbr,br,ncrv=0,len;
   float x[8000],ylo[8000],yhi[8000];
   len=0;
   fscanf(fp,"%g %g %g %d %d ",&x[len],&ylo[len],&yhi[len],&oldtype,&oldbr);
@@ -1323,13 +1435,13 @@ read_bd(fp)
        ncrv++;
      }
    }
-  printf( " got %d bifurcation curves\n",ncrv);
+  plintf( " got %d bifurcation curves\n",ncrv);
  fclose(fp);
  my_bd.nbifcrv=ncrv;
  my_bd.w=draw_win;
 } 
 
-get_frz_index(w)
+int get_frz_index(w)
      Window w;
 {
   char *n[MAXFRZ];
@@ -1362,7 +1474,7 @@ get_frz_index(w)
 
 
 
-export_graf_data()
+void export_graf_data()
 {
  FILE *fp;
  char filename[256];
@@ -1378,7 +1490,7 @@ if((fp=fopen(filename,"w"))==NULL){
  fclose(fp);
 }
 
-add_a_curve_com(int c)
+void add_a_curve_com(int c)
 {
 
  switch(c){

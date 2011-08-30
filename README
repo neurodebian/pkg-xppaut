@@ -1,19 +1,5 @@
 		README
-XPPAUT 5.98
 
-1. minor bug fixes
-
-2. GIF output for array plots
-
-3. saving/loading parameters only
-   when changing parameters using the minicommand line (top of main window)
-   type !load filename
-   or
-   type !save filename
-   to read in values for parameters
-
-
-	
 Quick Install:
 
 In Linux do the following:

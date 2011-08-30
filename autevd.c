@@ -1,8 +1,13 @@
+#include "autevd.h" 
 #include <stdlib.h> 
 #include <math.h>
 #include <stdio.h>
 
 
+#include "auto_nox.h"
+#include "diagram.h"
+#include "diagram.h"
+#include "gear.h"
 
 #include "auto_define.h"
 #include "autlim.h"
@@ -17,13 +22,13 @@
 
 extern int AutoTwoParam;
 int DiagFlag=0;
-typedef struct {double r,i;} dcomplex;
+/*typedef struct {double r,i;} dcomplex;
 
 typedef struct {
   int pt,br;
   double evr[NAUTO],evi[NAUTO];
 } EIGVAL;
-
+*/
 EIGVAL my_ev;
 
 double sign();
@@ -34,7 +39,7 @@ dcomplex *z;
  return(z->r);
  
 }
-send_eigen(ibr,ntot,n,ev)
+void send_eigen(ibr,ntot,n,ev)
      int ibr,ntot,n;
      dcomplex *ev;
 {
@@ -51,7 +56,7 @@ send_eigen(ibr,ntot,n,ev)
   }
 }
 
-send_mult(ibr,ntot,n,ev)
+void send_mult(ibr,ntot,n,ev)
      int ibr,ntot,n;
      dcomplex *ev;
 {
@@ -79,7 +84,7 @@ int get_bif_type(ibr,ntot,lab)
   /* if(lab>0)type=SPECIAL; */
   return(type);
 }
-int addbif_(ibr, ntot, itp, lab, npar,a, uhigh, ulow, u0, ubar,ndim)
+void addbif_(ibr, ntot, itp, lab, npar,a, uhigh, ulow, u0, ubar,ndim)
      int *ibr,*ntot,*itp,*lab,*ndim,*npar;
      double *a,*uhigh,*ulow,*u0,*ubar;
 {
@@ -87,6 +92,7 @@ int addbif_(ibr, ntot, itp, lab, npar,a, uhigh, ulow, u0, ubar,ndim)
   int icp1=blbcn_1.icp[0]-1,icp2=blbcn_1.icp[1]-1;
   double    per=blbcn_1.par[10];
   type=get_bif_type(*ibr,*ntot,*lab);
+
   if(my_ev.br==abs(*ibr)&&my_ev.pt==abs(*ntot))evflag=1;
   if(*ntot==1)
     add_point(blbcn_1.par,per,uhigh,ulow,ubar,*a,type,0,*lab,
@@ -133,12 +139,11 @@ int eigrf_(a,n,m,ecv,work,ier)
   }
 return 0;
 }
-
-init_auto(ndim,nbc,ips,irs,ilp,ntst,isp,isw,nmx,npr,
+void init_auto(ndim,nbc,ips,irs,ilp,ntst,isp,isw,nmx,npr,
 	  ds,dsmin,dsmax,rl0,rl1,a0,a1,
 	  ip1,ip2,ip3,ip4,ip5,nuzr,epsl,epsu,epss,ncol)
      int ndim,nbc,ips,irs,ilp,ntst,isp,isw,nmx,npr,ip1,ip2;
-     int nuzr,ncol;
+     int nuzr,ncol,ip3,ip4,ip5;
      double ds,dsmin,dsmax,rl0,rl1,a0,a1,epsl,epsu,epss;
 {
   int i;

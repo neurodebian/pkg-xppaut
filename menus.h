@@ -1,3 +1,9 @@
+#ifndef _menus_h_
+#define _menus_h_
+
+#include <X11/Xlib.h>
+
+
 #define MAIN_MENU 0
 #define FILE_MENU 1
 #define NUM_MENU 2
@@ -143,7 +149,8 @@ char *wind_hint[]={
 "Manually choose 2D view",
 "Zoom into with mouse",
 "Zoom out with mouse",
-"Let XPP automatically choose window"
+"Let XPP automatically choose window",
+"Reset to default view"
 };
 
 char *flow_hint[]={
@@ -335,11 +342,13 @@ char *aaxes_hint[]={
 "Plot period of orbit vs parameter",
 "Set up two-parameter bifurcation",
 "Zoom in with mouse",
+"Zoom out with mouse",
 "Recall last 1 parameter plot",
 "Recall last 2 parameter plot",
 "Let XPP determine the bounds of the plot",
 "Plot frequency vs parameter",
-"Plot average of orbit vs parameter"
+"Plot average of orbit vs parameter",
+"Return to default bounds of the plot"
 };
 
 char *afile_hint[]={
@@ -353,6 +362,17 @@ char *afile_hint[]={
 "Write all the info for the whole diagram!",
 "Save initial data for whole diagram",
 "Toggle automatic redraw"
+};
+
+char *aspecial_hint[]={
+"Bifurcation or branch point",
+"Endpoint of a branch",
+"Hopf bifurcation point",
+"Limit point or turning point of a branch",
+"Failure to converge",
+"Period doubling bifurcation",
+"Torus bifurcation from a periodic",
+"User defined function",
 };
 
 char *arun_hint[]={
@@ -389,5 +409,5 @@ char *browse_hint[]={
 
 
 
-
+#endif
 

@@ -1,3 +1,12 @@
+#include "kinescope.h"
+
+
+#include "scrngif.h"
+#include "pop_list.h"
+#include "aniparse.h"
+#include "browse.h"
+
+#include "ggets.h"
 #include <stdlib.h> 
 /*    Kinescope for X  windows       */
 #include <X11/Xlib.h>
@@ -7,7 +16,9 @@
 /* #include <X11/bitmaps/icon> */
 #include <stdio.h>
 #include <sys/time.h>
-
+#include <X11/keysym.h>
+#include <X11/keysymdef.h>
+#include "mykeydef.h"
 extern Display *display;
 extern Window draw_win,main_win,info_pop;
 extern int DCURY;
@@ -25,7 +36,7 @@ typedef struct {
 
 MOVIE movie[MAXFILM];
 
-do_movie_com(int c)
+void do_movie_com(int c)
 
 {
 
@@ -49,12 +60,15 @@ do_movie_com(int c)
 		        break;
               case 5: make_anigif();
 		        break;
+ case 6: /* test_keys(); */
+   break;
 	    }
       
   }
 
 
-reset_film()
+
+void reset_film()
 {
  int i;
  if(mov_ind==0)return;
@@ -63,7 +77,8 @@ reset_film()
  }
 
  
-film_clip()
+
+int film_clip()
 {
  int x,y;
  unsigned int h,w,bw,d;
@@ -79,45 +94,75 @@ film_clip()
  return 1;
 }
 
-play_back()
+int show_frame(int i, int h, int w)
 {
-int x,y;
- unsigned int h,w,bw,d;
- char ch;
- Window root;
- XEvent ev;
- int i=0;
- XGetGeometry(display,draw_win,&root,&x,&y,&w,&h,&bw,&d);
- if(mov_ind==0)return;
- if(h<movie[i].h||w<movie[i].w){
-	too_small();
-	return;
-	}
+  if(h<movie[i].h||w<movie[i].w){
+    too_small();
+    return 1;
+  }
+  XCopyArea(display,movie[i].xi,draw_win,gc_graph,0,0,w,h,0,0);
+  XFlush(display);
 
- XCopyArea(display,movie[i].xi,draw_win,gc_graph,0,0,w,h,0,0);
- XFlush(display);
- while(1){
-          XNextEvent(display,&ev);
-          switch(ev.type){
-			  case ButtonPress:
-				 i++;
-			         if(i>=mov_ind)i=0;
-				  if(h<movie[i].h||w<movie[i].w){
-					too_small();
-						return;
-					}
-			  XCopyArea(display,movie[i].xi,draw_win,gc_graph,0,0,w,h,0,0);
-			  XFlush(display);
-			 break;
-			case KeyPress:
-			      if(get_key_press(&ev)==27)return;
-			   
-		         break;
-                        }
+  return 0;
+}
 
-		}
-  }	         
-save_kine()
+void play_back()
+{
+  int x,y;
+  unsigned int h,w,bw,d;
+
+  Window root;
+  XEvent ev;
+  int i=0;
+  XGetGeometry(display,draw_win,&root,&x,&y,&w,&h,&bw,&d);
+  if(mov_ind==0)return;
+  if(h<movie[i].h||w<movie[i].w){
+    too_small();
+    return;
+  }
+  
+  XCopyArea(display,movie[i].xi,draw_win,gc_graph,0,0,w,h,0,0);
+  XFlush(display);
+  while(1){
+    XNextEvent(display,&ev);
+    switch(ev.type)
+      {
+      case ButtonPress:
+	i++;
+	if(i>=mov_ind)i=0;
+	if(show_frame(i,h,w))return;
+	break;
+      case KeyPress:
+	switch(get_key_press(&ev)){
+	  case ESC:
+	    return;
+	  case RIGHT:
+	    i++;
+	    if(i>=mov_ind)i=0;
+	    if(show_frame(i,h,w))return;
+	    break;
+	  case  LEFT:
+	    i--;
+	    if(i<0)i=mov_ind-1;
+	    if(show_frame(i,h,w))return;
+	    break;
+	  case  HOME:
+	    i=0;
+	    if(show_frame(i,h,w))return;
+	    break;
+	  case END:
+	    i=mov_ind-1;
+	    if(show_frame(i,h,w))return;
+	    break;
+	  }
+	  
+      }
+  }
+}
+	       		
+
+     
+void save_kine()
 {
  char base[128];
  int fmat=1;
@@ -134,7 +179,8 @@ new_int("format:1-ppm,2-gif",&fmat);
   
 
 
-make_anigif()
+     
+void make_anigif()
 {
   int i=0;
   int x,y;
@@ -157,20 +203,23 @@ make_anigif()
    }
  }
  fp=fopen("anim.gif","wb");
+ set_global_map(1);
   for(i=0;i<mov_ind;i++){
     XCopyArea(display,movie[i].xi,draw_win,gc_graph,0,0,w,h,0,0);
     XFlush(display);
-    add_ani_gif(draw_win,fp,i);
+    /* add_ani_gif(draw_win,fp,i); */
+        add_ani_gif(movie[i].xi,fp,i);
   }
   
  end_ani_gif(fp);
    fclose(fp);
-
+   set_global_map(0);
 
 }
 
 
-save_movie(basename,fmat)
+     
+void save_movie(basename,fmat)
      char *basename;
      int fmat;
 {
@@ -179,7 +228,7 @@ save_movie(basename,fmat)
   int x,y;
   FILE *fp;
   Window root;
-  int pngflag=0;
+
   unsigned int h,w,bw,d;
   XGetGeometry(display,draw_win,&root,&x,&y,&w,&h,&bw,&d);
   if(mov_ind==0)return;
@@ -210,12 +259,15 @@ save_movie(basename,fmat)
   }
 
 }
- auto_play()
+ 
+
+     
+void  auto_play()
 {
  int x,y;
  unsigned int h,w,bw,d,key;
  Window root;
- double new,old;
+ 
   int dt=20;
   int smax=500;
  XEvent ev;
@@ -290,7 +342,7 @@ save_movie(basename,fmat)
 
        
 
- too_small()
+void too_small()
  {
   respond_box("Okay","Window too small for film!");
   }

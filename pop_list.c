@@ -1,120 +1,11 @@
-#include <stdlib.h> 
-#include <string.h>
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include <X11/cursorfont.h>
-#include <stdio.h>
-#include "xpplim.h"
+#include "pop_list.h"
 
-#define MAX_N_SBOX 20
-#define MAX_LEN_SBOX 25 
+#include "many_pops.h"
+#include "ggets.h"
+#include "menudrive.h"
 
 
-#define FORGET_ALL 0
-#define DONE_ALL 2
-#define FORGET_THIS 3
-#define DONE_THIS 1
-
-
-
-
-
-#define EV_MASK (ButtonPressMask 	|\
-		KeyPressMask		|\
-		ExposureMask		|\
-		StructureNotifyMask)	
-
-#define BUT_MASK (ButtonPressMask 	|\
-		KeyPressMask		|\
-		ExposureMask		|\
-		StructureNotifyMask	|\
-		EnterWindowMask		|\
-		LeaveWindowMask)	
-
-
-
-	
-	
-
-
-extern Display *display;
-extern int DisplayWidth,DisplayHeight;
-extern int screen;
-extern Atom deleteWindowAtom;
-extern Window main_win,info_pop,draw_win;
-extern int DCURY,DCURX,CURY_OFF,DCURXs,DCURYs,CURY_OFFs,xor_flag;
-extern GC gc,small_gc;
-extern unsigned int MyBackColor,MyForeColor;
-
-extern int TipsFlag;
-char *get_next(),*get_first();
-
-Window make_window();
-
-/*  This is a string box widget which handles a list of 
-	editable strings  
- */
-
-typedef struct {
-		Window base,ok,cancel;
-		Window win[MAX_N_SBOX];
-		char name[MAX_N_SBOX][MAX_LEN_SBOX],
-		     value[MAX_N_SBOX][MAX_LEN_SBOX];
-		int n,hot;
-                int hgt,wid;
-                int hh[MAX_N_SBOX];
-		} STRING_BOX;
-
-
-typedef struct {
-               char **list;
-               int n;
-}  SCRBOX_LIST;
-
-extern int NUPAR,NEQ,NODE,NMarkov;
-extern char  upar_names[MAXPAR][11],uvar_names[MAXODE][12];
-extern  char *color_names[];
-SCRBOX_LIST scrbox_list[10];
-
-
-/*  This is a new improved pop_up widget */
-typedef struct {
-		Window base,tit;
-		Window *w;
-		char *title;
-		char **entries;
-                char **hints;
-		int n,max;
-		char *key;
-		int hot;
-		} POP_UP;
-		
-   
-typedef struct {
-               Window base,slide,close,text;
-               int i0;
-               int exist,len,nlines;
-               char **list;
-               } TEXTWIN;
-
-typedef struct {
-              Window base,slide;
-              Window *w;
-              int nw,nent,i0;
-              int len,exist;
-              char **list;
-              } SCROLLBOX;
-
-TEXTWIN mytext;
-#define SB_PLOTTABLE 0
-#define SB_VARIABLE 1
-#define SB_PARAMETER 2
-#define SB_PARVAR 3
-#define SB_COLOR 4
-#define SB_MARKER 5
-#define SB_METHOD 6
-
-set_window_title(Window win,char *string)
+void set_window_title(Window win,char *string)
 {
  XTextProperty wname,iname;
   XStringListToTextProperty(&string,1,&wname);
@@ -124,7 +15,7 @@ set_window_title(Window win,char *string)
 
 /* these are the standard lists that are possible */
 
-make_scrbox_lists()
+void make_scrbox_lists()
 {
  int i,n;
  static char *method[]={"Discrete","Euler","Mod. Euler",
@@ -195,7 +86,7 @@ scrbox_list[3].n=n;
  
 }
  
-get_x_coord_win(Window win)
+int get_x_coord_win(Window win)
 {
  int x,y;
  unsigned int h,w,bw,d;
@@ -203,7 +94,8 @@ get_x_coord_win(Window win)
  XGetGeometry(display,win,&root,&x,&y,&w,&h,&bw,&d);
  return(x);
 }
-destroy_scroll_box(SCROLLBOX *sb)
+
+void destroy_scroll_box(SCROLLBOX *sb)
 {
   if(sb->exist==1){
     sb->exist=0;
@@ -213,7 +105,7 @@ destroy_scroll_box(SCROLLBOX *sb)
 }
 
 
-create_scroll_box(Window root,int x0,int y0,int nent,
+void create_scroll_box(Window root,int x0,int y0,int nent,
 		  int nw,char **list,SCROLLBOX *sb)
 {
  int slen=0;
@@ -226,7 +118,7 @@ create_scroll_box(Window root,int x0,int y0,int nent,
  ww=slen*DCURXs+DCURXs/2;
  hgt=hw*(nw+1);
  len=hgt-6;
- sb->base=make_window(root,x0,y0,wid,hgt,2);
+ sb->base=(Window)make_plain_window(root,x0,y0,wid,hgt,2);
  sb->w=(Window *)malloc(nw*sizeof(Window));
  for(i=0;i<nw;i++)
    sb->w[i]=make_window(sb->base,1,hw/2+i*hw,ww,DCURYs,0);
@@ -240,10 +132,10 @@ create_scroll_box(Window root,int x0,int y0,int nent,
  sb->exist=1;
 }
  
-expose_scroll_box(Window w,SCROLLBOX sb)
+void expose_scroll_box(Window w,SCROLLBOX sb)
 {
  int i;
- int flag=-1;
+ /*int flag=-1;*/
  for(i=0;i<sb.nw;i++)
    if(w==sb.w[i]){
      redraw_scroll_box(sb);
@@ -254,7 +146,7 @@ expose_scroll_box(Window w,SCROLLBOX sb)
 }
 
 
-redraw_scroll_box(SCROLLBOX sb)
+void redraw_scroll_box(SCROLLBOX sb)
 {
   int i,p;
   int i0=sb.i0;
@@ -272,7 +164,7 @@ redraw_scroll_box(SCROLLBOX sb)
   }
 }
 
-crossing_scroll_box(Window w, int c,SCROLLBOX sb)
+void crossing_scroll_box(Window w, int c,SCROLLBOX sb)
 {
  int i;
  for(i=0;i<sb.nw;i++){
@@ -283,7 +175,7 @@ crossing_scroll_box(Window w, int c,SCROLLBOX sb)
  }
 }
 
-scroll_box_motion(XEvent ev,SCROLLBOX *sb)
+int scroll_box_motion(XEvent ev,SCROLLBOX *sb)
 {
   int x;
   Window w;
@@ -301,8 +193,10 @@ scroll_box_motion(XEvent ev,SCROLLBOX *sb)
    sb->i0=pos;
    redraw_scroll_box(*sb);
   }
+  return 1;
 }
-select_scroll_item(Window w,SCROLLBOX sb)
+
+int select_scroll_item(Window w,SCROLLBOX sb)
 {
   int i;
   int item=-1;
@@ -315,12 +209,12 @@ select_scroll_item(Window w,SCROLLBOX sb)
   return -1;
 }
 
-scroll_popup(STRING_BOX *sb,SCROLLBOX *scrb)
+void scroll_popup(STRING_BOX *sb,SCROLLBOX *scrb)
 {
   int hw=DCURYs+4;
   int ihot=sb->hot;
   int id=sb->hh[ihot];
-  int i,xx;
+  int xx;
   int maxhgt=sb->hgt;
   int maxw;
   if(id<0)return; /* shouldnt happen */
@@ -335,7 +229,7 @@ scroll_popup(STRING_BOX *sb,SCROLLBOX *scrb)
 
 }
 
-do_string_box(n,row,col,title,names,values,maxchar)
+int do_string_box(n,row,col,title,names,values,maxchar)
      int n,row,col,maxchar;
      char **names,values[][MAX_LEN_SBOX],*title;
 
@@ -382,15 +276,15 @@ do_string_box(n,row,col,title,names,values,maxchar)
 	
 }
 
-expose_sbox(sb,w,pos,col)
+void expose_sbox(sb,w,pos,col)
 STRING_BOX sb;
 Window w;
 int pos,col;
 {
  int i,flag;
  
- if(w==sb.ok){XDrawString(display,w,gc,0,CURY_OFF,"Ok",2);return;}
- if(w==sb.cancel){XDrawString(display,w,gc,0,CURY_OFF,"Cancel",6);
+ if(w==sb.ok){XDrawString(display,w,gc,5,CURY_OFF,"Ok",2);return;}
+ if(w==sb.cancel){XDrawString(display,w,gc,5,CURY_OFF,"Cancel",6);
 		   return; 
                  }
  for(i=0;i<sb.n;i++){
@@ -401,7 +295,7 @@ int pos,col;
 }
 }
 
-do_hilite_text(name,value,flag,w,pos,col)
+void do_hilite_text(name,value,flag,w,pos,col)
 char *name,*value;
 Window w;
 int pos,col;
@@ -424,7 +318,7 @@ int flag;
 }
 
   
-reset_hot(inew,sb)
+void reset_hot(inew,sb)
 int inew;
 STRING_BOX *sb;
 {
@@ -438,7 +332,7 @@ STRING_BOX *sb;
 		strlen(sb->value[i]),0);
  }
 
- new_editable(sb,inew,pos,col,done,w)
+void new_editable(sb,inew,pos,col,done,w)
  int inew;
  STRING_BOX *sb;
  int *pos,*col,*done;
@@ -452,16 +346,18 @@ STRING_BOX *sb;
   *w=sb->win[inew];
   }
  
-set_sbox_item(STRING_BOX *sb,int item)
+void set_sbox_item(STRING_BOX *sb,int item)
 {
   int i=sb->hot;
   int id=sb->hh[i];
   if(id<0)return;
   strcpy(sb->value[i],scrbox_list[id].list[item]);
-  /* printf("setting %d to be %d in list %d \n",
+  /* plintf("setting %d to be %d in list %d \n",
      i,item, sb->hh[i]); */
 }
- s_box_event_loop(sb,pos,col,scrb)
+
+
+int s_box_event_loop(sb,pos,col,scrb)
  STRING_BOX *sb;
  SCROLLBOX *scrb;
  int *col,*pos;
@@ -470,7 +366,7 @@ set_sbox_item(STRING_BOX *sb,int item)
  int status=-1,inew;
  int nn=sb->n;
  int done=0,i,j;
- int item,xx;
+ int item;
  char ch;
  int ihot=sb->hot;
  Window wt;
@@ -577,7 +473,7 @@ set_sbox_item(STRING_BOX *sb,int item)
 	
  
  
-make_sbox_windows(sb,row,col,title,maxchar)
+void make_sbox_windows(sb,row,col,title,maxchar)
 int row,col,maxchar;
 char *title;
 STRING_BOX *sb;
@@ -592,7 +488,7 @@ STRING_BOX *sb;
    Window base;
    width=(maxchar+4)*col*DCURX;
    height=(row+4)*(DCURY+16);
-   base=make_window(DefaultRootWindow(display),0,0,width,height,4);
+   base=make_plain_window(DefaultRootWindow(display),0,0,width,height,4);
  XStringListToTextProperty(&title,1,&winname);
  size_hints.flags=PPosition|PSize|PMinSize|PMaxSize;
  size_hints.x=0;
@@ -616,37 +512,146 @@ STRING_BOX *sb;
   }
   
  ypos=height-2*DCURY;
-  xpos=(width-12*DCURX)/2;
-  (sb->ok)=make_window(base,xpos,ypos,2*DCURX,DCURY,1);
-  (sb->cancel)=make_window(base,xpos+4*DCURX,ypos,6*DCURX,DCURY,1);
+  xpos=(width-16*DCURX)/2;
+  (sb->ok)=make_window(base,xpos,ypos,8*DCURX,DCURY,1);
+  (sb->cancel)=make_window(base,xpos+8*DCURX+4,ypos,8*DCURX,DCURY,1);
   XRaiseWindow(display,base);
  }
 
- 
+/* 
+This is the previous make_fancy_window which we override to get
+consistent use of colors for a themed look.
 
-
-
- Window make_fancy_window(root,x,y,width,height,bw,fc,bc)
+Window make_fancy_window(root,x,y,width,height,bw,fc,bc)
 	Window root;
 	int x,y,width,height,bw;
 	{
 	 Window win;
 	 win=XCreateSimpleWindow(display,root,x,y,width,height,
 		bw,fc,bc);
+	 
+	 
+	
 	 XSelectInput(display,win,ExposureMask|KeyPressMask|ButtonPressMask|
               StructureNotifyMask|ButtonReleaseMask|ButtonMotionMask|
 		      LeaveWindowMask|EnterWindowMask);
 	 XMapWindow(display,win);
+	 
+         return(win);
+         }
+*/
+
+
+ Window make_fancy_window(root,x,y,width,height,bw,fc,bc)
+	Window root;
+	int x,y,width,height,bw,fc,bc;
+	{
+	 Window win;
+	 win=XCreateSimpleWindow(display,root,x,y,width,height,
+		bw,MyForeColor,MyBackColor);
+	 
+	
+	 if (UserGradients == 1)
+	 {
+		 
+		 Pixmap pmap = XCreatePixmap(display,root,width,height,DefaultDepth(display, DefaultScreen(display)));
+
+		 int xx, yy;
+		 double cosine, l2rads;
+		 xx= 0;
+		 
+		 XColor bcolour, col2, diffcol;
+		 Colormap cmap = DefaultColormap(display, DefaultScreen(display));
+		 XParseColor(display, cmap,UserWhite, &bcolour);
+		 XParseColor(display, cmap,UserBlack, &diffcol);
+
+		 l2rads = 3.1415926535897932384/(1.0*height);
+
+		 /*win=XCreateSimpleWindow(display,root,x,y,width,height,
+			bw,diffcol.pixel,bcolour.pixel);
+		 */
+
+
+		 for(yy = 0; yy < height; yy += 1)
+		 {
+
+
+
+			 if (yy<1.0)
+			 {
+				 col2.red = 65535;
+				 col2.green = 65355;
+				 col2.blue = 65355;	
+			 }
+			 else 
+			 {
+				 if (yy<(height/2.0))
+				 {
+					 cosine = 1.0;
+				 }
+				 else if ((height-yy)<=1.0)
+				 {
+					 cosine = 0.1;
+				 }
+				 else
+				 {
+					 cosine = 0.93;
+				 }
+				 col2.red = bcolour.red * cosine;
+				 col2.green = bcolour.green * cosine;
+				 col2.blue = bcolour.blue  * cosine;
+			 }
+
+			
+
+			 XAllocColor(display, cmap, &col2);
+			 XSetForeground(display, gc, col2.pixel);
+			 
+			 
+			 for (xx = 1; xx < width-1; xx += 1)
+			 {
+			 	
+				 XDrawPoint(display, pmap, gc, xx, yy);
+			 }
+			 
+			 
+			 /*Now do xx=0 and xx=width-1*/
+			 xx = 0;
+			 col2.red = 65535;
+			 col2.green = 65355;
+			 col2.blue = 65355;
+			 XAllocColor(display, cmap, &col2);
+			 XSetForeground(display, gc, col2.pixel);
+			 XDrawPoint(display, pmap, gc, xx, yy);
+			 xx = width-1;
+			 cosine = 0.1;
+			 col2.red = bcolour.red * cosine;
+			 col2.green = bcolour.green * cosine;
+                         col2.blue = bcolour.blue  * cosine;
+			 
+			 XAllocColor(display, cmap, &col2);
+			 XSetForeground(display, gc, col2.pixel);
+			 XDrawPoint(display, pmap, gc, xx, yy);
+
+
+		  }
+		  
+		 XSetWindowBackgroundPixmap(display,win,pmap);
+		 XFreePixmap(display,pmap);
+	 
+	 
+	 }
+	 
+	
+	 XSelectInput(display,win,ExposureMask|KeyPressMask|ButtonPressMask|
+              StructureNotifyMask|ButtonReleaseMask|ButtonMotionMask|
+		      LeaveWindowMask|EnterWindowMask);
+	 XMapWindow(display,win);
+	 
          return(win);
          }
 
-
-
- 
-
-   
-  
-		
+	
 Window make_unmapped_window(root,x,y,width,height,bw)
 	Window root;
 	int x,y,width,height,bw;
@@ -654,6 +659,102 @@ Window make_unmapped_window(root,x,y,width,height,bw)
 	 Window win;
 	 win=XCreateSimpleWindow(display,root,x,y,width,height,
 		bw,MyForeColor,MyBackColor);
+		
+		 
+	 /*Gradient stuff*/
+	
+	
+	 if (UserGradients == 1)
+	 {
+		 
+		 Pixmap pmap = XCreatePixmap(display,root,width,height,DefaultDepth(display, DefaultScreen(display)));
+
+		 int xx, yy;
+		 double cosine, l2rads;
+		 
+		 xx= 0;
+		 
+		 XColor bcolour, col2, diffcol;
+		 Colormap cmap = DefaultColormap(display, DefaultScreen(display));
+		 XParseColor(display, cmap,UserWhite, &bcolour);
+		 XParseColor(display, cmap,UserBlack, &diffcol);
+
+		 l2rads = 3.1415926535897932384/(1.0*height);
+
+		/* win=XCreateSimpleWindow(display,root,x,y,width,height,
+			bw,diffcol.pixel,bcolour.pixel);
+		 */
+
+
+		 for(yy = 0; yy < height; yy += 1)
+		 {
+
+
+
+			 if (yy<1.0)
+			 {
+				 col2.red = 65535;
+				 col2.green = 65355;
+				 col2.blue = 65355;	
+			 }
+			 else 
+			 {
+				 if (yy<(height/2.0))
+				 {
+					 cosine = 1.0;
+				 }
+				 else if ((height-yy)<=1.0)
+				 {
+					 cosine = 0.1;
+				 }
+				 else
+				 {
+					 cosine = 0.93;
+				 }
+				 col2.red = bcolour.red * cosine;
+				 col2.green = bcolour.green * cosine;
+				 col2.blue = bcolour.blue  * cosine;
+			 }
+
+
+
+			 XAllocColor(display, cmap, &col2);
+			 XSetForeground(display, gc, col2.pixel);
+
+
+			 for (xx = 1; xx < width-1; xx += 1)
+			 {
+			 	
+				 XDrawPoint(display, pmap, gc, xx, yy);
+			 }
+			 
+			 
+			 /*Now do xx=0 and xx=width-1*/
+			 xx = 0;
+			 col2.red = 65535;
+			 col2.green = 65355;
+			 col2.blue = 65355;
+			 XAllocColor(display, cmap, &col2);
+			 XSetForeground(display, gc, col2.pixel);
+			 XDrawPoint(display, pmap, gc, xx, yy);
+			 xx = width-1;
+			 cosine = 0.1;
+			 col2.red = bcolour.red * cosine;
+			 col2.green = bcolour.green * cosine;
+                         col2.blue = bcolour.blue  * cosine;
+			 
+			 XAllocColor(display, cmap, &col2);
+			 XSetForeground(display, gc, col2.pixel);
+			 XDrawPoint(display, pmap, gc, xx, yy);
+			 
+			 
+		  }
+		  XSetWindowBackgroundPixmap(display,win,pmap);
+		  XFreePixmap(display,pmap);
+	 }
+	 
+	 
+	 
 	 XSelectInput(display,win,ExposureMask|KeyPressMask|ButtonPressMask|
               StructureNotifyMask|ButtonReleaseMask|ButtonMotionMask|
 		      LeaveWindowMask|EnterWindowMask);
@@ -661,6 +762,23 @@ Window make_unmapped_window(root,x,y,width,height,bw)
          return(win);
          }
 
+
+Window make_plain_unmapped_window(root,x,y,width,height,bw)
+	Window root;
+	int x,y,width,height,bw;
+	{
+	 Window win;
+	 win=XCreateSimpleWindow(display,root,x,y,width,height,
+		bw,MyForeColor,MyBackColor);
+		
+		 
+	
+	 XSelectInput(display,win,ExposureMask|KeyPressMask|ButtonPressMask|
+              StructureNotifyMask|ButtonReleaseMask|ButtonMotionMask|
+		      LeaveWindowMask|EnterWindowMask);
+	 
+         return(win);
+        }
 
 
 
@@ -675,9 +793,21 @@ Window make_window(root,x,y,width,height,bw)
 	 XMapWindow(display,win);
          return(win);
          }
+	 
+Window make_plain_window(root,x,y,width,height,bw)
+	Window root;
+	int x,y,width,height,bw;
+	{
+	 Window win;
+         win=make_plain_unmapped_window(root,x,y,width,height,bw);
+	 if(root==RootWindow(display,screen)) 
+          XSetWMProtocols(display, win, &deleteWindowAtom, 1);	  
+	 XMapWindow(display,win);
+         return(win);
+         }
 
 
-    expose_resp_box(button,message,wb,wm,w)
+void expose_resp_box(button,message,wb,wm,w)
     Window w,wb,wm;
     char *button,*message;
    {
@@ -686,7 +816,7 @@ Window make_window(root,x,y,width,height,bw)
    }
 
 
-    respond_box(button,message)
+void respond_box(button,message)
     char *button,*message;
     {
      int l1=strlen(message);
@@ -700,9 +830,9 @@ Window make_window(root,x,y,width,height,bw)
       if(l1<l2)width=l2;
       width=width+4;
       height=5*DCURY;
-       wmain=make_window(RootWindow(display,screen),DisplayWidth/2,
+       wmain=make_plain_window(RootWindow(display,screen),DisplayWidth/2,
        DisplayHeight/2,width*DCURX,height,4);
-       wm=make_window(wmain,((width-l1)*DCURX)/2,DCURY/2,l1*DCURX,DCURY,0);
+       wm=make_plain_window(wmain,((width-l1)*DCURX)/2,DCURY/2,l1*DCURX,DCURY,0);
        wb=make_window(wmain,((width-l2)*DCURX)/2,2*DCURY,l2*DCURX,DCURY,1);
             ping();
       set_window_title(wmain,"!!");
@@ -751,7 +881,7 @@ Window make_window(root,x,y,width,height,bw)
       
     
 
-    message_box(w,x,y,message)
+   void message_box(w,x,y,message)
 	Window *w;
 	int x,y;
 	char *message;
@@ -767,7 +897,7 @@ Window make_window(root,x,y,width,height,bw)
 	         }   
 
 
- expose_choice(choice1,choice2,msg,c1,c2,wm,w)
+void expose_choice(choice1,choice2,msg,c1,c2,wm,w)
  Window c1,c2,wm,w;
  char *choice1,*choice2,*msg;
 {
@@ -776,7 +906,7 @@ Window make_window(root,x,y,width,height,bw)
 	if(w==c2)Ftext(0,0,choice2,c2);
 }
 
- two_choice(choice1,choice2,string,key,x,y,w)
+int two_choice(choice1,choice2,string,key,x,y,w)
  char *choice1,*choice2,*string,*key;
  int x,y;
   Window w;
@@ -795,7 +925,7 @@ Window make_window(root,x,y,width,height,bw)
     xm=(tot-lm)/2;
 	x1=(tot-l1-l2-4*DCURX)/2;
 	x2=x1+l1+4*DCURX;
-        base=make_window(w,x,y,tot,5*DCURY,4);
+        base=make_plain_window(w,x,y,tot,5*DCURY,4);
 	c1=make_window(base,x1,3*DCURY,l1+DCURX,DCURY+4,1);
         c2=make_window(base,x2,3*DCURY,l2+DCURX,DCURY+4,1);
 	  XSelectInput(display,c1,BUT_MASK);
@@ -846,17 +976,17 @@ Window make_window(root,x,y,width,height,bw)
 
 				}
 	}
-          XFlush(display);
-	  XSelectInput(display,c1,EV_MASK);
-  	 XSelectInput(display,c2,EV_MASK);
-          XFlush(display);
+        XFlush(display);
+	XSelectInput(display,c1,EV_MASK);
+  	XSelectInput(display,c2,EV_MASK);
+        XFlush(display);
 	XDestroySubwindows(display,base);
  	XDestroyWindow(display,base);
    	return(value);
    }
 	
 
-  yes_no_box()
+int yes_no_box()
   {
    char ans;
    ans=(char)TwoChoice("YES","NO","Are you sure?","yn");
@@ -867,7 +997,7 @@ Window make_window(root,x,y,width,height,bw)
   
 /*  new pop_up_list   */
 
-pop_up_list(root,title,list,key,n,max,def,x,y,hints,hwin,httxt)
+int pop_up_list(root,title,list,key,n,max,def,x,y,hints,hwin,httxt)
 int def,n,max,x,y;
  char *title,**list,*key,**hints,*httxt;
 Window *root,hwin;
@@ -880,7 +1010,7 @@ Window *root,hwin;
         int i,done=0,value;
 	int width=DCURX*(max+5);
 	int length=(DCURY+6)*(n+2);
-	w=make_window(*root,x,y,width,length,2);
+	w=make_plain_window(*root,x,y,width,length,2);
 	txt=XCreateFontCursor(display,XC_hand2);
  	 XDefineCursor(display,w,txt);
   p.base=w;
@@ -951,7 +1081,7 @@ Window *root,hwin;
 
   }
 
- draw_pop_up(p,w)
+void draw_pop_up(p,w)
  POP_UP p;
  Window w;
  {

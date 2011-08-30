@@ -1,8 +1,10 @@
+#include "color.h"
+
 #include <stdlib.h> 
 
 
 #include <X11/Xlib.h>
-
+#include "ggets.h"
 #include <math.h>
 #define COLOR_SCALE 0
 #define GRAYSCALE 1
@@ -28,7 +30,7 @@
 #define C_BUDGIE 6
 
 
- extern GC gc_graph;
+extern GC gc_graph,small_gc;
 extern Display *display;
 extern int screen;
 extern Window main_win;
@@ -40,14 +42,16 @@ int periodic=0,spectral;
 int custom_color;
 #define MAX_COLORS 256
 #define COL_TOTAL 100
- int rfun(),gfun(),bfun();
+/* int rfun(),gfun(),bfun();
+*/
+
 XColor	color[MAX_COLORS];
 /* int	pixel[MAX_COLORS];
  */
 extern int TrueColorFlag;
 
 
-tst_color(w)
+void tst_color(w)
 Window w;
 {
  int i;
@@ -56,7 +60,22 @@ Window w;
    XDrawLine(display,w,gc_graph,0,2*i+20,50,2*i+20);
  }
 }
-set_color(col)
+
+void set_scolor(col)
+int col;
+{
+ if(col<0)XSetForeground(display,small_gc,GrBack);
+ if(col==0)XSetForeground(display,small_gc,GrFore);
+ else{
+
+   if(COLOR)XSetForeground(display,small_gc,ColorMap(col));
+   else XSetForeground(display,small_gc,GrFore);
+}
+
+
+}
+
+void set_color(col)
 int col;
 {
  if(col<0)XSetForeground(display,gc_graph,GrBack);
@@ -70,13 +89,13 @@ int col;
 }
 
 /* this makes alot of nice color maps */
-make_cmaps(r,g,b,n,type)
+void make_cmaps(r,g,b,n,type)
  int n, *r,*g,*b,type;
 {
  double x;
  int i,i1,i2,i3;
- int j;
- int m;
+ 
+ 
 
  switch(type){
  case C_NORM:
@@ -160,21 +179,23 @@ make_cmaps(r,g,b,n,type)
   return((int)(3.*255*sqrt((.333334-x)*(x+.33334))));
 }
 
-int gfun(y)
+int gfun(y,per)
  double y;
+ int per;
 {
  if(y>.666666)return(0);
  return( (int)(3.*255*sqrt((.6666667-y)*(y))));
 }
  
-int bfun(y)
+int bfun(y,per)
 double y;
+int per;
 {
  if(y<.333334)return(0);
  return((int)(2.79*255*sqrt((1.05-y)*(y-.333333333))));
 }
 
-NewColormap(int type)
+void NewColormap(int type)
 {
   if(TrueColorFlag==0){
    err_msg("New colormaps not supported without TrueColor");
@@ -184,20 +205,21 @@ NewColormap(int type)
  MakeColormap();
 }
 
-get_ps_color(int i,float *r,float *g,float *b)
+void get_ps_color(int i,float *r,float *g,float *b)
 {
   float z=1./(255.*255.);
   *r=z*(float)color[i].red;
     *g=z*(float)color[i].green;
   *b=z*(float)color[i].blue;
 }
- MakeColormap()
+
+
+void MakeColormap()
 {
 
 Colormap	cmap;
 int	i;
 int clo=20;
-double z;
 
 int r[256],g[256],b[256];
 
@@ -220,7 +242,7 @@ int r[256],g[256],b[256];
   
     color[RED].red=255;
     color[BLUE].blue=255;
-    color[GREEN].green=255;
+    color[GREEN].green=225;
     color[YELLOWGREEN].red=200;
     color[YELLOWGREEN].blue=75;
     color[YELLOWGREEN].green=235;
@@ -231,10 +253,10 @@ int r[256],g[256],b[256];
 ;
     color[YELLOWORANGE].red=255;
     color[YELLOWORANGE].green=205;
-    color[YELLOW].red=255;
-    color[YELLOW].green=255;
-    color[BLUEGREEN].blue=255;
-    color[BLUEGREEN].green=255;
+    color[YELLOW].red=200;
+    color[YELLOW].green=200;
+    color[BLUEGREEN].blue=200;
+    color[BLUEGREEN].green=200;
     color[PURPLE].red=160;
     color[PURPLE].green=32;
     color[PURPLE].blue=240;

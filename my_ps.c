@@ -1,3 +1,9 @@
+#include "my_ps.h"
+#include "lunch-new.h"
+#include "ggets.h"
+#include "graphics.h"
+#include "color.h"
+
 #include <stdlib.h> 
 #include <stdio.h>
 #include <string.h>
@@ -72,10 +78,10 @@ char *PS_header[]={
 "/LT2 { PL [2 dl 3 dl] .95 .4 0 DL } def\n",
 "/LT3 { PL [1 dl 1.5 dl] 1 .65 0 DL } def\n",
 "/LT4 { PL [5 dl 2 dl 1 dl 2 dl] 1 .8 0 DL } def\n",
-"/LT5 { PL [4 dl 3 dl 1 dl 3 dl] 1 1 0 DL } def\n",
+"/LT5 { PL [4 dl 3 dl 1 dl 3 dl] .85 .85 0 DL } def\n",
 "/LT6 { PL [2 dl 2 dl 2 dl 4 dl]  .6 .8 .2 DL } def\n",
-"/LT7 { PL [2 dl 2 dl 2 dl 2 dl 2 dl 4 dl] 0 1 0 DL } def\n",
-"/LT8 { stroke 16. setlinewidth [] 0 1 1 DL } def\n", /* really fat line */
+"/LT7 { PL [2 dl 2 dl 2 dl 2 dl 2 dl 4 dl] 0 .9 0 DL } def\n",
+"/LT8 { stroke 16. setlinewidth [] 0 .85 .85 DL } def\n", /* really fat line */
 "/LT9 { stroke 16. setlinewidth [4 dl 2 dl] 0 0 1 DL } def\n",
 "/LTc { stroke 16. setlinewidth [2 dl 3 dl] .95 .4 0 DL } def\n",
 "/M {moveto} def\n",
@@ -111,7 +117,7 @@ NULL
 
   
 		   
-ps_init(filename,color)
+int ps_init(filename,color)
 char *filename;
 int color;
 {
@@ -162,25 +168,30 @@ int color;
  return(1);
 }
 
-ps_do_color(int color)
+void ps_stroke()
+{
+  fprintf(psfile,"stroke\n");
+}
+
+void ps_do_color(int color)
 {
  float r,g,b;
  /* this doesn work very well */
  if(PSFlag==0)return;
- if(color==0)
+ /* if(color==0) */
    /* fprintf(psfile,"0 setgray\n"); */
- /* printf("color=%d\n",color); */
+ /* plintf("color=%d\n",color); */
  if(PSColorFlag==0)return;
  get_ps_color(color,&r,&g,&b);
  /*  if(LastPtLine)
    fprintf(psfile,"%f %f %f RGB\n",r,g,b);
- else 
+   else */ 
    fprintf(psfile,"%f %f %f RGb\n",r,g,b);  
-		
- */
+ 		
+ 
 }
 
-ps_setcolor(color)
+void ps_setcolor(color)
      int color;
 {
   int i;
@@ -203,33 +214,37 @@ ps_setcolor(color)
    sprintf(bob," %.3f %.3f %.3f setrgbcolor", pscolor[i],pscolor[i+1],pscolor[i+2]);
   ps_write(bob);
 }
-ps_end()
+
+void ps_end()
 {
  ps_write("stroke");
  ps_write("grestore");
  ps_write("end");
  ps_write("showpage");
+ ps_write_pars(psfile);
  fclose(psfile);
  PSFlag=0;
  init_x11();
 }
 
-ps_bead(x,y)
+void ps_bead(x,y)
 int x,y;
 {
 
 }
-ps_frect(x,y,w,h)
+
+void ps_frect(x,y,w,h)
      int x,y,w,h;
 {
 
 }
 
-ps_last_pt_off()
+void ps_last_pt_off()
 {
   LastPtLine=0;
 }
-ps_line(xp1,yp1,xp2,yp2)
+
+void ps_line(xp1,yp1,xp2,yp2)
 int xp1,yp1,xp2,yp2;
 {
  LastPtLine=1;
@@ -260,7 +275,7 @@ int xp1,yp1,xp2,yp2;
  chk_ps_lines();
  }
  
-chk_ps_lines()
+void chk_ps_lines()
 {
   PSLines++;
   if(PSLines>=MAXPSLINE){
@@ -269,7 +284,7 @@ chk_ps_lines()
   }
 }
    
-ps_linetype(linetype)
+void ps_linetype(linetype)
 int linetype;
 {
 char *line = "ba0123456789c"; 
@@ -282,7 +297,7 @@ char *line = "ba0123456789c";
 
  
  
-ps_point(x,y)
+void ps_point(x,y)
      int x,y;
  
 {
@@ -291,20 +306,20 @@ ps_point(x,y)
   number %= POINT_TYPES;
   if(number < -1) 
     number = -1;
-  if(PointRadius>0)number=6;
+  if(PointRadius>0)number=7;
   fprintf(psfile,"%d %d %c\n",x,y,point[number+1]);
   PSLines=0;
  LastPtLine=0;
 }
 
 
-ps_write(str)
+void ps_write(str)
 char *str;
 {
   fprintf(psfile,"%s\n",str);
 }
 
-ps_fnt(int cf,int scale)
+void ps_fnt(int cf,int scale)
 {
   if(cf==0) 
     fprintf(psfile,"/%s findfont %d scalefont setfont \n",PS_FONT,scale);
@@ -313,7 +328,7 @@ ps_fnt(int cf,int scale)
 }
 
 
-ps_show(char *str,int type)
+void ps_show(char *str,int type)
 {
   char ch;
   putc('(',psfile);
@@ -331,17 +346,19 @@ ps_show(char *str,int type)
  PSLines=0;
 }
 
-ps_abs(x,y)
+void ps_abs(x,y)
      int x,y;
 {
   fprintf(psfile,"%d %d moveto \n",x,y);
 }
-ps_rel(x,y)
+
+void ps_rel(x,y)
      int x,y;
 {
   fprintf(psfile,"%d %d rmoveto \n",x,y);
 }
-special_put_text_ps(x,y,str,size)
+
+void special_put_text_ps(x,y,str,size)
      int x,y,size;
      char *str;
 {
@@ -353,7 +370,7 @@ special_put_text_ps(x,y,str,size)
   int sub,sup,pssz;
   static int sz[]={8,10,14,18,24};    
   cs=size;
-  /* printf(" %s size %d \n",str,size); */
+  /* plintf(" %s size %d \n",str,size); */
   fprintf(psfile, "0 0 0 setrgbcolor \n");
   ps_abs(x,y);
   pssz=sz[size]*PS_SC;
@@ -422,7 +439,7 @@ special_put_text_ps(x,y,str,size)
     
       
       
-fancy_ps_text(x,y,str,size,font)
+void fancy_ps_text(x,y,str,size,font)
      int x,y,font,size;
      char *str;
 {
@@ -453,7 +470,7 @@ fancy_ps_text(x,y,str,size,font)
  PSLines=0;
 }
 
-ps_text(x,y,str)
+void ps_text(x,y,str)
 int x,y;
 char *str;
 {

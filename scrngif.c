@@ -1,3 +1,8 @@
+#include "scrngif.h"
+
+#include "aniparse.h"
+
+#include "ggets.h"
 #include <stdlib.h> 
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,14 +26,8 @@
   * nodes will be <= noOfArrays, for a 128 color GIF the number of
   * LOOKUP nodes will be <= 2 * noOfArrays, etc.  */
 #define GifPutShort(i, fout)    {fputc(i&0xff, fout); fputc(i>>8, fout);}
- typedef struct GifTree {
-   char typ;             /* terminating, lookup, or search */
-   int code;             /* the code to be output */
-   unsigned char ix;     /* the color map index */
-   struct GifTree **node, *nxt, *alt;
- } GifTree;
 
- char *AddCodeToBuffer(int, short, char *);
+ unsigned char *AddCodeToBuffer(int, short, unsigned char *);
  void ClearTree(int, GifTree *);
  int GifEncode();
  unsigned int debugFlag;
@@ -42,14 +41,11 @@
 
 extern Display *display;
 
-typedef struct {
-  unsigned char r,g,b;
-} GIFCOL;
 
 GIFCOL gifcol[256];
 GIFCOL gifGcol[256];
 int NGlobalColors=0;
-set_global_map(int flag)
+void set_global_map(int flag)
 {
   if(NGlobalColors==0){  /* Cant use it if it aint there */
     UseGlobalMap=0;
@@ -72,7 +68,7 @@ int ppmtopix(unsigned char r,unsigned char g, unsigned char b,int *n)
     if(r==gifcol[i].r&&g==gifcol[i].g&&b==gifcol[i].b)
       return i;
   if(nc>255){
-    printf("Too many colors \n");
+    plintf("Too many colors \n");
     return -1;
   }
   gifcol[nc].r=r;
@@ -84,31 +80,33 @@ int ppmtopix(unsigned char r,unsigned char g, unsigned char b,int *n)
 }
 
 
-end_ani_gif(FILE *fp)
+void end_ani_gif(FILE *fp)
 {
 
   fputc(';',fp);
 }
 
-add_ani_gif(Window win,FILE *fp,int count)
+void add_ani_gif(Window win,FILE *fp,int count)
 {
-  printf("Frame %d \n",count);
+  plintf("Frame %d \n",count);
   if(count==0)
     gif_stuff(win,fp,FIRST_ANI_GIF);
   else
     gif_stuff(win,fp,NEXT_ANI_GIF);
 }
-screen_to_gif(Window win, FILE *fp)
+
+void screen_to_gif(Window win, FILE *fp)
 {
  gif_stuff(win,fp,MAKE_ONE_GIF);
 }
-get_global_colormap(Window win)
+
+void get_global_colormap(Window win)
 {
-  FILE *junk;
+  FILE *junk=NULL;
   gif_stuff(win,junk,GET_GLOBAL_CMAP);
 }
 
-local_to_global()
+void local_to_global()
 {
   int i;
    for(i=0;i<256;i++){
@@ -155,7 +153,7 @@ int i,j,k=0,l=0;
      l++;
    }
  }
- printf("Got %d colors\n",ncol);
+ plintf("Got %d colors\n",ncol);
  for(i=ncol;i<256;i++){
    gifcol[i].r=255;
    gifcol[i].g=255;
@@ -163,7 +161,8 @@ int i,j,k=0,l=0;
  }
  return ncol;
 }
-gif_stuff(Window win,FILE *fp,int task)
+
+void gif_stuff(Window win,FILE *fp,int task)
 {
  Window root;
  unsigned int h,w,bw,d;
@@ -171,16 +170,18 @@ gif_stuff(Window win,FILE *fp,int task)
  unsigned char *ppm;
  
  unsigned char *pixels;
- int i,j,k=0,l=0;
+ int i;
  int ncol=0;
- int locflag=1;
+
  int ok;
-/*  printf("stog !! \n");*/
+/*  plintf("stog !! \n");*/
+
  XGetGeometry(display,win,&root,&x0,&y0,&w,&h,&bw,&d);
  ppm=(unsigned char *)malloc(w*h*3);
  pixels=(unsigned char *)malloc(h*w);
- /* printf(" h=%d w=%d \n",h,w);*/
- getppmbits(win,&w,&h,ppm);   
+ /* plintf(" h=%d w=%d \n",h,w);*/
+ 
+ getppmbits(win,(int*)&w,(int*)&h,ppm);   
  switch(task){
  case GET_GLOBAL_CMAP:
     ncol=make_local_map(pixels,ppm,h,w);
@@ -259,14 +260,14 @@ gif_stuff(Window win,FILE *fp,int task)
 
 }
 
-write_global_header(int cols,int rows, FILE *dst)
+void write_global_header(int cols,int rows, FILE *dst)
 {
-  int     i,depth=8;
+  int     i;
  
-  char    *pos,*buffer;
+  unsigned char    *pos,*buffer;
 
 
-  buffer = (char *)malloc((BUFLEN+1)*sizeof(char))+1;
+  buffer = (unsigned char *)malloc((BUFLEN+1)*sizeof(unsigned char))+1;
 
   pos = buffer;
 
@@ -295,7 +296,7 @@ write_global_header(int cols,int rows, FILE *dst)
   GifLoop(dst,GifFrameLoop);
 }
 
-GifLoop(FILE *fout, unsigned int repeats)
+void GifLoop(FILE *fout, unsigned int repeats)
 {
 
   fputc(0x21, fout);
@@ -311,7 +312,7 @@ GifLoop(FILE *fout, unsigned int repeats)
 }
 
 
-write_local_header(int cols,int rows, FILE *fout,int colflag,int delay)
+void write_local_header(int cols,int rows, FILE *fout,int colflag,int delay)
 {
   int i;
   fputc(0x21, fout);
@@ -343,15 +344,15 @@ write_local_header(int cols,int rows, FILE *fout,int colflag,int delay)
 
 
 
-make_gif(unsigned char *pixels,int cols,int rows,FILE *dst)
+void make_gif(unsigned char *pixels,int cols,int rows,FILE *dst)
 {
 
-  int     i,j,depth=8;
+  int     i,depth=8;
 
-  char    *pos,*buffer;
+  unsigned char    *pos,*buffer;
 
 
-  buffer = (char *)malloc((BUFLEN+1)*sizeof(char))+1;
+  buffer = (unsigned char *)malloc((BUFLEN+1)*sizeof(unsigned char))+1;
 
 
   
@@ -407,14 +408,14 @@ int GifEncode(FILE *fout, unsigned char *pixels, int depth, int siz)
   int     cc, eoi, next, tel=0;
   short   cLength;
 
-  char    *pos, *buffer;
+  unsigned char    *pos, *buffer;
 
   empty[0] = NULL;
   need = 8;
 
   nodeArray = empty;
   memmove(++nodeArray, empty, 255*sizeof(GifTree **));
-  if (( buffer = (char *)malloc((BUFLEN+1)*sizeof(char))) == NULL )
+  if (( buffer = (unsigned char *)malloc((BUFLEN+1)*sizeof(unsigned char))) == NULL )
 	 return 0;
   buffer++;
 
@@ -436,7 +437,7 @@ int GifEncode(FILE *fout, unsigned char *pixels, int depth, int siz)
   lastArray = nodeArray + ( 256*noOfArrays - cc);
   ClearTree(cc, first);
 
-  pos = AddCodeToBuffer(cc, cLength, pos);
+  pos = AddCodeToBuffer(cc, cLength,pos);
 
   end = pixels+siz;
   curNode = first;
@@ -598,7 +599,7 @@ void ClearTree(int cc, GifTree *root)
   }
 }
 
-char *AddCodeToBuffer(int code, short n, char *buf)
+unsigned char *AddCodeToBuffer(int code, short n, unsigned char *buf)
 {
   int    mask;
 

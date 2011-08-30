@@ -16,7 +16,9 @@
  */
 
 
-#include <iostream.h>
+/*#include <iostream.h> <- This is now deprecated. Use the following instead*/
+#include <iostream>
+
 #include "ppm.h"
 
 // How many types of IO can we use in one program??

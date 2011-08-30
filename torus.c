@@ -1,3 +1,5 @@
+#include "torus.h"
+
 #include <stdlib.h> 
 #include <string.h>
 #include <X11/Xlib.h>
@@ -5,6 +7,9 @@
 #include <stdio.h>
 #include <math.h>
 #include "xpplim.h"
+#include "ggets.h"
+#include "pop_list.h"
+#include "many_pops.h"
 
 extern int DisplayHeight,DisplayWidth;
 
@@ -48,7 +53,7 @@ struct {
 
 
 
-do_torus_com(int c)
+void do_torus_com(int c)
 {
  int i;
  TORUS=0;
@@ -74,7 +79,7 @@ do_torus_com(int c)
   
 
 
-draw_tor_var(i)
+void draw_tor_var(i)
 int i;
 {
  char strng[15];
@@ -85,18 +90,18 @@ int i;
 }
  
 
-draw_torus_box(win)
+void draw_torus_box(win)
 Window win;
 {
  int i;
  
  
  if(win==torbox.cancel){
-   XDrawString(display,win,small_gc,0,CURY_OFFs,"Cancel",6);
+   XDrawString(display,win,small_gc,5,CURY_OFFs,"Cancel",6);
    return;
  }
  if(win==torbox.done){
-   XDrawString(display,win,small_gc,0,CURY_OFFs,"Done",4);
+   XDrawString(display,win,small_gc,5,CURY_OFFs,"Done",4);
    return;
  }
 
@@ -106,7 +111,7 @@ for(i=0;i<NEQ;i++){
 }
 }   
 
-choose_torus()
+void choose_torus()
 {
   int i;
  make_tor_box("Fold which");
@@ -114,10 +119,10 @@ choose_torus()
  for(i=0;i<NEQ;i++)if(itor[i]==1)TORUS=1;
 }
  
-make_tor_box(title)
+void make_tor_box(title)
 char *title;
 {
- int n=NEQ;
+ 
  int ndn,nac,width,height;
  int nv,nh;
  int i,i1,j1,xpos,ypos;
@@ -134,10 +139,10 @@ char *title;
  nac=NEQ/ndn;
  if(nac*ndn<NEQ)nac++;
  
- width=18*DCURXs*nac;
+ width=24*DCURXs*nac+10;
  height=3*DCURYs+ndn*(DCURYs+8);
  
- base=make_window(RootWindow(display,screen),0,0,width,height,4);
+ base=make_plain_window(RootWindow(display,screen),0,0,width,height,4);
  torbox.base=base;
 XStringListToTextProperty(&title,1,&winname);
  size_hints.flags=PPosition|PSize|PMinSize|PMaxSize;
@@ -158,17 +163,17 @@ XStringListToTextProperty(&title,1,&winname);
    torbox.w[i]=make_window(base,xpos,ypos,15*DCURXs,DCURYs,1);
  }
 
- xpos=(width-12*DCURXs)/2;
+ xpos=(width-16*DCURXs-10)/2;
  ypos=height-3*DCURYs/2;
 
- torbox.cancel=make_window(base,xpos,ypos,6*DCURXs,DCURYs,1);
- torbox.done=make_window(base,xpos+7*DCURXs,ypos,4*DCURXs,DCURYs,1);
+ torbox.cancel=make_window(base,xpos,ypos,8*DCURXs,DCURYs,1);
+ torbox.done=make_window(base,xpos+8*DCURXs+10,ypos,8*DCURXs,DCURYs,1);
  XSelectInput(display,torbox.cancel,BUT_MASK);
  XSelectInput(display,torbox.done,BUT_MASK);
  XRaiseWindow(display,torbox.base);
 }
 
- do_torus_events()
+void do_torus_events()
 {
  XEvent ev;
  int status=-1;

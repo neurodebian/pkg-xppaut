@@ -1,7 +1,13 @@
-#include <stdlib.h> 
+#include <stdlib.h>
+
+#include "eig_list.h" 
+#include "gear.h"
+#include "ggets.h"
+
 #include <math.h>
 #include <stdio.h>
 #include "xpplim.h"
+#include "del_stab.h"
 
 #define Z(a,b) z[(a)+n*(b)]
 #define DING ping()
@@ -12,19 +18,20 @@ extern double variable_shift[2][MAXODE],AlphaMax,OmegaMax;
 
 extern double delay_list[MAXDELAY];
 extern int NDelay,del_stab_flag,WhichDelay,DelayGrid;
-extern (*rhs)();
+extern int (*rhs)();
 double amax();
-typedef struct{
+
+/*typedef struct{
   double r,i;
 }COMPLEX;
-
+*/
 
 /* The
  code here replaces the do_sing code if the equation is
    a delay differential equation. 
 */
 
-do_delay_sing(x,eps,err,big,maxit,n,ierr,stabinfo)
+void do_delay_sing(x,eps,err,big,maxit,n,ierr,stabinfo)
      double *x,eps,err,big;
      int *ierr,n,maxit;
      float *stabinfo;
@@ -35,7 +42,7 @@ do_delay_sing(x,eps,err,big,maxit,n,ierr,stabinfo)
  double *work,old_x[MAXODE],sign;
  double *coef,yp[MAXODE],y[MAXODE],xp[MAXODE],dx;
  int kmem=n*(2*n+5)+50,i,j,k,okroot;
- int nd=NDelay;
+
  double *ev;
  ev=(double *)malloc(2*n*sizeof(double));
  for(i=0;i<(2*n);i++)ev[i]=0.0;
@@ -60,7 +67,7 @@ do_delay_sing(x,eps,err,big,maxit,n,ierr,stabinfo)
    variable_shift[1][i]=x[i];
  }
  free(work);
- /*  printf(" Found %d delays \n",NDelay); */ 
+ /*  plintf(" Found %d delays \n",NDelay); */ 
  coef=(double *)malloc(n*n*(NDelay+1)*sizeof(double));
  
  /* now we must compute a bunch of jacobians  */
@@ -79,7 +86,7 @@ do_delay_sing(x,eps,err,big,maxit,n,ierr,stabinfo)
      for(j=0;j<n;j++){
        coef[j*n+i]=(yp[j]-y[j])/dx;
        colsum+=fabs(coef[j*n+i]);
-       /*      printf("a(0,%d,%d)=%g \n",i,j,coef[j*n+i]); */   
+       /*      plintf("a(0,%d,%d)=%g \n",i,j,coef[j*n+i]); */   
      }
      if(colsum>colmax)colmax=colsum;
    }
@@ -87,7 +94,7 @@ do_delay_sing(x,eps,err,big,maxit,n,ierr,stabinfo)
  for(j=0;j<n;j++)xp[j]=x[j];
  /* now the jacobians for the delays */
  for(k=0;k<NDelay;k++){
-   /* printf(" found delay=%g \n",delay_list[k]); */   
+   /* plintf(" found delay=%g \n",delay_list[k]); */   
    WhichDelay=k;
    colmax=0.0;
    for(i=0;i<n;i++){
@@ -101,13 +108,13 @@ do_delay_sing(x,eps,err,big,maxit,n,ierr,stabinfo)
      for(j=0;j<n;j++){
        coef[j*n+i+n*n*(k+1)]=(yp[j]-y[j])/dx;
        colsum+=fabs(coef[j*n+i+n*n*(k+1)]);
-       /* printf("a(%d,%d,%d)=%g \n",k+1,i,j,coef[j*n+i+n*n*(k+1)]); */  
+       /* plintf("a(%d,%d,%d)=%g \n",k+1,i,j,coef[j*n+i+n*n*(k+1)]); */  
      }
      if(colsum>colmax)colmax=colsum;
    }
    colnorm+=colmax;
  }
- /* printf("Norm= %g \n",colnorm); */
+ /* plintf("Norm= %g \n",colnorm); */
  /* sign=plot_args(coef,delay_list,n,NDelay,DelayGrid,AlphaMax,OmegaMax); */
  sign=plot_args(coef,delay_list,n,NDelay,DelayGrid,colnorm,colnorm);
 
@@ -181,7 +188,7 @@ COMPLEX cexp2(z)
   return sum;
 }
 
-switch_rows(z,i1,i2,n)
+void switch_rows(z,i1,i2,n)
      COMPLEX *z;
      int i1,i2,n;
 {
@@ -203,19 +210,19 @@ COMPLEX rtoc(x,y)
   return sum;
 }
 
-cprintn(z)
+void cprintn(z)
      COMPLEX z;
 {
-  printf(" %g + i %g \n",z.r,z.i);
+  plintf(" %g + i %g \n",z.r,z.i);
 }
 
-cprint(z)
+void cprint(z)
      COMPLEX z;
 {
 printf("(%g,%g) ",z.r,z.i);
 }
 
-cprintarr(z,n,m)
+void cprintarr(z,n,m)
      COMPLEX *z;
      int n,m;
 {
@@ -223,7 +230,7 @@ cprintarr(z,n,m)
   for(i=0;i<m;i++){
     for(j=0;j<n;j++)
       cprint(z[i+m*j]);
-    printf("\n");
+    plintf("\n");
   }
 }
 
@@ -270,7 +277,7 @@ COMPLEX cxdeterm(z,n)
      int n;
 {
   int i,j,k;
-  COMPLEX ajj,sum,mult,temp;
+  COMPLEX ajj,sum,mult;
   for(j=0;j<n;j++){
     ajj=Z(j,j);
     for(i=j+1;i<n;i++){
@@ -288,13 +295,13 @@ COMPLEX cxdeterm(z,n)
   return sum;
 }
 	 
-make_z(z,delay,n,m,coef,lambda)
+void make_z(z,delay,n,m,coef,lambda)
      COMPLEX lambda;
      COMPLEX *z;
      double *coef,*delay;
      int n,m;
 {
-  int nt, i,j,k,km;
+  int i,j,k,km;
   COMPLEX temp,eld;
   
  for(j=0;j<n;j++)
@@ -325,7 +332,7 @@ int find_positive_root(coef,delay,n,m,rad,err,eps,big,maxit,rr)
   COMPLEX det,*z,detp;
   double jac[4];
   double xl,yl,r,xlp,ylp;
-  int i,j;
+
   int k;
   
     lambda.r=AlphaMax;
@@ -372,7 +379,7 @@ int find_positive_root(coef,delay,n,m,rad,err,eps,big,maxit,rr)
     jac[3]=(detp.i-det.i)/r;
     r=jac[0]*jac[3]-jac[1]*jac[2];
     if(r==0){
-      printf(" singular jacobian \n");
+      plintf(" singular jacobian \n");
       return -1;
     }
    xlp=(jac[3]*det.r-jac[1]*det.i)/r;
@@ -392,18 +399,18 @@ int find_positive_root(coef,delay,n,m,rad,err,eps,big,maxit,rr)
       return 1;
     }
     if(r>big){
-      printf("Failed to converge \n");
+      plintf("Failed to converge \n");
       return -1;
     }
   }
       
-  printf("Max iterates exceeded \n");
+  plintf("Max iterates exceeded \n");
   return -1;
 }
-process_root(real,im)
+void process_root(real,im)
      double real,im;
 {
-  printf("Root: %g + I %g \n",real,im); 
+  plintf("Root: %g + I %g \n",real,im); 
 }
 double get_arg(delay,coef,m,n,lambda)  
      COMPLEX lambda;
@@ -438,14 +445,14 @@ double get_arg(delay,coef,m,n,lambda)
   temp=cdeterm(z,n);
   /* cprint(lambda); 
   cprint(temp); 
-  printf(" \n"); */
+  plintf(" \n"); */
    free(z); 
   arg=atan2(temp.i,temp.r);
-  /*   printf("%g %g %g \n",lambda.r,lambda.i,arg); */ 
+  /*   plintf("%g %g %g \n",lambda.r,lambda.i,arg); */ 
   return(arg);
 }   
 
-test_sign(old,new)
+int test_sign(old,new)
      double old,new;
 {
   if(old>0.0&&new<0.0){
@@ -477,7 +484,7 @@ test_sign(old,new)
      principle
 */  
 
-plot_args(coef,delay,n,m,npts,almax,wmax)
+int plot_args(coef,delay,n,m,npts,almax,wmax)
      double *coef;
      int n,m,npts;
      double almax,wmax,*delay;
@@ -494,7 +501,7 @@ plot_args(coef,delay,n,m,npts,almax,wmax)
     y=wmax-i*ds;
     lambda=rtoc(x,y);
     arg=get_arg(delay,coef,m,n,lambda);
-   /* printf(" %d %g \n",i,arg); */
+   /* plintf(" %d %g \n",i,arg); */
     sign=sign+test_sign(oldarg,arg);
     oldarg=arg;
  
@@ -506,7 +513,7 @@ plot_args(coef,delay,n,m,npts,almax,wmax)
     x=i*ds;
     lambda=rtoc(x,y);
     arg=get_arg(delay,coef,m,n,lambda);
-/*        printf(" %d %g \n",i+npts,arg); */
+/*        plintf(" %d %g \n",i+npts,arg); */
        sign=sign+test_sign(oldarg,arg);
     oldarg=arg;
  
@@ -518,7 +525,7 @@ plot_args(coef,delay,n,m,npts,almax,wmax)
     y=-wmax+i*ds;
     lambda=rtoc(x,y);
     arg=get_arg(delay,coef,m,n,lambda);
-/*     printf(" %d %g \n",i+2*npts,arg); */
+/*     plintf(" %d %g \n",i+2*npts,arg); */
       sign=sign+test_sign(oldarg,arg);
     oldarg=arg;
  
@@ -531,7 +538,7 @@ plot_args(coef,delay,n,m,npts,almax,wmax)
     x=almax-i*ds;
     lambda=rtoc(x,y);
     arg=get_arg(delay,coef,m,n,lambda);
-/*         printf(" %d %g \n",i+3*npts,arg); */
+/*         plintf(" %d %g \n",i+3*npts,arg); */
     sign=sign+test_sign(oldarg,arg);
     oldarg=arg;
   

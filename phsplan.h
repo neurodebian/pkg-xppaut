@@ -1,3 +1,7 @@
+#ifndef _phsplan_h
+#define _phsplan_h
+
+
 /*          This include file has all of the global phaseplane 
             stuff.
             This is not where it is defined
@@ -61,7 +65,7 @@ extern int HIST,HVAR,hist_ind;
  extern char uvar_names[MAXODE][12];
 
 
-
+#endif
 
 
 

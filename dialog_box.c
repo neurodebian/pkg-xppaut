@@ -1,3 +1,7 @@
+#include "dialog_box.h"
+
+#include "many_pops.h"
+#include "ggets.h"
 #include <stdlib.h> 
 #include <string.h>
 #include <X11/Xlib.h>
@@ -35,7 +39,8 @@ extern GC gc;
 extern int xor_flag,DCURY,DCURX,CURY_OFF,CURS_X,CURS_Y;
 double atof();
  Window make_window();
-get_dialog(wname,name,value,ok,cancel,max)
+
+int get_dialog(wname,name,value,ok,cancel,max)
 char *wname,*name,*value,*ok,*cancel;
 int max;
 {
@@ -99,7 +104,7 @@ int max;
  return(status);
 }   
 
-dialog_event_loop(d,max,pos,col)
+int dialog_event_loop(d,max,pos,col)
 DIALOG *d;
  int max;
  int *pos,*col;
@@ -160,7 +165,7 @@ DIALOG *d;
   
    
 
-display_dialog(w,d,pos,col)
+void display_dialog(w,d,pos,col)
 Window w;
 DIALOG d;
 int pos,col;

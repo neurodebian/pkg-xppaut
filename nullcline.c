@@ -1,3 +1,16 @@
+#include "nullcline.h"
+#include "my_rhs.h"
+#include "abort.h"
+#include "browse.h"
+#include "ggets.h"
+#include "init_conds.h"
+#include "integrate.h"
+#include "load_eqn.h"
+#include "main.h"
+
+#include "parserslow.h"
+#include "pop_list.h"
+
 #include <stdlib.h> 
 #include <string.h>
 #include <math.h>
@@ -6,6 +19,10 @@
 #include <X11/Xutil.h>
 #include "xpplim.h"
 #include "struct.h"
+#include "graphics.h"
+#include "menudrive.h"
+
+
 
 #define MAX_LEN_SBOX 25
 #define DING ping
@@ -15,7 +32,7 @@ extern int SuppressBounds;
 extern GRAPH *MyGraph;
 
 int NullStyle=0; /* 1 is with little vertical/horizontal lines */
-extern (*rhs)();
+extern int (*rhs)();
 
 double atof();
 extern int DRight,DLeft,DTop,DBottom;
@@ -33,16 +50,6 @@ float fnull();
 int DF_GRID=10,DF_FLAG=0,DF_IX=-1,DF_IY=-1;
 int DFIELD_TYPE=0;
 
-typedef struct {
-		float x,y,z;
-		} Pt;
-
-typedef struct nclines {
-                float *xn,*yn;
-                int nmx,nmy;
-                int n_ix,n_iy;
-                struct nclines *n,*p;
-}  NCLINES;
 
 
 RANGE_INFO ncrange;  
@@ -51,7 +58,7 @@ NCLINES *ncperm;
 int n_nstore=0;
 int ncline_cnt;
 
-froz_cline_stuff_com(int i)
+void froz_cline_stuff_com(int i)
 {
   int delay=200;
   if(n_nstore==0)start_ncline();
@@ -77,7 +84,7 @@ froz_cline_stuff_com(int i)
 	
 		 
 
-do_range_clines()
+void do_range_clines()
 {
   static char *n[]={"*2Range parameter","Steps","Low","High"};
   char values[4][MAX_LEN_SBOX];
@@ -152,7 +159,7 @@ do_range_clines()
   
 }
 
-start_ncline()
+void start_ncline()
 {
   n_nstore=1;
   ncperm=(NCLINES *)malloc(sizeof(NCLINES));
@@ -168,7 +175,7 @@ start_ncline()
   sprintf(ncrange.rv," ");
 }
 
-clear_froz_cline()
+void clear_froz_cline()
 {
   NCLINES *z,*znew;
   z=ncperm;
@@ -203,7 +210,7 @@ clear_froz_cline()
   ncline_cnt=0;
 }
 
-get_nullcline_floats(float **v,int *n,int who,int type) /* type=0,1 */
+int get_nullcline_floats(float **v,int *n,int who,int type) /* type=0,1 */
 {
   NCLINES *z;
   int i;
@@ -236,7 +243,7 @@ get_nullcline_floats(float **v,int *n,int who,int type) /* type=0,1 */
     return 0;
 }   
 
-save_frozen_clines(fn)
+void save_frozen_clines(fn)
      char *fn;
 {
    NCLINES *z;
@@ -266,7 +273,7 @@ save_frozen_clines(fn)
   
 }
 
-redraw_froz_cline(flag)
+void redraw_froz_cline(flag)
      int flag;
 {
   NCLINES *z;
@@ -280,7 +287,7 @@ redraw_froz_cline(flag)
   while(1){
     if(z==NULL||(z->nmx==0&&z->nmy==0))return;
     
-  /*  printf(" %d %d  %d %d  %d \n",
+  /*  plintf(" %d %d  %d %d  %d \n",
 	   MyGraph->xv[0],z->n_ix, &MyGraph->yv[0],z->n_iy ,
 	  MyGraph->ThreeDFlag==0); */
     if(MyGraph->xv[0]==z->n_ix&&MyGraph->yv[0]==z->n_iy
@@ -304,7 +311,7 @@ redraw_froz_cline(flag)
   }
 }
 
-add_froz_cline(xn,nmx,n_ix,yn,nmy,n_iy)
+void add_froz_cline(xn,nmx,n_ix,yn,nmy,n_iy)
      float *xn,*yn;
      int nmx,nmy,n_ix,n_iy;
 {
@@ -337,7 +344,7 @@ add_froz_cline(xn,nmx,n_ix,yn,nmy,n_iy)
 }
 
                 
-get_max_dfield(y,ydot,u0,v0,du,dv,n,inx,iny,mdf)
+void get_max_dfield(y,ydot,u0,v0,du,dv,n,inx,iny,mdf)
      double *y,*ydot,du,dv,u0,v0,*mdf;
      int n,inx,iny;
 {
@@ -358,19 +365,19 @@ get_max_dfield(y,ydot,u0,v0,du,dv,n,inx,iny,mdf)
 }
 /*  all the nifty 2D stuff here    */
 
-redraw_dfield()
+void redraw_dfield()
 {
-  int i,j,start,k;
+  int i,j,k;
   int inx=MyGraph->xv[0]-1;
   int iny=MyGraph->yv[0]-1;
   double y[MAXODE],ydot[MAXODE],xv1,xv2;
   float v1[MAXODE],v2[MAXODE];
-  double scx=MyGraph->yhi-MyGraph->ylo;
-  double scy=MyGraph->xhi-MyGraph->xlo;
+  
+
   double amp,mdf;
-  double t;
+
   double du,dv,u0,v0,dxp,dyp,dz,dup,dvp;
-  double oldtrans=TRANS;
+
 
   int grid=DF_GRID;
   
@@ -432,7 +439,7 @@ redraw_dfield()
   }
 }
 
-direct_field_com(int c)
+void direct_field_com(int c)
 {
   
   int i,j,start,k;
@@ -441,8 +448,8 @@ direct_field_com(int c)
   double y[MAXODE],ydot[MAXODE],xv1,xv2;
   double dtold=DELTA_T;
   float v1[MAXODE],v2[MAXODE];
-  double scx=MyGraph->yhi-MyGraph->ylo;
-  double scy=MyGraph->xhi-MyGraph->xlo;
+  
+  
   double amp,mdf;
   double t;
   double du,dv,u0,v0,dxp,dyp,dz,dup,dvp;
@@ -562,7 +569,7 @@ direct_field_com(int c)
        
      
      
-save_the_nullclines()
+void save_the_nullclines()
 {
   FILE *fp;
   char filename[256];
@@ -581,7 +588,7 @@ save_the_nullclines()
 }
 
 
-restore_nullclines()
+void restore_nullclines()
 {
  int col1=XNullColor,col2=YNullColor;
  /* if(PaperWhite){
@@ -599,7 +606,7 @@ restore_nullclines()
  redraw_froz_cline(0);
 }
 
-dump_clines(fp,x,nx,y,ny) /* gnuplot format */
+void dump_clines(fp,x,nx,y,ny) /* gnuplot format */
      FILE *fp;
      float *x,*y;
      int nx,ny;
@@ -620,7 +627,8 @@ dump_clines(fp,x,nx,y,ny) /* gnuplot format */
 
 
 }
-dump_clines_old(fp,x,nx,y,ny)
+
+void dump_clines_old(fp,x,nx,y,ny)
      FILE *fp;
      float *x,*y;
      int nx,ny;
@@ -645,7 +653,8 @@ dump_clines_old(fp,x,nx,y,ny)
     }
 
 }
-restor_null(v,n,d) /* d=1 for x and 2 for y  */
+
+void restor_null(v,n,d) /* d=1 for x and 2 for y  */
      float *v;
      int n,d;
 {
@@ -673,9 +682,13 @@ restor_null(v,n,d) /* d=1 for x and 2 for y  */
       }
     }
 }
+void create_new_cline()
+{
+  if(NULL_HERE)
+    new_clines_com(0);
+} 
 
-
-new_clines_com(int c)
+void new_clines_com(int c)
 {
   int course=NMESH,i;
   float xmin,xmax,y_tp,y_bot;
@@ -745,7 +758,7 @@ new_clines_com(int c)
 }
 
 
-new_nullcline(course,xlo,ylo,xhi,yhi,stor,npts)
+void new_nullcline(course,xlo,ylo,xhi,yhi,stor,npts)
      int course;
      float xlo,ylo,xhi,yhi;
      int *npts;
@@ -759,7 +772,7 @@ new_nullcline(course,xlo,ylo,xhi,yhi,stor,npts)
 
 
 
-stor_null(x1,y1,x2,y2)
+void stor_null(x1,y1,x2,y2)
 float x1,y1,x2,y2;
 {
  int i;
@@ -782,12 +795,12 @@ float fnull( x, y)
   y1[null_ix-1]=(double)x;
   y1[null_iy-1]=(double)y;
   rhs(0.0,y1,ydot,NODE);
-  /*  printf(" %f  %f %f \n ", x,y,ydot[WHICH_CRV-1]); */
+  /*  plintf(" %f  %f %f \n ", x,y,ydot[WHICH_CRV-1]); */
   return((float)ydot[WHICH_CRV-1]);
  }
 
 
-interpolate(p1,p2,z,x,y)
+int interpolate(p1,p2,z,x,y)
  Pt p1,p2;
  float z,*x,*y;
 {
@@ -799,7 +812,7 @@ interpolate(p1,p2,z,x,y)
    return(1);
  }
 
-quad_contour(p1,p2,p3,p4)
+void quad_contour(p1,p2,p3,p4)
 Pt p1,p2,p3,p4;
 {
  float x[4],y[4];
@@ -823,7 +836,7 @@ Pt p1,p2,p3,p4;
 }
 
 
-triangle_contour(p1,p2,p3)
+void triangle_contour(p1,p2,p3)
 
 Pt p1,p2,p3;
 {
@@ -854,13 +867,13 @@ if(p2.z*p3.z<=0.0)
 
 
 
-do_cline(ngrid,x1,y1,x2,y2)
+void do_cline(ngrid,x1,y1,x2,y2)
 int ngrid;
 float x1,y1,x2,y2;
 {
  float dx=(x2-x1)/(float)ngrid;
  float dy=(y2-y1)/(float)ngrid;
- float x,y,z;
+ float x,y;
  Pt p[5];
  char esc;
  int i,j,cwidth;

@@ -6,7 +6,7 @@
 <P>
 <center>
 <h1>Structure of ODE files</h1> 
-
+</center>
 </DIV>
 
 <P>
@@ -408,7 +408,7 @@ than their meaning here.
 sin cos tan atan atan2 sinh cosh tanh
 exp delay ln log log10 t pi if then else
 asin acos heav sign ceil flr ran abs del_shft
-max min normal besselj bessely erf erfc hom_bcs
+max min normal besselj bessely besseli erf erfc hom_bcs
 arg1 ... arg9  @ $ + - / * ^ ** shift
 | &gt; &lt; == &gt;= &lt;= != not \# int sum of i'
 </PRE>
@@ -424,8 +424,8 @@ These are mainly self-explanatory. The nonobvious ones are:
 <LI><TT>ran(arg)</TT> produces a uniformly distributed random number
 between 0 and <TT>arg.</TT>
 </LI>
-<LI><TT>besselj, bessely </TT> take two arguments, <b> (n,x) </b> 
-and return <b> J<sub>n</sub>(x) </b> and <b> Y<sub>n</sub>(x) </b>
+<LI><TT>besselj, bessely, besseli  </TT> take two arguments, <b> (n,x) </b> 
+and return <b> J<sub>n</sub>(x) </b> , <b> Y<sub>n</sub>(x) </b>, and <b> I<sub>n</sub>(x) </b>
 respectively, the Bessel functions.
 </LI>
 <LI> <TT>erf(x), erfc(x)</TT> are the error function and the

@@ -1,3 +1,9 @@
+#include "parserslow.h"
+
+#include <time.h>
+#include "ggets.h"
+#include "tabular.h"
+
 #include <stdlib.h> 
 /*  lots of changes - good luck */
 /* NOTE!!!  I am changing the parser a great deal here
@@ -46,9 +52,10 @@ so that I have the block from 200-599 for parameter
 #include <stdio.h>
 #include <string.h>
 
-#include "parserslow.h"
+
 #include "xpplim.h"
 #include "getvar.h"
+
 #define MAXEXPLEN 1024
 #define THOUS 10000
 #define DOUB_EPS 2.23E-15 
@@ -56,7 +63,15 @@ so that I have the block from 200-599 for parameter
 double zippy;
 #define PUSH(a) zippy=(a); stack[stack_pointer++]=zippy;
 
+#ifdef NOLGAMMA
+double lgamma();
+#endif
 
+
+extern int NODE;
+
+
+int nsrand48(int seed);
 
 #define DFNORMAL 1
 #define DFFP 2
@@ -77,11 +92,155 @@ double hom_bcs();
 double BoxMuller;
 int BoxMullerFlag=0;
 int RandSeed=12345678;
+
+#ifndef M_PI
+# define M_PI	3.14159265358979323846264338327950288
+#endif
+
+
 extern int newseed;
 extern int del_stab_flag;
 
 double CurrentIndex=0;
 int SumIndex=1;
+
+double evaluate(/* int* */ );
+
+double get_ivar(/* int i */ );
+
+double eval_rpn(/* int* */ );
+double ker_val();
+double pop(  );
+
+int stack_pointer,uptr;
+double constants[MAXPAR];
+double variables[MAXODE1];
+int *ufun[MAXUFUN];
+char *ufun_def[MAXUFUN];
+char ufun_names[MAXUFUN][12];
+int narg_fun[MAXUFUN];
+double stack[200],ustack[200];
+
+KERNEL kernel[MAXKER];
+int NKernel;
+int MaxPoints;
+double *Memory[MAXKER];
+int NTable;
+
+
+UFUN_ARG ufun_arg[MAXUFUN];
+
+
+SYMBOL my_symb[MAX_SYMBS]=
+{  
+   {"(",1,999,0,1},      /*  0   */
+   {")",1,999,0,2},
+   {",",1,999,0,3},
+   {"+",1,100,0,4},
+   {"-",1,101,0,4},
+   {"*",1,102,0,6},
+   {"/",1,103,0,6},
+   {"^",1,105,0,7},
+   {"**",2,105,0,7},
+   {"~",1,14,0,6},
+   {"START",5,-1,0,0},  /* 10  */
+   {"END",3,999,0,-1},
+   {"ATAN2",5,104,2,10},
+   {"MAX",3,106,2,10},
+   {"MIN",3,107,2,10},
+   {"SIN",3,0,0,10},
+   {"COS",3,1,0,10},
+   {"TAN",3,2,0,10},
+   {"ASIN",4,3,0,10},
+   {"ACOS",4,4,0,10},
+   {"ATAN",4,5,0,10},  /* 20  */
+   {"SINH",4,6,0,10},
+   {"TANH",4,7,0,10},
+   {"COSH",4,8,0,10},
+   {"ABS",3,9,0,10},
+   {"EXP",3,10,0,10},
+   {"LN",2,11,0,10},
+   {"LOG",3,11,0,10},
+   {"LOG10",5,12,0,10},
+   {"SQRT",4,13,0,10},
+   {"HEAV",4,16,0,10},  /*  30 */
+   {"SIGN",4,17,0,10},
+   {"#$%1",4,800,0,10},
+   {"#$%2",4,801,0,10},
+   {"#$%3",4,802,0,10},
+   {"#$%4",4,803,0,10},
+   {"#$%5",4,804,0,10},
+   {"#$%6",4,805,0,10},
+   {"#$%7",4,806,0,10},
+   {"#$%8",4,807,0,10},
+   {"FLR",3,18,0,10},  /*  40 */
+   {"MOD",3,108,2,10}, /*  41 */
+   {"DELAY",5,ENDDELAY,2,10},      /*  42 */   /*  Delay symbol */
+   {"RAN",3,19,1,10}, /* 43 */
+   {"&",1,109,0,6},  /* logical stuff  */
+   {"|",1,110,0,4},
+   {">",1,111,0,7},
+   {"<",1,112,0,7},
+   {"==",2,113,0,7},
+   {">=",2,114,0,7},
+   {"<=",2,115,0,7}, /*50 */
+   {"IF",2,995,1,10}, 
+   {"THEN",4,994,1,10},
+   {"ELSE",4,993,1,10},
+   {"!=",2,116,0,7},
+   {"NOT",3,20,0,6},
+   {"NORMAL",6,117,2,10}, /* returns normally dist number */
+   {"BESSELJ",7,118,2,10}, /* Bessel J   */
+   {"BESSELY",7,119,2,10}, /* Bessel Y */
+   {"NXXQQ",5,NUMSYM,0,10},  
+   {"ERF", 3, 21,0,10}, /* 60 */
+   {"ERFC",4,22,0,10},
+   {"SUM",3,SUMSYM,2,10},
+   {"OF",2,ENDSUM,0,10},
+   {"SHIFT",5,ENDSHIFT,2,10}, 
+   {"DEL_SHFT",8,ENDDELSHFT,3,10},/* 65 */
+   {"HOM_BCS",7,23,0,10},
+   {"ISHIFT",6,ENDISHIFT,2,10}, /* 67 */
+   {"@",1,INDXCOM,0,10}, /*68 */
+   {"]",1,ENDSHIFT,0,10},
+   {"[",1,ENDSHIFT,0,10}, /*70 */
+   {"POISSON",7,24,0,10}, /* 71 */
+   {"SET",3,ENDSET,3,10}, /* 72 */
+   {"ARG1",4,800,0,10},
+   {"ARG2",4,801,0,10},
+   {"ARG3",4,802,0,10},
+   {"ARG4",4,803,0,10},
+   {"ARG5",4,804,0,10},
+   {"ARG6",4,805,0,10},
+   {"ARG7",4,806,0,10},
+   {"ARG8",4,807,0,10},
+   {"ARG9",4,808,0,10},
+   {"ARG10",5,809,0,10},
+   {"ARG11",5,810,0,10},
+   {"ARG12",5,811,0,10},
+   {"ARG13",5,812,0,10},
+   {"ARG14",5,813,0,10},
+   {"ARG15",5,814,0,10},
+   {"ARG16",5,815,0,10},
+   {"ARG17",5,816,0,10},
+   {"ARG18",5,817,0,10},
+   {"ARG19",5,818,0,10},
+   {"ARG20",5,819,0,10},  
+   {"BESSELI",7,120,2,10},/* Bessel I  # 93 */
+   {"LGAMMA",6,25,1,10} /* Log Gamma  #94 */
+      };
+    
+    
+    
+int NCON=0,NVAR=0,NFUN=0;
+int NSYM=STDSYM;
+
+/*     pointers to functions    */
+
+double (*fun1[50])(/* double */ );
+double (*fun2[50])(/* double,double */ );
+
+
 /*************************
   RPN COMPILER           *
 **************************/
@@ -135,9 +294,9 @@ char *c;
 */
 
 
-init_rpn()
+void init_rpn()
 {
-	int             i;
+
 	ERROUT = 1;
 	NCON = 0;
 	NFUN = 0;
@@ -149,7 +308,17 @@ init_rpn()
 	two_args();
 	one_arg();
 	add_con("PI", M_PI);
+
         add_con("I'",0.0);
+	/*   This is going to be for interacting with the 
+	     animator */
+
+        add_con("mouse_x",0.0);
+        add_con("mouse_y",0.0);
+        add_con("mouse_vx",0.0);
+        add_con("mouse_vy",0.0);
+
+	/* end animator stuff */
 	/*  add_con("c___1",0.0);
         add_con("c___2",0.0);
         add_con("c___3",0.0); */
@@ -161,7 +330,8 @@ init_rpn()
 
  /*  FREE_UFUNS   */
 
-free_ufuns()
+
+void free_ufuns()
 {
  int i;
  for(i=0;i<NFUN;i++)
@@ -170,7 +340,8 @@ free_ufuns()
   free(ufun_def[i]);
  }
 }
-duplicate_name(junk)
+
+int duplicate_name(junk)
      char *junk;
 {
   int i;
@@ -181,10 +352,10 @@ duplicate_name(junk)
   }
   return(0);
 }
-  
+
 /*  ADD_CONSTANT   */
 
-add_constant(junk)
+int add_constant(junk)
 char *junk;
 {
  int len;
@@ -199,7 +370,7 @@ char *junk;
  convert(junk,string);
  len=strlen(string);
   if(len<1){
-   printf("Empty parameter - remove spaces\n");
+   plintf("Empty parameter - remove spaces\n");
    return 1;
  }
  if(len>MXLEN)len=MXLEN;
@@ -214,10 +385,10 @@ char *junk;
 }
 
 
-get_var_index(name)
+int get_var_index(name)
      char *name;
 {
-  int in=-1;
+
   int type,com;
   find_name(name,&type);
   if(type<0)return -1;
@@ -233,7 +404,7 @@ get_var_index(name)
 /* GET_TYPE   */
 
 
-get_type(index)
+int get_type(index)
 int index;
 {
 return(my_symb[index].com);
@@ -241,7 +412,7 @@ return(my_symb[index].com);
 
 /*   ADD_CON      */
 
-add_con(name,value)
+int add_con(name,value)
 char *name;
 double value;
 {
@@ -255,20 +426,20 @@ double value;
  return(add_constant(name));
 }
 
-add_kernel(name,mu,expr)
+int add_kernel(name,mu,expr)
      char *name,*expr;
      double mu;
 {
   char string[100];
-  char bexpr[MAXEXPLEN],kexpr[MAXEXPLEN];
+  
   int len,i,in=-1;
   if(duplicate_name(name)==1)return(1);
   if(NKernel==MAXKER){
-    printf("Too many kernels..\n");
+    plintf("Too many kernels..\n");
     return(1);
   }
   if(mu<0||mu>=1.0){
-    printf(" mu must lie in [0,1.0) \n");
+    plintf(" mu must lie in [0,1.0) \n");
     return(1);
   }
   convert(name,string);
@@ -288,7 +459,7 @@ add_kernel(name,mu,expr)
   for(i=0;i<strlen(expr);i++)
     if(expr[i]=='#')in=i;
   if(in==0||in==(strlen(expr)-1)){
-    printf("Illegal use of convolution...\n");
+    plintf("Illegal use of convolution...\n");
     return(1);
   }
   if(in>0){
@@ -299,7 +470,7 @@ add_kernel(name,mu,expr)
     kernel[NKernel].kerexpr[in]=0;
     for(i=in+1;i<strlen(expr);i++)kernel[NKernel].expr[i-in-1]=expr[i];
     kernel[NKernel].expr[strlen(expr)-in-1]=0;
-    printf("Convolving %s with %s\n",
+    plintf("Convolving %s with %s\n",
 	   kernel[NKernel].kerexpr,kernel[NKernel].expr);
   }
   else {
@@ -315,13 +486,13 @@ add_kernel(name,mu,expr)
 
 /*  ADD_VAR          */
 
-add_var(junk, value)
+int add_var(junk, value)
 char *junk;
 double value;
 {
  char string[100];
  int len;
- /*   printf(" variable - %s \n",junk); */
+ /*   plintf(" variable - %s \n",junk); */
  if(duplicate_name(junk)==1)return(1);
  if(NVAR>=MAXODE1)
  {
@@ -345,7 +516,7 @@ double value;
 
 /* ADD_EXPR   */
 
-add_expr(expr,command, length )
+int add_expr(expr,command, length )
 char *expr;
 int *command, *length;
 {
@@ -353,12 +524,12 @@ int *command, *length;
  int my_token[1024];
  int err,i;
  convert(expr,dest);
-/* printf(" Making token ...\n");  */
+/* plintf(" Making token ...\n");  */
  err=make_toks(dest,my_token); 
 
 /*  i=0;
   while(1){
-  printf(" %d %d \n",i,my_token[i]);
+  plintf(" %d %d \n",i,my_token[i]);
   if(my_token[i]==ENDTOK)break;
   i++;
 } */ 
@@ -372,13 +543,13 @@ int *command, *length;
    return(0);
 }
 
-add_net_name(index,name)
+int add_net_name(index,name)
      int index;
      char *name;
 {
   char string[50];
   int len=strlen(name);
-  printf(" Adding net %s %d \n",name,index);
+  plintf(" Adding net %s %d \n",name,index);
   if(duplicate_name(name)==1)return(1);  
   convert(name,string);
   if(len>MXLEN)len=MXLEN;
@@ -393,13 +564,13 @@ add_net_name(index,name)
    
 }
 
-add_vect_name(index,name)
+int  add_vect_name(index,name)
      int index;
      char *name;
 {
   char string[50];
   int len=strlen(name);
-  printf(" Adding vector %s %d \n",name,index);
+  plintf(" Adding vector %s %d \n",name,index);
   if(duplicate_name(name)==1)return(1);  
   convert(name,string);
   if(len>MXLEN)len=MXLEN;
@@ -417,14 +588,14 @@ add_vect_name(index,name)
 
 /* ADD LOOKUP TABLE   */
 
-add_2d_table(name,file)
+int add_2d_table(name,file)
      char *name,*file;
 {
- printf(" TWO D NOT HERE YET \n");
+ plintf(" TWO D NOT HERE YET \n");
  return(1);
 }
 
-add_file_table(index,file)
+int add_file_table(index,file)
      char *file;
      int index;
 {
@@ -438,7 +609,7 @@ add_file_table(index,file)
     return(0);
 }
 
-add_table_name(index,name)
+int add_table_name(index,name)
      char *name;
      int index;
 {
@@ -460,7 +631,7 @@ add_table_name(index,name)
 /* ADD LOOKUP TABLE   */
 
 
-add_form_table(index,nn,xlo,xhi,formula)
+int add_form_table(index,nn,xlo,xhi,formula)
      char *formula;
      double xlo,xhi;
      int nn;
@@ -477,7 +648,7 @@ add_form_table(index,nn,xlo,xhi,formula)
 }
     
 
-set_old_arg_names(narg)
+void set_old_arg_names(narg)
      int narg;
 {
   int i;
@@ -487,7 +658,7 @@ set_old_arg_names(narg)
   }
 }
 
-set_new_arg_names(narg,args)
+void set_new_arg_names(narg,args)
      char args[10][11];
      int narg;
 {
@@ -501,7 +672,7 @@ set_new_arg_names(narg,args)
 
 /* NEW ADD_FUN for new form_ode code  */
 
-add_ufun_name(name,index,narg)
+int add_ufun_name(name,index,narg)
      char *name;
      int index,narg;
 {
@@ -513,7 +684,7 @@ add_ufun_name(name,index,narg)
   if(ERROUT)printf("too many functions !!\n");
   return(1);
  }
-  printf(" Added user fun %s \n",name);
+  plintf(" Added user fun %s \n",name);
   convert(name,string);
   if(len>MXLEN)len=MXLEN;
   strncpy(my_symb[NSYM].name,string,len);
@@ -526,7 +697,8 @@ add_ufun_name(name,index,narg)
   strcpy(ufun_names[index],name);
   return (0);
 }
-fixup_endfun(u,l,narg)
+
+void fixup_endfun(u,l,narg)
      int *u;
      int l,narg;
 {
@@ -535,7 +707,8 @@ fixup_endfun(u,l,narg)
  u[l+1]=ENDEXP;
 }
 
-add_ufun_new(index,narg,rhs,args)
+
+int add_ufun_new(index,narg,rhs,args)
      char *rhs,args[MAXARG][11];
      int narg,index;
 {
@@ -543,7 +716,7 @@ add_ufun_new(index,narg,rhs,args)
   int i,l;
   int end;
    if(narg>MAXARG){
-    printf("Maximal arguments exceeded \n");
+    plintf("Maximal arguments exceeded \n");
     return(1);
   }
   if((ufun[index]=(int *)malloc(1024))==NULL)
@@ -581,7 +754,7 @@ add_ufun_new(index,narg,rhs,args)
 
 /* ADD_UFUN   */
 
-add_ufun(junk,expr,narg)
+int add_ufun(junk,expr,narg)
 char *junk, *expr;
 int narg;
 {
@@ -637,7 +810,7 @@ int narg;
 }
 
 
-check_num(tok,value)
+int check_num(tok,value)
 int *tok;
 double value;
 {
@@ -663,7 +836,7 @@ double value;
 
 /* is_ufun         */
 
-is_ufun( x)
+int is_ufun( x)
 int x;
 {
  if((x/100)==UFUN)return(1);
@@ -672,7 +845,7 @@ int x;
 
 /* IS_UCON        */
 
-is_ucon( x)
+int is_ucon( x)
 int x;
 {
  int xx=x/100;
@@ -682,7 +855,7 @@ int x;
 
 /* IS_UVAR       */
 
-is_uvar(x)
+int is_uvar(x)
 int x;
 {
  int y=x/100;
@@ -690,39 +863,43 @@ int x;
  else return(0);
 }
 
-isvar(y)
+int isvar(y)
      int y;
 {
   if((y>=100)&&(y<200))return(1);
   return 0;
 }
-iscnst(y)
+
+int iscnst(y)
      int y;
 {
   if(y>1&&y<6)return(1);
   return 0;
 }
-isker(y)
+
+int isker(y)
      int y;
 {
   if(y==10)return(1);
   return 0;
 }
 
-is_kernel(x)
+
+int is_kernel(x)
 int x;
 {
   if((x/100)==10)return(1);
   else return(0);
 }
-is_lookup(x)
+
+int is_lookup(x)
 int x;
 {
  if((x/100)==7)return(1);
  else return(0);
 }
 
-find_lookup(name)
+int find_lookup(name)
      char *name;
 {
  int index,com;
@@ -736,7 +913,7 @@ find_lookup(name)
 
 /* FIND_NAME    */
 
-find_name(string, index)
+void find_name(string, index)
  char *string;
  int *index;
 {
@@ -755,7 +932,7 @@ find_name(string, index)
 }
 
 
-get_param_index(name)
+int get_param_index(name)
      char *name;
 {
  int type,com;
@@ -772,7 +949,7 @@ get_param_index(name)
 
 /* GET_VAL   */
 
-get_val(name,value)
+int get_val(name,value)
 char *name;
 double *value;
 {
@@ -796,7 +973,7 @@ double *value;
 
 /* SET_VAL         */
 
-set_val(name, value)
+int set_val(name, value)
 char *name;
 double value;
 {
@@ -821,7 +998,7 @@ double value;
 
 
 
-set_ivar(i, value)
+void set_ivar(i, value)
 int i;
 double value;
 {
@@ -836,18 +1013,17 @@ int i;
 
 
 
-alg_to_rpn(toklist,command)
+int alg_to_rpn(toklist,command)
 int *toklist,*command;
 {
   int tokstak[500],comptr=0,tokptr=0,lstptr=0,temp;
-  int ncomma=0,delflag=0,deltok;
+  int ncomma=0;
   int loopstk[100];
   int lptr=0;
   int nif=0,nthen=0,nelse=0;
-  int newtok,oldtok,zip;
-  int i,my_com,my_arg,jmp;
-  char ch;
-  int jj;
+  int newtok,oldtok;
+  int my_com,my_arg,jmp;
+
   tokstak[0]=STARTTOK;
   tokptr=1;
   oldtok=STARTTOK;
@@ -856,7 +1032,7 @@ int *toklist,*command;
  getnew:
           newtok=toklist[lstptr++];
    /*    for(zip=0;zip<tokptr;zip++)
-	    printf("%d %d\n",zip,tokstak[zip]);  */
+	    plintf("%d %d\n",zip,tokstak[zip]);  */
 /*        check for delay symbol             */
           if(newtok==DELSYM)
 	  {
@@ -965,7 +1141,7 @@ int *toklist,*command;
            if(my_symb[oldtok%THOUS].pri>=my_symb[newtok%THOUS].pri)
            {
             command[comptr]=my_symb[oldtok%THOUS].com;
-/*             printf("com(%d)=%d\n",comptr,command[comptr]); */
+/*             plintf("com(%d)=%d\n",comptr,command[comptr]); */
 	    if((my_symb[oldtok%THOUS].arg==2)&&
 	       (my_symb[oldtok%THOUS].com/100==1))
 	      ncomma--;
@@ -973,15 +1149,15 @@ int *toklist,*command;
 	                comptr++;
  /*   New code   3/95      */
 	   if(my_com==NUMSYM){
-/*             printf("tp=%d ",tokptr);  */
+/*             plintf("tp=%d ",tokptr);  */
 	     tokptr--;
-/*     printf(" ts[%d]=%d ",tokptr,tokstak[tokptr]); */
+/*     plintf(" ts[%d]=%d ",tokptr,tokstak[tokptr]); */
 	     command[comptr]=tokstak[tokptr-1];
-/*	     printf("xcom(%d)=%d\n",comptr,command[comptr]);  */
+/*	     plintf("xcom(%d)=%d\n",comptr,command[comptr]);  */
 	     comptr++;
 	     tokptr--;
 	     command[comptr]=tokstak[tokptr-1];
-/*	     printf("xcom(%d)=%d\n",comptr,command[comptr]);  */
+/*	     plintf("xcom(%d)=%d\n",comptr,command[comptr]);  */
 	     comptr++;
 	   }
  /*   end new code    3/95    */
@@ -1059,11 +1235,11 @@ int *toklist,*command;
           goto getnew;
        }
         if(ncomma!=0){
-        printf("Illegal number of arguments\n");
+        plintf("Illegal number of arguments\n");
 	return(1);
         }
 	if((nif!=nelse)||(nif!=nthen)){
-	  printf("If statement missing ELSE or THEN \n");
+	  plintf("If statement missing ELSE or THEN \n");
 	  return(1);
 	    }
         command[comptr]=my_symb[ENDTOK].com;
@@ -1072,14 +1248,14 @@ int *toklist,*command;
         return(0);
     }
 
-pr_command(command)
+void pr_command(command)
      int *command;
 {
  int i=0;
  int token;
  while(1){
   token=command[i];
-  printf("%d %d \n",i,token);
+  plintf("%d %d \n",i,token);
   if(token==ENDEXP)return;
    i++;
   }
@@ -1088,19 +1264,20 @@ pr_command(command)
 
 
 
-show_where(string,index)
+void show_where(string,index)
      char *string;
      int index;
 {
   char junk[MAXEXPLEN];
   int i;
+  /* exit(-1); */
   for(i=0;i<index;i++)junk[i]=' ';
   junk[index]='^';
   junk[index+1]=0;
-  printf("%s\n%s\n",string,junk);
+  plintf("%s\n%s\n",string,junk);
 }
 
-function_sym(token) /* functions should have ( after them  */
+int function_sym(int token) /* functions should have ( after them  */
 {
   int com=my_symb[token].com;
   int i1=com/100;
@@ -1113,14 +1290,14 @@ function_sym(token) /* functions should have ( after them  */
   return(0);
 }
 
-unary_sym(token)
+int unary_sym(int token)
 {
 
   if(token==9||token==55)return(1);
   return(0);
 }
 
-binary_sym(token)
+int binary_sym(token)
      int token;
 {
   if(token>2&&token<9)return(1);
@@ -1129,7 +1306,7 @@ binary_sym(token)
   return(0);
 }
 
-pure_number(token)
+int pure_number(token)
      int token;
 {
   int com=my_symb[token].com;
@@ -1140,7 +1317,7 @@ pure_number(token)
 }
 
 
-gives_number(token)
+int gives_number(token)
      int token;
 {
   int com=my_symb[token].com;
@@ -1155,10 +1332,10 @@ gives_number(token)
 }
 
 
-check_syntax(oldtoken,newtoken) /* 1 is BAD!   */
+int check_syntax(oldtoken,newtoken) /* 1 is BAD!   */
      int oldtoken,newtoken;
 {
-  int com1=my_symb[oldtoken].com,com2=my_symb[newtoken].com;
+  int com2=my_symb[newtoken].com;
 
 /* if the first symbol or (  or binary symbol then must be unary symbol or 
    something that returns a number or another (   
@@ -1203,7 +1380,7 @@ check_syntax(oldtoken,newtoken) /* 1 is BAD!   */
    return(1);
  }
 
-  printf("Bad token %d \n",oldtoken);
+  plintf("Bad token %d \n",oldtoken);
   return(1);
     
 }
@@ -1216,14 +1393,14 @@ check_syntax(oldtoken,newtoken) /* 1 is BAD!   */
 
 
 
- make_toks(dest,my_token)
+int make_toks(dest,my_token)
  char *dest;
  int *my_token;
  {
- char num[40],junk[10];
+ char num[40];
  double value;
   int old_tok=STARTTOK,tok_in=0;
- int index=0,err,token,nparen=0,lastindex=0;
+ int index=0,token,nparen=0,lastindex=0;
  union    /*  WARNING  -- ASSUMES 32 bit int  and 64 bit double  */
    {
      struct {
@@ -1244,6 +1421,7 @@ check_syntax(oldtoken,newtoken) /* 1 is BAD!   */
   token=NEGATE;
   if(token==LPAREN)++nparen;
   if(token==RPAREN)--nparen;
+  
   if(token==NSYM)
     {
       if(do_num(dest,num,&value,&index)){
@@ -1256,7 +1434,7 @@ check_syntax(oldtoken,newtoken) /* 1 is BAD!   */
       my_token[tok_in++]=encoder.pieces.int1;
       my_token[tok_in++]=encoder.pieces.int2;
       if(check_syntax(old_tok,NUMTOK)==1){
-	 printf("Illegal syntax \n");
+	 plintf("Illegal syntax \n");
 	 show_where(dest,lastindex);
 	 return(1);
        }
@@ -1268,7 +1446,7 @@ check_syntax(oldtoken,newtoken) /* 1 is BAD!   */
      {
        my_token[tok_in++]=token;
        if(check_syntax(old_tok,token)==1){
-	 printf("Illegal syntax (Ref:%d %d) \n",old_tok,token);
+	 plintf("Illegal syntax (Ref:%d %d) \n",old_tok,token);
 	 show_where(dest,lastindex);
          tokeninfo(old_tok);
          tokeninfo(token);
@@ -1281,7 +1459,7 @@ check_syntax(oldtoken,newtoken) /* 1 is BAD!   */
 
 my_token[tok_in++]=ENDTOK;
 if(check_syntax(old_tok,ENDTOK)==1){
-  printf("Premature end of expression \n");
+  plintf("Premature end of expression \n");
   show_where(dest,lastindex);
   return(1);
 }
@@ -1294,16 +1472,16 @@ return(0);
 
 }
 
-tokeninfo(tok)
+void tokeninfo(tok)
 int tok;
 {
- printf(" %s %d %d %d %d \n",
+ plintf(" %s %d %d %d %d \n",
 	my_symb[tok].name,my_symb[tok].len,my_symb[tok].com,
         my_symb[tok].arg,my_symb[tok].pri);
 }
 
 
-do_num(source,num,value,ind)
+int do_num(source,num,value,ind)
 char *source,*num;
 double *value;
 int *ind;
@@ -1357,7 +1535,7 @@ err:
 
 
 
-convert(source,dest)
+void convert(source,dest)
 char *source,*dest;
 {
  char ch;
@@ -1374,7 +1552,7 @@ char *source,*dest;
 
 
 
-find_tok(source,index,tok)
+void find_tok(source,index,tok)
 char *source;
 int *index,*tok;
 {
@@ -1413,7 +1591,7 @@ double pmod(x,y)
   return(z);
 }
 
-two_args()
+void two_args()
 {
  fun2[4]=atan2;
  fun2[5]=pow;
@@ -1432,13 +1610,14 @@ two_args()
  fun2[17]=normal;
  fun2[18]=bessel_j;
  fun2[19]=bessel_y;
- 
+ fun2[20]=bessi;
  
 
 
 
 
 }
+
 /*   These are the Bessel Functions; if you dont have them then
      return some sort of dummy value or else write a program 
      to compute them
@@ -1457,6 +1636,91 @@ double bessel_y(x,y)
  int n=(int)x;
  return(yn(n,y));
 }
+
+#define ACC 40.0
+#define BIGNO 1.0e10
+#define BIGNI 1.0e-10
+
+
+double bessi(n,x)
+double  x;
+int n;
+{
+       	int j;
+	double  bi,bim,bip,tox,ans;
+
+	if(n==0)return bessi0(x);
+	if(n==1)return bessi1(x);
+	if (x == 0.0)
+		return 0.0;
+	else {
+		tox=2.0/fabs(x);
+		bip=ans=0.0;
+		bi=1.0;
+		for (j=2*(n+(int) sqrt(ACC*n));j>0;j--) {
+			bim=bip+j*tox*bi;
+			bip=bi;
+			bi=bim;
+			if (fabs(bi) > BIGNO) {
+				ans *= BIGNI;
+				bi *= BIGNI;
+				bip *= BIGNI;
+			}
+			if (j == n) ans=bip;
+		}
+		ans *= bessi0(x)/bi;
+		return x < 0.0 && (n & 1) ? -ans : ans;
+	}
+}
+
+double bessi0(x)
+double  x;
+{
+	double  ax,ans;
+	double y;
+
+	if ((ax=fabs(x)) < 3.75) {
+		y=x/3.75;
+		y*=y;
+		ans=1.0+y*(3.5156229+y*(3.0899424+y*(1.2067492
+			+y*(0.2659732+y*(0.360768e-1+y*0.45813e-2)))));
+	} else {
+		y=3.75/ax;
+		ans=(exp(ax)/sqrt(ax))*(0.39894228+y*(0.1328592e-1
+			+y*(0.225319e-2+y*(-0.157565e-2+y*(0.916281e-2
+			+y*(-0.2057706e-1+y*(0.2635537e-1+y*(-0.1647633e-1
+			+y*0.392377e-2))))))));
+	}
+	return ans;
+}
+
+double bessi1(x)
+double  x;
+{
+	double ax,ans;
+	double y;
+
+	if ((ax=fabs(x)) < 3.75) {
+		y=x/3.75;
+		y*=y;
+		ans=ax*(0.5+y*(0.87890594+y*(0.51498869+y*(0.15084934
+			+y*(0.2658733e-1+y*(0.301532e-2+y*0.32411e-3))))));
+	} else {
+		y=3.75/ax;
+		ans=0.2282967e-1+y*(-0.2895312e-1+y*(0.1787654e-1
+			-y*0.420059e-2));
+		ans=0.39894228+y*(-0.3988024e-1+y*(-0.362018e-2
+			+y*(0.163801e-2+y*(-0.1031555e-1+y*ans))));
+		ans *= (exp(ax)/sqrt(ax));
+	}
+	return x < 0.0 ? -ans : ans;
+}
+
+#undef ACC
+#undef BIGNO
+#undef BIGNI
+
+
 
 /*
 double pow2(z,w)
@@ -1500,7 +1764,7 @@ double shift,variable;
   int it, in;
   int i=(int)(variable),ish=(int)shift;
 
-/* printf( "shifting %d (%s) by %d to %d (%s)\n", 
+/* plintf( "shifting %d (%s) by %d to %d (%s)\n", 
  *	(int)variable, com_name((int)variable), (int)shift, i, com_name(i) );
  */
 
@@ -1546,17 +1810,15 @@ double shift,variable;
 	else 
 	  return variables[in];  
   default:
-    printf("This can't happen: Invalid symbol index for SHIFT\n");
+    plintf("This can't happen: Invalid symbol index for SHIFT\n");
     return 0.0;
   }
 }
 double do_ishift(shift,variable)
 double shift,variable;
 {
-  int it, in;
-  int i=(int)(variable),ish=(int)shift;
-
-/* printf( "shifting %d (%s) by %d to %d (%s)\n", 
+  
+/* plintf( "shifting %d (%s) by %d to %d (%s)\n", 
  *	(int)variable, com_name((int)variable), (int)shift, i, com_name(i) );
  */
  return variable+shift;
@@ -1566,7 +1828,7 @@ double shift,variable;
 double do_delay_shift(delay,shift,variable)
      double delay,shift,variable;
 {
- int it, in;
+ int in;
   int i=(int)(variable),ish=(int)shift;
   if(i<0) return(0.0);
   in=i-10000+ish;
@@ -1590,8 +1852,8 @@ double do_delay_shift(delay,shift,variable)
 double do_delay(delay,i)
 double delay,i;
 {
-  double z;
-  int variable, it, in;
+
+  int variable;
 
     variable = i-10000;
 
@@ -1625,7 +1887,7 @@ double z;
 }
 */
 
-one_arg()
+void one_arg()
 {
  fun1[0]=sin;
  fun1[1]=cos;
@@ -1652,7 +1914,10 @@ one_arg()
  fun1[22]=erfc;
  fun1[23]=hom_bcs;
   fun1[24]=poidev;
+  fun1[25]=lgamma;
 }
+
+
 
 
 double normal(mean,std)
@@ -1795,10 +2060,10 @@ double x,y;
  int *equat;
  {
    int i,it,in,j,*tmpeq;
-  int sumcount,ii,new[500],is;
-  int isum,aind;
-  int low,high,ind,iloop,ijmp;
-  double temp,temx,temy,temz;
+  int is;
+  
+  int low,high,ijmp;
+  double temx,temy,temz;
   double sum;
   union    /*  WARNING  -- ASSUMES 32 bit int  and 64 bit double  */
    {
@@ -1988,9 +2253,34 @@ bye: j=0;
 }
 
 
+/* code for log-gamma if you dont have it */
+
+#ifdef NOLGAMMA
+double lgamma(xx)
+double xx;
+{
+	double x,y,tmp,ser;
+	static double cof[6]={76.18009172947146,-86.50532032941677,
+		24.01409824083091,-1.231739572450155,
+		0.1208650973866179e-2,-0.5395239384953e-5};
+	int j;
+
+	y=x=xx;
+	tmp=x+5.5;
+	tmp -= (x+0.5)*log(tmp);
+	ser=1.000000000190015;
+	for (j=0;j<=5;j++) ser += cof[j]/++y;
+	return -tmp+log(2.5066282746310005*ser/x);
+}
+
+
+#endif
+
+
+
 /*  STRING STUFF  */
 #ifndef STRUPR
-strupr(s)
+void strupr(s)
 char *s;
 {
  int i=0;
@@ -2002,7 +2292,7 @@ char *s;
 }
 
 
-strlwr(s)
+void strlwr(s)
 char *s;
 {
  int i=0;
@@ -2013,7 +2303,3 @@ char *s;
   }
 }
 #endif
-
-
-
-

@@ -1,3 +1,11 @@
+#include "simplenet.h"
+
+#include "aniparse.h"
+#include "ggets.h"
+#include "markov.h"
+#include "parserslow.h"
+#include "tabular.h"
+
 #include <stdlib.h> 
 #include <string.h>
 /* 
@@ -139,6 +147,9 @@ typedef struct {
 #define FMMULT 7 
 #define GILLTYPE 25
 #define INTERP 30 
+#define MKSOL 35
+
+
 extern double variables[];
 #define MAXNET 50
 char *get_first(/* char *string,char *src */);
@@ -174,14 +185,14 @@ double network_value(x, i)
 }
  
 
-init_net(double *v,int n)
+void init_net(double *v,int n)
 {
   int i;
   for(i=0;i<n;i++)
     v[i]=0.0;
 }
 
-add_spec_fun(name,rhs)
+int add_spec_fun(name,rhs)
      char *name;
      char *rhs;
 {
@@ -189,18 +200,18 @@ add_spec_fun(name,rhs)
   int type;
   int iwgt,iind,ivar,ivar2;
   int ntype,ntot,ncon,ntab;
-  char *str,cc;
+  char *str;
   char junk[256];
   char rootname[20],wgtname[20],indname[20];
   char root2name[20],fname[20];
   type=is_network(rhs);
     if(type==0)return 0;
-  printf("type=%d \n",type);
+  plintf("type=%d \n",type);
   for(i=0;i<n_network;i++)
     if(strcmp(name,my_net[i].name)==0)break;
   ind=i;
   if(ind>=n_network){
-    printf(" No such name %s ?? \n",name);
+    plintf(" No such name %s ?? \n",name);
     return 0;
   }
   switch(type){
@@ -212,26 +223,26 @@ add_spec_fun(name,rhs)
     if(str[0]=='0'||str[0]=='Z')ntype=CONV0;
     if(str[0]=='P')ntype=CONVP;
     if(ntype==-1){
-      printf(" No such convolution type %s \n",str);
+      plintf(" No such convolution type %s \n",str);
       return 0;
     }
     str=get_next(",");
     ntot=atoi(str);
     if(ntot<=0){
-      printf(" %s must be positive int \n",str);
+      plintf(" %s must be positive int \n",str);
       return 0;
     }
     str=get_next(",");
     ncon=atoi(str);
     if(ncon<=0){
-       printf(" %s must be positive int \n",str);
+       plintf(" %s must be positive int \n",str);
       return 0;
     }
     str=get_next(",");
     strcpy(wgtname,str);
     iwgt=find_lookup(wgtname);
     if(iwgt<0){
-      printf("in network %s,  %s is not a table \n",
+      plintf("in network %s,  %s is not a table \n",
 	     name,wgtname);
       return 0;
     }
@@ -239,7 +250,7 @@ add_spec_fun(name,rhs)
     strcpy(rootname,str);
     ivar=get_var_index(rootname);
     if(ivar<0){
-      printf(" In %s , %s is not valid variable\n",
+      plintf(" In %s , %s is not valid variable\n",
 	     name,rootname);
       return 0;
     }
@@ -250,7 +261,7 @@ add_spec_fun(name,rhs)
     my_net[ind].root=ivar;
     my_net[ind].n=ntot;
     my_net[ind].ncon=ncon;
-    printf(" Added net %s type %d len=%d x %d using %s var[%d] \n",
+    plintf(" Added net %s type %d len=%d x %d using %s var[%d] \n",
 	   name,ntype,ntot,ncon,wgtname,ivar);
     
     return 1;   
@@ -262,14 +273,14 @@ add_spec_fun(name,rhs)
     ntot=atoi(str);
     
     if(ntot<=0){
-      printf(" %s must be positive int \n",str);
+      plintf(" %s must be positive int \n",str);
       return 0;
     }
     str=get_next(",");
     ncon=atoi(str);
     
     if(ncon<=0){
-       printf(" %s must be positive int \n",str);
+       plintf(" %s must be positive int \n",str);
       return 0;
     }
     str=get_next(",");
@@ -277,7 +288,7 @@ add_spec_fun(name,rhs)
     iwgt=find_lookup(wgtname);
     
     if(iwgt<0){
-      printf("in network %s,  %s is not a table \n",
+      plintf("in network %s,  %s is not a table \n",
 	     name,wgtname);
       return 0;
     }
@@ -287,7 +298,7 @@ add_spec_fun(name,rhs)
     iind=find_lookup(indname);
     
     if(iind<0){
-      printf("in network %s,  %s is not a table \n",
+      plintf("in network %s,  %s is not a table \n",
 	     name,indname);
       return 0;
     }
@@ -297,7 +308,7 @@ add_spec_fun(name,rhs)
   
 
    if(ivar<0){
-      printf(" In %s , %s is not valid variable\n",
+      plintf(" In %s , %s is not valid variable\n",
 	     name,rootname);
       return 0;
     }
@@ -311,7 +322,7 @@ add_spec_fun(name,rhs)
     my_net[ind].root=ivar;
     my_net[ind].n=ntot;
     my_net[ind].ncon=ncon;
-    printf(" Added sparse %s len=%d x %d using %s var[%d]  and %s\n",
+    plintf(" Added sparse %s len=%d x %d using %s var[%d]  and %s\n",
 	   name,ntot,ncon,wgtname,ivar,indname );
     return 1;   
     break;
@@ -323,26 +334,26 @@ add_spec_fun(name,rhs)
     if(str[0]=='0'||str[0]=='Z')ntype=FCONV0;
     if(str[0]=='P')ntype=FCONVP;
     if(ntype==-1){
-      printf(" No such convolution type %s \n",str);
+      plintf(" No such convolution type %s \n",str);
       return 0;
     }
     str=get_next(",");
     ntot=atoi(str);
     if(ntot<=0){
-      printf(" %s must be positive int \n",str);
+      plintf(" %s must be positive int \n",str);
       return 0;
     }
     str=get_next(",");
     ncon=atoi(str);
     if(ncon<=0){
-       printf(" %s must be positive int \n",str);
+       plintf(" %s must be positive int \n",str);
       return 0;
     }
     str=get_next(",");
     strcpy(wgtname,str);
     iwgt=find_lookup(wgtname);
     if(iwgt<0){
-      printf("in network %s,  %s is not a table \n",
+      plintf("in network %s,  %s is not a table \n",
 	     name,wgtname);
       return 0;
     }
@@ -352,7 +363,7 @@ add_spec_fun(name,rhs)
     strcpy(rootname,str);
     ivar=get_var_index(rootname);
     if(ivar<0){
-      printf(" In %s , %s is not valid variable\n",
+      plintf(" In %s , %s is not valid variable\n",
 	     name,rootname);
       return 0;
     }
@@ -361,7 +372,7 @@ add_spec_fun(name,rhs)
     strcpy(root2name,str);
     ivar2=get_var_index(root2name);
     if(ivar2<0){
-      printf(" In %s , %s is not valid variable\n",
+      plintf(" In %s , %s is not valid variable\n",
 	     name,root2name);
       return 0;
     }
@@ -369,7 +380,7 @@ add_spec_fun(name,rhs)
     strcpy(fname,str);
     sprintf(junk,"%s(%s,%s)",fname,rootname,root2name);
     if(add_expr(junk,my_net[ind].f,&elen)){
-      printf(" bad function %s \n",fname);
+      plintf(" bad function %s \n",fname);
       return 0;
     }
     my_net[ind].values=(double *)malloc((ntot+1)*sizeof(double));
@@ -380,7 +391,7 @@ add_spec_fun(name,rhs)
     my_net[ind].root2=ivar2;
     my_net[ind].n=ntot;
     my_net[ind].ncon=ncon;
-    printf(" Added net %s type %d len=%d x %d using %s %s(var[%d],var[%d]) \n",
+    plintf(" Added net %s type %d len=%d x %d using %s %s(var[%d],var[%d]) \n",
 	   name,ntype,ntot,ncon,wgtname,fname,ivar,ivar2);
     return 1;   
     break;
@@ -391,14 +402,14 @@ add_spec_fun(name,rhs)
     ntot=atoi(str);
     
     if(ntot<=0){
-      printf(" %s must be positive int \n",str);
+      plintf(" %s must be positive int \n",str);
       return 0;
     }
     str=get_next(",");
     ncon=atoi(str);
     
     if(ncon<=0){
-       printf(" %s must be positive int \n",str);
+       plintf(" %s must be positive int \n",str);
       return 0;
     }
     str=get_next(",");
@@ -406,7 +417,7 @@ add_spec_fun(name,rhs)
     iwgt=find_lookup(wgtname);
     
     if(iwgt<0){
-      printf("in network %s,  %s is not a table \n",
+      plintf("in network %s,  %s is not a table \n",
 	     name,wgtname);
       return 0;
     }
@@ -416,7 +427,7 @@ add_spec_fun(name,rhs)
     iind=find_lookup(indname);
     
     if(iind<0){
-      printf("in network %s,  %s is not a table \n",
+      plintf("in network %s,  %s is not a table \n",
 	     name,indname);
       return 0;
     }
@@ -428,7 +439,7 @@ add_spec_fun(name,rhs)
   
 
    if(ivar<0){
-      printf(" In %s , %s is not valid variable\n",
+      plintf(" In %s , %s is not valid variable\n",
 	     name,rootname);
       return 0;
     }
@@ -438,7 +449,7 @@ add_spec_fun(name,rhs)
     strcpy(root2name,str);
     ivar2=get_var_index(root2name);
     if(ivar2<0){
-      printf(" In %s , %s is not valid variable\n",
+      plintf(" In %s , %s is not valid variable\n",
 	     name,root2name);
       return 0;
     }
@@ -446,7 +457,7 @@ add_spec_fun(name,rhs)
     strcpy(fname,str);
     sprintf(junk,"%s(%s,%s)",fname,rootname,root2name);
     if(add_expr(junk,my_net[ind].f,&elen)){
-      printf(" bad function %s \n",fname);
+      plintf(" bad function %s \n",fname);
       return 0;
     }
 
@@ -460,7 +471,7 @@ add_spec_fun(name,rhs)
     my_net[ind].root2=ivar2;
     my_net[ind].n=ntot;
     my_net[ind].ncon=ncon;
-    printf(" Sparse %s len=%d x %d using %s %s(var[%d],var[%d]) and %s\n",
+    plintf(" Sparse %s len=%d x %d using %s %s(var[%d],var[%d]) and %s\n",
 	   name,ntot,ncon,wgtname,fname,ivar,ivar2,indname );
     return 1;   
     break;
@@ -473,13 +484,13 @@ add_spec_fun(name,rhs)
     if(str[0]=='0'||str[0]=='Z')ntype=FFTCON0;
     if(str[0]=='P')ntype=FFTCONP;
     if(ntype==-1){
-      printf(" No such fft convolution type %s \n",str);
+      plintf(" No such fft convolution type %s \n",str);
       return 0;
     }
     str=get_next(",");
     ntot=atoi(str);
     if(ntot<=0){
-      printf(" %s must be positive int \n",str);
+      plintf(" %s must be positive int \n",str);
       return 0;
     }
    
@@ -487,24 +498,24 @@ add_spec_fun(name,rhs)
     strcpy(wgtname,str);
     iwgt=find_lookup(wgtname);
     if(iwgt<0){
-      printf("in network %s,  %s is not a table \n",
+      plintf("in network %s,  %s is not a table \n",
 	     name,wgtname);
       return 0;
     }
     ntab=get_lookup_len(iwgt);
     if(type==FFTCONP&&ntab<ntot){
-     printf(" In %s, weight is length %d < %d \n",name,ntab,ntot);
+     plintf(" In %s, weight is length %d < %d \n",name,ntab,ntot);
      return 0;
     }
     if(type==FFTCON0&&ntab<(2*ntot)){
-     printf(" In %s, weight is length %d < %d \n",name,ntab,2*ntot);
+     plintf(" In %s, weight is length %d < %d \n",name,ntab,2*ntot);
      return 0;
     }
     str=get_next(")");
     strcpy(rootname,str);
     ivar=get_var_index(rootname);
     if(ivar<0){
-      printf(" In %s , %s is not valid variable\n",
+      plintf(" In %s , %s is not valid variable\n",
 	     name,rootname);
       return 0;
     }
@@ -526,7 +537,7 @@ add_spec_fun(name,rhs)
     my_net[ind].ncon=ncon;
     update_fft(ind);
 
-    printf(" Added net %s type %d len=%d x %d using %s var[%d] \n",
+    plintf(" Added net %s type %d len=%d x %d using %s var[%d] \n",
 	   name,ntype,ntot,ncon,wgtname,ivar);
     return 1;   
     break;
@@ -537,14 +548,14 @@ add_spec_fun(name,rhs)
     ntot=atoi(str);
     
     if(ntot<=0){
-      printf(" %s must be positive int \n",str);
+      plintf(" %s must be positive int \n",str);
       return 0;
     }
     str=get_next(",");
     ncon=atoi(str);
     
     if(ncon<=0){
-       printf(" %s must be positive int \n",str);
+       plintf(" %s must be positive int \n",str);
       return 0;
     }
     str=get_next(",");
@@ -552,7 +563,7 @@ add_spec_fun(name,rhs)
     iwgt=find_lookup(wgtname);
     
     if(iwgt<0){
-      printf("in network %s,  %s is not a table \n",
+      plintf("in network %s,  %s is not a table \n",
 	     name,wgtname);
       return 0;
     }
@@ -563,7 +574,7 @@ add_spec_fun(name,rhs)
   
 
    if(ivar<0){
-      printf(" In %s , %s is not valid variable\n",
+      plintf(" In %s , %s is not valid variable\n",
 	     name,rootname);
       return 0;
     }
@@ -576,7 +587,7 @@ add_spec_fun(name,rhs)
     my_net[ind].root=ivar;
     my_net[ind].n=ncon;
     my_net[ind].ncon=ntot;
-    printf(" Added mmult %s len=%d x %d using %s var[%d]\n",
+    plintf(" Added mmult %s len=%d x %d using %s var[%d]\n",
 	   name,ntot,ncon,wgtname,ivar,indname );
     return 1;   
     break;
@@ -587,14 +598,14 @@ add_spec_fun(name,rhs)
     ntot=atoi(str);
     
     if(ntot<=0){
-      printf(" %s must be positive int \n",str);
+      plintf(" %s must be positive int \n",str);
       return 0;
     }
     str=get_next(",");
     ncon=atoi(str);
     
     if(ncon<=0){
-       printf(" %s must be positive int \n",str);
+       plintf(" %s must be positive int \n",str);
       return 0;
     }
     str=get_next(",");
@@ -602,7 +613,7 @@ add_spec_fun(name,rhs)
     iwgt=find_lookup(wgtname);
     
     if(iwgt<0){
-      printf("in network %s,  %s is not a table \n",
+      plintf("in network %s,  %s is not a table \n",
 	     name,wgtname);
       return 0;
     }
@@ -613,7 +624,7 @@ add_spec_fun(name,rhs)
   
 
    if(ivar<0){
-      printf(" In %s , %s is not valid variable\n",
+      plintf(" In %s , %s is not valid variable\n",
 	     name,rootname);
       return 0;
     }
@@ -621,7 +632,7 @@ add_spec_fun(name,rhs)
     strcpy(root2name,str);
     ivar2=get_var_index(root2name);
     if(ivar2<0){
-      printf(" In %s , %s is not valid variable\n",
+      plintf(" In %s , %s is not valid variable\n",
 	     name,root2name);
       return 0;
     }
@@ -629,7 +640,7 @@ add_spec_fun(name,rhs)
     strcpy(fname,str);
     sprintf(junk,"%s(%s,%s)",fname,rootname,root2name);
     if(add_expr(junk,my_net[ind].f,&elen)){
-      printf(" bad function %s \n",fname);
+      plintf(" bad function %s \n",fname);
       return 0;
     }
     my_net[ind].values=(double *)malloc((ncon+1)*sizeof(double));
@@ -641,7 +652,7 @@ add_spec_fun(name,rhs)
     my_net[ind].root2=ivar2;
     my_net[ind].n=ncon;
     my_net[ind].ncon=ntot;
-    printf(" Added fmmult %s len=%d x %d using %s %s(var[%d],var[%d])\n",
+    plintf(" Added fmmult %s len=%d x %d using %s %s(var[%d],var[%d])\n",
 	   name,ntot,ncon,wgtname,fname,ivar,ivar2);
     return 1; 
   case 30:
@@ -656,7 +667,7 @@ add_spec_fun(name,rhs)
     str=get_next(",");
     ivar=atoi(str);
     if(ivar<1){
-      printf("Need more than 1 entry for interpolate\n");
+      plintf("Need more than 1 entry for interpolate\n");
       return 0;
     }
     my_net[ind].n=ivar; /* # entries in array */
@@ -664,12 +675,12 @@ add_spec_fun(name,rhs)
     strcpy(rootname,str);
     ivar=get_var_index(rootname);
     if(ivar<0){
-      printf(" In %s , %s is not valid variable\n",
+      plintf(" In %s , %s is not valid variable\n",
 	     name,rootname);
       return 0;
     }
     my_net[ind].root=ivar;
-    printf("Added interpolator %s length %d on %s \n",name,my_net[ind].n,rootname); 
+    plintf("Added interpolator %s length %d on %s \n",name,my_net[ind].n,rootname); 
     return 1;
   case 10:
     /* 
@@ -698,7 +709,7 @@ add_spec_fun(name,rhs)
     my_net[ind].n=ivar2+1;
     my_net[ind].ncon=-1;
     my_net[ind].values=(double *)malloc((ivar2+2)*sizeof(double));
-    printf("Added gillespie chain with %d reactions \n",ivar2);
+    plintf("Added gillespie chain with %d reactions \n",ivar2);
     return 1;
 
     /*  case 8:  
@@ -722,18 +733,20 @@ add_spec_fun(name,rhs)
       }
       
     }
-    printf("total=%d str=%s\n",ntot,junk);
+    plintf("total=%d str=%s\n",ntot,junk);
     
     return 0; */
+    
+    
   }
   return 0;
 }
-add_special_name(name,rhs)
+void add_special_name(name,rhs)
      char *name;
      char *rhs;
 {
   if(is_network(rhs)){
-    printf(" netrhs = |%s| \n",rhs);
+    plintf(" netrhs = |%s| \n",rhs);
     if(n_network>=MAXNET){
       return;
     }
@@ -742,13 +755,13 @@ add_special_name(name,rhs)
     n_network++;
   }
   else
-    printf(" No such special type ...\n");
+    plintf(" No such special type ...\n");
 }
 
-is_network(s)
+int is_network(s)
      char *s;
 {
-  int i,n;
+  int n;
   de_space(s);
   strupr(s);
   n=strlen(s);
@@ -756,24 +769,24 @@ is_network(s)
   if(s[0]=='S' &&s[1]=='P' &&s[2]=='A' && s[3]=='R')return 2;
   if(s[0]=='F'&&s[1]=='C' &&s[2]=='O' &&s[3]=='N' && s[4]=='V')return 3;
   if(s[0]=='F' && s[1]=='S' &&s[2]=='P' &&s[3]=='A' && s[4]=='R')return 4;
-   if(s[0]=='F' && s[1]=='F' && s[2]=='T' && s[3]=='C' )return 5; 
- if(s[0]=='M' &&s[1]=='M' &&s[2]=='U' && s[3]=='L')return 6;
+  if(s[0]=='F' && s[1]=='F' && s[2]=='T' && s[3]=='C' )return 5; 
+  if(s[0]=='M' &&s[1]=='M' &&s[2]=='U' && s[3]=='L')return 6;
   if(s[0]=='F'&& s[1]=='M' &&s[2]=='M' &&s[3]=='U' && s[4]=='L')return 7;
   if(s[0]=='G'&& s[1]=='I' &&s[2]=='L' &&s[3]=='L')return 10;
-  if(s[0]='I' && s[1]=='N' &&s[2]=='T' && s[3]=='E' && s[4]=='R')return INTERP;
+  if(s[0]=='I' && s[1]=='N' &&s[2]=='T' && s[3]=='E' && s[4]=='R')return INTERP;
   /* if(s[0]=='G'&& s[1]=='R' && s[2]=='O' && s[3]=='U')return 8; */
   return 0;
 }
   
 
-eval_all_nets()
+void eval_all_nets()
 {
   int i;
   for(i=0;i<n_network;i++)
     evaluate_network(i);
 }
 
-evaluate_network(ind)
+void evaluate_network(ind)
 int ind;
 {
    int i,j,k,ij;
@@ -857,7 +870,7 @@ int ind;
        for(j=0;j<ncon;j++){
 	 ij=i*ncon+j;
 	 k=(int)cc[ij];
-         if(k>=0&&k<n)
+         if(k>=0)
 	   sum+=(w[ij]*y[k]);
        }
        values[i]=sum;
@@ -924,7 +937,7 @@ int ind;
        for(j=0;j<ncon;j++){
 	 ij=i*ncon+j;
 	 k=(int)cc[ij];
-         if(k>=0&&k<n){
+         if(k>=0){
 	   f[1]=(int)(&y[k]);
 	   z=evaluate(f);
 	   sum+=(w[ij]*z);
@@ -952,7 +965,7 @@ int ind;
    }
 }
 
-update_all_ffts()
+void update_all_ffts()
 {
   int i;
 
@@ -968,7 +981,7 @@ update_all_ffts()
  fftr[i]=wgt[i+k] i = 0.. k
  fftr[i+k]=wgt[i] i=1 .. k-1
 */	 
-update_fft(int ind)
+void update_fft(int ind)
 {
   int i;
   int dims[2];
@@ -987,9 +1000,9 @@ update_fft(int ind)
       fftr[n2+i+1]=w[i];
     dims[0]=n;
     fftn(1,dims,fftr,ffti,1,1.);
-    /* printf("index=%d n=%d n2=%d \n",ind,n,n2); 
+    /* plintf("index=%d n=%d n2=%d \n",ind,n,n2); 
     for(i=0;i<n;i++)
-    printf("(%g , %g)\n",fftr[i],ffti[i]); */
+    plintf("(%g , %g)\n",fftr[i],ffti[i]); */
   }
   if(type==FFTCON0){
     n=2*my_net[ind].n;
@@ -1006,11 +1019,11 @@ update_fft(int ind)
 }
 
 
-fft_conv(int it,int n,double *values,double *yy,double *fftr,double *ffti,double *dr,double *di)
+void fft_conv(int it,int n,double *values,double *yy,double *fftr,double *ffti,double *dr,double *di)
 {
   int i;
  int dims[2];
- double x,y,mid;
+ double x,y;
  int n2=2*n;
   switch(it){
   case 0:
@@ -1063,14 +1076,14 @@ fft_conv(int it,int n,double *values,double *yy,double *fftr,double *ffti,double
 
 /* parsing stuff to get gillespie code quickly */
 
-gilparse(char *s,int *ind,int *nn)
+int gilparse(char *s,int *ind,int *nn)
 {
   int i=0,n=strlen(s);
   char piece[50],b[20],bn[25],c;
   int i1,i2,jp=0,f;
   int k=0,iv;
   int id,m;
-  printf("s=|%s|",s);
+  plintf("s=|%s|",s);
   while(1){
     c=s[i];
     if(c==','||i>(n-1)){
@@ -1081,10 +1094,10 @@ gilparse(char *s,int *ind,int *nn)
       }
       if(f==0)
 	{
-	  printf("added %s\n",b);
+	  plintf("added %s\n",b);
 	  iv=get_var_index(b);
 	  if(iv<0){
-	    printf("No such name %s\n",b);
+	    plintf("No such name %s\n",b);
 	    return 0;
 	  }
 	  ind[k]=iv;
@@ -1092,13 +1105,13 @@ gilparse(char *s,int *ind,int *nn)
 	}
       else 
 	{
-	  printf("added %s{%d-%d}\n",b,i1,i2);
+	  plintf("added %s{%d-%d}\n",b,i1,i2);
 	  m=i2-i1+1;
 	  for(id=0;id<m;id++){
 	    sprintf(bn,"%s%d",b,id+i1);
 	     iv=get_var_index(bn);
 	     if(iv<0){
-	       printf("No such name %s\n",bn);
+	       plintf("No such name %s\n",bn);
 	       return 0;
 	     }
 	     ind[k]=iv;
@@ -1147,7 +1160,7 @@ int g_namelist(char *s,char *root,int *flag,int *i1,int*i2)
     j++;
   }
   if(i==n){
-    printf("Illegal syntax %s\n",s);
+    plintf("Illegal syntax %s\n",s);
     return 0;
   }
   num[j]=0;

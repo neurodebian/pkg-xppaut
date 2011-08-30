@@ -244,7 +244,7 @@ float fnull( x, y)
   y1[null_ix-1]=(double)x;
   y1[null_iy-1]=(double)y;
   rhs(0.0,y1,ydot,NODE);
-  /*  printf(" %f  %f %f \n ", x,y,ydot[WHICH_CRV-1]); */
+  /*  plintf(" %f  %f %f \n ", x,y,ydot[WHICH_CRV-1]); */
   return((float)ydot[WHICH_CRV-1]);
  }
 

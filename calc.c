@@ -1,3 +1,8 @@
+#include "calc.h"
+
+#include "ggets.h"
+#include "pop_list.h"
+#include "init_conds.h"
 #include <stdlib.h> 
 #include <math.h>
 #include <stdio.h>
@@ -9,6 +14,8 @@
 #include "xpplim.h"
 #define PARAM 1
 #define IC 2
+
+#include "parserslow.h"
 
 extern int NCON,NSYM,NCON_START,NSYM_START;
 
@@ -47,7 +54,7 @@ struct {
 
 
 
-draw_calc(w)
+void draw_calc(w)
 Window w;
 {
  char bob[100];
@@ -63,7 +70,7 @@ Window w;
  }
 }
 
-make_calc(z)
+void make_calc(z)
 double z;
 
 {
@@ -77,7 +84,7 @@ double z;
  if(my_calc.use==0){
  width=20+24*DCURXs;
  height=4*DCURYs;
- base=make_window(RootWindow(display,screen),0,0,width,height,4);
+ base=make_plain_window(RootWindow(display,screen),0,0,width,height,4);
  my_calc.base=base;
    XStringListToTextProperty(name,1,&winname);
  size_hints.flags=PPosition|PSize|PMinSize|PMaxSize;
@@ -102,7 +109,7 @@ double z;
  XFlush(display);
 }
 
-quit_calc()
+void quit_calc()
 {
  my_calc.use=0;
  XSelectInput(display,my_calc.quit,SIMPMASK); 
@@ -111,7 +118,7 @@ quit_calc()
  clr_command();
 }
 
-ini_calc_string(name,value,pos,col)
+void ini_calc_string(name,value,pos,col)
 int *pos,*col;
 char *name,*value;
 {
@@ -123,7 +130,7 @@ char *name,*value;
  display_command(name,value,2,0);
 }
 
-q_calc()
+void q_calc()
 {
  char value[80],name[10];
  double z=0.0;
@@ -156,13 +163,13 @@ q_calc()
  }
 
 
-do_calc(temp,z)
+int do_calc(temp,z)
 char *temp;
 double *z;
  {
  char val[15];
  int ok; 
- int k,i;
+ int i;
  double newz;
  if(strlen(temp)==0){
 	*z=0.0;
@@ -203,7 +210,7 @@ double *z;
 }
 
 
- has_eq(z, w, where)
+int has_eq(z, w, where)
  int *where;
  char *z,*w;
  {
@@ -222,7 +229,7 @@ double *z;
  char *expr;
  int *ok;
  {
-  int com[400],con,i;
+  int com[400],i;
   double z=0.0;
     if(add_expr(expr,com,&i)){
      err_msg("Illegal formula ..");
@@ -233,7 +240,7 @@ double *z;
   z=evaluate(com);
  *ok=1;
 bye:
-  /* printf(" old=%d %d  new = %d %d \n",NCON,NSYM,NCON_START,NSYM_START);  */
+  /* plintf(" old=%d %d  new = %d %d \n",NCON,NSYM,NCON_START,NSYM_START);  */
   NCON=NCON_START;
   NSYM=NSYM_START;
   return(z);

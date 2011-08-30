@@ -15,7 +15,7 @@ my_fun(x,y)
 
 main()
 {
-  printf("%g \n",getroot(.5,0.,1.));
+  plintf("%g \n",getroot(.5,0.,1.));
 }
  
 double getroot(x,x1,x2)
@@ -27,7 +27,7 @@ double getroot(x,x1,x2)
   fun(x1,&fl,&df);
   fun(x2,&fh,&df);
   if((fl>0.0 &&fh >0.0)||(fl<0.0 && fh<0.0)){
-    printf("Doesnt span...\n"); 
+    plintf("Doesnt span...\n"); 
   
     return(x);}
   if(fl==0.0)return(x1);

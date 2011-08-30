@@ -1,9 +1,21 @@
+
+#include "do_fit.h"
+
+#include "cv2.h"
+#include "dormpri.h"
+#include "stiff.h"
+#include "parserslow.h"
+#include "derived.h"
 #include <stdlib.h> 
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-
-
+#include "ggets.h"
+#include "odesol2.h"
+#include "delay_handle.h"
+#include "pop_list.h"
+#include "gear.h"
+#include "browse.h"
 
 
 #include "phsplan.h"
@@ -22,14 +34,7 @@
 extern double constants[];
 extern double last_ic[MAXODE];
 double atof();
-typedef struct {
-  char file[25];
-  char varlist[25],collist[25];
-  char parlist1[25],parlist2[25];
-  int dim,npars,nvars,npts,maxiter;
-  int icols[50],ipar[50],ivar[50];
-  double tol,eps;
-} FITINFO;
+
 extern double DELAY;
 extern int DelayFlag;
 FITINFO fin;
@@ -40,7 +45,7 @@ char *get_next();
 
 int (*solver)();
 
-init_fit_info()
+void init_fit_info()
 {
   fin.tol=.001;
   fin.eps=1e-5;
@@ -56,7 +61,7 @@ init_fit_info()
   fin.file[0]=0;
 }
 
-get_fit_info(y,a,t0,flag,eps,yfit,yderv,npts,npars,nvars,ivar,ipar)
+void get_fit_info(y,a,t0,flag,eps,yfit,yderv,npts,npars,nvars,ivar,ipar)
      int *flag,*ivar,*ipar,npts,npars,nvars;
      double *y,*a,eps,**yderv,*yfit,*t0;
 /*  
@@ -82,18 +87,18 @@ get_fit_info(y,a,t0,flag,eps,yfit,yderv,npts,npars,nvars,ivar,ipar)
 {
   int i,iv,ip,istart=1,j,k,l,k0,ok;
   double yold[MAXODE],dp;
-  double par,t=t0[0];
+  double par;
   *flag=0;
 /* set up all initial data and parameter guesses  */
   for(l=0;l<npars;l++){
     ip=ipar[l];
     if(ip<0)constants[-ip]=a[l];
     else y[ip]=a[l];
-  /*  printf(" par[%d]=%g \n",l,a[l]); */
+  /*  plintf(" par[%d]=%g \n",l,a[l]); */
   }
   for(i=0;i<NODE;i++){
     yold[i]=y[i];
-  /*  printf(" init y[%d]=%g \n",i,y[i]); */
+  /*  plintf(" init y[%d]=%g \n",i,y[i]); */
   }
   if(DelayFlag){
    /* restart initial data */
@@ -185,30 +190,30 @@ if(METHOD==CVODE)
 
 
 
-printem(yderv,yfit,t0,npars,nvars,npts)
+void printem(yderv,yfit,t0,npars,nvars,npts)
      double **yderv,*yfit,*t0;
      int npars,nvars,npts;
 {
   int i,j,k;
   int ioff;
   for(i=0;i<npts;i++){
-    printf(" %8.5g ",t0[i]);
+    plintf(" %8.5g ",t0[i]);
     ioff=nvars*i;
     for(j=0;j<nvars;j++){
-      printf(" %g ",yfit[ioff+j]);
+      plintf(" %g ",yfit[ioff+j]);
       for(k=0;k<npars;k++)
 	printf(" %g ",yderv[k][ioff+j]);
     }
-    printf(" \n");
+    plintf(" \n");
   }
 }
 
-one_step_int(y,t0,t1,istart)
+int one_step_int(y,t0,t1,istart)
      int *istart;
      double *y,t0,t1;
 {
-  int i,nit;
-   int kflag,command=0;
+  int nit;
+   int kflag;
   double dt=DELTA_T;
   double z;
   double error[MAXODE];
@@ -302,21 +307,21 @@ if(METHOD==RKQS||METHOD==STIFF){
     
 
 
-print_fit_info()
+void print_fit_info()
 {
   int i;
-  printf("dim=%d maxiter=%d npts=%d file=%s tol=%g eps=%g\n",
+  plintf("dim=%d maxiter=%d npts=%d file=%s tol=%g eps=%g\n",
 	 fin.dim,fin.maxiter,fin.npts,fin.file,fin.tol,fin.eps);
   
   for(i=0;i<fin.nvars;i++)
-    printf(" variable %d to col %d \n",
+    plintf(" variable %d to col %d \n",
 	   fin.ivar[i],fin.icols[i]);
   for(i=0;i<fin.npars;i++)
-    printf(" P[%d]=%d \n",i,fin.ipar[i]);
+    plintf(" P[%d]=%d \n",i,fin.ipar[i]);
 }
 
 
-test_fit()
+void test_fit()
 {
  double *yfit,a[1000],y0[1000];
  int nvars,npars,i,ok;
@@ -384,7 +389,7 @@ test_fit()
   }
 
  print_fit_info();
- printf(" Running the fit...\n");
+ plintf(" Running the fit...\n");
  ok=run_fit(fin.file, fin.npts,fin.npars,fin.nvars,fin.maxiter,fin.dim,
          fin.eps,fin.tol,
 	 fin.ipar,fin.ivar,fin.icols,
@@ -406,7 +411,7 @@ test_fit()
 
 
 
- run_fit( filename,  /* string */
+int run_fit( filename,  /* string */
 	npts,npars,nvars,maxiter,ndim,  /* ints */
 	eps,tol, /* doubles */
 	ipar,ivar,icols, /* int arrays */
@@ -464,7 +469,7 @@ test_fit()
     }
 
   }
-  printf(" Data loaded ... %f %f ...  %f %f \n",
+  plintf(" Data loaded ... %f %f ...  %f %f \n",
 	 y[0],y[1],y[npts*nvars-2],y[npts*nvars-1]);
 
   
@@ -485,12 +490,12 @@ test_fit()
 	       ivar,ipar,covar,alpha,&chisq,&alambda,work,
 	       yderv,yfit,&ochisq,ictrl,eps);
     niter++;
-    printf(" step %d is %d  -- lambda= %g  chisq= %g oldchi= %g\n",
+    plintf(" step %d is %d  -- lambda= %g  chisq= %g oldchi= %g\n",
 	   niter,ok,alambda,chisq,ochisq);
-    printf(" params: ");
+    plintf(" params: ");
     for(i=0;i<npars;i++)
-      printf(" %g ",a[i]);
-    printf("\n");
+      plintf(" %g ",a[i]);
+    plintf("\n");
     if((ok==0)||(niter>=maxiter))break;
     if(ochisq>chisq){
       if(((ochisq-chisq)<tol10)||(((ochisq-chisq)/MAX(1.0,chisq))<tol))
@@ -542,11 +547,11 @@ test_fit()
 	       yderv,yfit,&ochisq,ictrl,eps);
   err_msg(" Success! ");
   /* have the covariance matrix -- so what?   */
-  printf(" covariance: \n");
+  plintf(" covariance: \n");
   for(i=0;i<npars;i++){
     for(j=0;j<npars;j++)
-      printf(" %g ",covar[i+npars*j]);
-    printf("\n");
+      plintf(" %g ",covar[i+npars*j]);
+    plintf("\n");
   }
 
 
@@ -562,7 +567,7 @@ test_fit()
   return(1);
 }  
 
-marlevstep(t0,y0,y,sig,a,npts,nvars,npars,
+int marlevstep(t0,y0,y,sig,a,npts,nvars,npars,
 	   ivar,ipar,covar,alpha,chisq,alambda,work,
 	   yderv,yfit,ochisq,ictrl,eps)
      double *t0,*y0,*y,*sig,*a,*covar,*alpha,*chisq,*alambda,*work,
@@ -593,8 +598,8 @@ eps   control numerical derivative
 sigma  weights on nvars
 */
 {
-  int i,j,k,l,ierr,ipivot[1000];
-  int k0;
+  int i,j,k,ierr,ipivot[1000];
+
   double *da,*atry,*beta,*oneda;
   da=work;
   atry=work+npars;
@@ -624,7 +629,7 @@ sigma  weights on nvars
   sgesl(covar,npars,npars,ipivot,oneda,0);
   for(j=0;j<npars;j++){
     da[j]=oneda[j];
-   /* printf(" da[%d]=%g \n",j,da[j]); */
+   /* plintf(" da[%d]=%g \n",j,da[j]); */
   }
   if(ictrl==2){  /* all done invert alpha to get the covariance */
     for(j=0;j<(npars*npars);j++)
@@ -639,7 +644,7 @@ sigma  weights on nvars
   }
   for(j=0;j<npars;j++) {
     atry[j]=a[j]+da[j];
-/*    printf(" aold[%d]=%g anew[%d]=%g \n",
+/*    plintf(" aold[%d]=%g anew[%d]=%g \n",
 	   j,a[j],j,atry[j]); */
   }
   if(mrqcof(t0,y0,y,sig,atry,npts,nvars,npars,
@@ -662,14 +667,14 @@ sigma  weights on nvars
   return(1);
 }
 
-  mrqcof(t0,y0,y,sig,a,npts,nvars,npars,
+ int mrqcof(t0,y0,y,sig,a,npts,nvars,npars,
 	 ivar,ipar,alpha,chisq,beta,
 	 yderv,yfit,eps)
     double *t0,*y0,*y,*sig,*a,*alpha,*chisq,*beta,**yderv,*yfit,eps;
     int nvars,npars,npts,*ivar,*ipar;
       {
        int flag,i,j,k,l,k0;
-       double sig2i,dy,wt,ymod;
+       double sig2i,dy,wt;
       
        get_fit_info(y0,a,t0,&flag,eps,yfit,yderv,npts,npars,nvars,ivar,ipar);
        if(flag==0)
@@ -689,7 +694,7 @@ sigma  weights on nvars
 	 for(k=0;k<npts;k++){
 	   k0=k*nvars+i;
 	   dy=y[k0]-yfit[k0];
-/*           printf(" i=%d k=%d dy = %f \n",i,k,dy); */
+/*           plintf(" i=%d k=%d dy = %f \n",i,k,dy); */
 	   for(j=0;j<npars;j++){
 	     wt=yderv[j][k0]*sig2i;
 	     for(l=0;l<npars;l++)
@@ -704,11 +709,11 @@ sigma  weights on nvars
 */
 	 }
        }
-  /* printf(" chisqr= %g \n",*chisq);
+  /* plintf(" chisqr= %g \n",*chisq);
 	 for(j=0;j<npars;j++){
-	   printf(" \n beta[%d]=%g \n",j,beta[j]);
+	   plintf(" \n beta[%d]=%g \n",j,beta[j]);
 	   for(k=0;k<npars;k++)
-	     printf(" alpha[%d][%d]=%g ",j,k,alpha[j+k*npars]);
+	     plintf(" alpha[%d][%d]=%g ",j,k,alpha[j+k*npars]);
 	 }
 	 */
        return(1);
@@ -716,7 +721,7 @@ sigma  weights on nvars
      
 
 
-get_fit_params()
+int get_fit_params()
 {
   static char *n[]={"File", "Fitvar","Params","Tolerance","Npts",
 		    "NCols","To Col","Params","Epsilon","Max iter"};
@@ -751,11 +756,11 @@ get_fit_params()
 
 /* gets a list of the data columns to use ... */
 
-parse_collist(collist,icols,n)
+void parse_collist(collist,icols,n)
      int *icols,*n;
      char *collist;
 {
-  char *item,*ptr;
+  char *item;
   int v,i=0;
  
   item=get_first(collist," ,");
@@ -774,11 +779,11 @@ parse_collist(collist,icols,n)
   *n=i;
 }
 
-parse_varlist(varlist,ivars,n)
+void parse_varlist(varlist,ivars,n)
      int *n,*ivars;
      char *varlist;
 {  
-  char *item,*ptr;
+  char *item;
   int v,i=0;
   
   item=get_first(varlist," ,");
@@ -799,11 +804,11 @@ parse_varlist(varlist,ivars,n)
 }
 
 
-parse_parlist(parlist,ipars,n)
+void parse_parlist(parlist,ipars,n)
      int *n,*ipars;
      char *parlist;
 {  
-  char *item,*ptr;
+  char *item;
   int v,i=0;
   int j;
   for(j=0;j<strlen(parlist);j++){

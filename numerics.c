@@ -1,9 +1,23 @@
+
+#include "numerics.h"
+
+
+#include "menudrive.h"
 #include <stdlib.h> 
 #include <stdio.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <math.h>
 #include "browse.h"
+#include "pop_list.h"
+#include "volterra2.h"
+#include "menu.h"
+#include "ggets.h"
+#include "pp_shoot.h"
+#include "storage.h"
+#include "delay_handle.h"
+#include "graf_par.h"
+
 extern Window main_win,info_pop;
 extern Display *display;
 extern int DCURY,NDELAYS;
@@ -21,6 +35,7 @@ extern GRAPH *MyGraph;
 #define DP83 12
 #define RB23 13
 #define SYMPLECT 14
+
 extern int NKernel,MyStart,MaxPoints;
 extern int NFlags;
 extern double STOL;
@@ -28,6 +43,7 @@ extern char *info_message,*meth_hint[];
 extern int DelayGrid;
 extern double OmegaMax,AlphaMax;
 double atof();
+extern BROWSER my_browser;
 
 /*   This is numerics.c    
  *   The input is primitive and eventually, I want to make it so
@@ -90,18 +106,18 @@ extern int storind;
 
 extern int NODE,NEQ; /* as well as the number of odes etc  */
 
-chk_volterra()
+void chk_volterra()
 {
   if (NKernel>0)METHOD=VOLTERRA;
 }
 
- check_pos(j)
+void  check_pos(j)
  int *j;
  {
   if(*j<=0)*j=1;
  }
 
-quick_num(int com)
+void quick_num(int com)
 {
   char key[]="tsrdnviobec";
   if(com>=0&&com<11)
@@ -111,7 +127,7 @@ quick_num(int com)
  
 
 
- get_num_par(ch)
+void  get_num_par(ch)
  char ch;
 
 {
@@ -317,7 +333,7 @@ quick_num(int com)
 	   } 
 
 
-chk_delay()
+void chk_delay()
 {
   if(DELAY>0.0) {
 			  free_delay();
@@ -328,7 +344,9 @@ chk_delay()
 			  else 
 			    free_delay();
 }
-set_delay()
+
+
+void set_delay()
 {
  if(NDELAYS==0)return;
  if(DELAY>0.0){
@@ -338,7 +356,8 @@ set_delay()
    }
  }
 }
-ruelle()
+
+void ruelle()
 {
    new_int("x-axis shift ",&(MyGraph->xshft));
    new_int("y-axis shift ",&(MyGraph->yshft));
@@ -348,7 +367,7 @@ ruelle()
    if(MyGraph->zshft<0)MyGraph->zshft=0;
 }
 
-init_numerics()
+void init_numerics()
 /*    these are the default values of the numerical parameters   */
 {
 
@@ -388,23 +407,24 @@ SOS=0;
 
 }
 
-meth_dialog()
+void meth_dialog()
 {
-  static char *n[]={"*6Method","Abs tol","Rel Tol","DtMin","DtMax",
-		    "Banded(y/n)","UpperBand","LowerBand"};
+  /*static char *n[]={"*6Method","Abs tol","Rel Tol","DtMin","DtMax",
+		    "Banded(y/n)","UpperBand","LowerBand"};*/
    char values[8][MAX_LEN_SBOX];
    sprintf(values[0],"%d",METHOD);
    sprintf(values[1],"%g",ATOLER);
    sprintf(values[2],"%g",TOLER);
 }
-get_pmap_pars_com(int l)
+
+void get_pmap_pars_com(int l)
 {
  static char mkey[]="nsmp";
  char ch;
  static char *n[]={"*0Variable","Section","Direction (+1,-1,0)","Stop on sect(y/n)"};
  char values[4][MAX_LEN_SBOX];
  static char *yn[]={"N","Y"};
- int status,i;
+ int status;
  char n1[15];
  int i1=POIVAR;
  
@@ -443,7 +463,7 @@ get_pmap_pars_com(int l)
 
 
 
-get_method()
+void get_method()
 {
  char ch;
  int i;
@@ -470,9 +490,9 @@ get_method()
  }
 
  
-  set_col_par_com(int i)
+void set_col_par_com(int i)
    {
-    int j,koff,ivar;
+    int j,ivar;
     double temp[2];
     float maxder=0.0,minder=0.0,sum=0.0;
     char ch,name[20];
@@ -543,7 +563,7 @@ get_method()
  
 
 
-do_meth()
+void do_meth()
 {
  if(NKernel>0)METHOD=VOLTERRA;
  switch(METHOD)

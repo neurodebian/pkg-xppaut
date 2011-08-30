@@ -1,3 +1,6 @@
+#ifndef _volterra_h_
+#define _volterra_h_
+
 #define MAXKER 50
 #define KN_OLD 1
 #define KN 0
@@ -8,7 +11,7 @@ typedef struct {
 }KERNEL;
 
   
-
+#endif
  
 
 

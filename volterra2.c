@@ -1,9 +1,18 @@
+#include "volterra2.h"
+#include "delay_handle.h"
+#include "gear.h"
+#include "ggets.h"
+#include "markov.h"
+
 #include <stdlib.h> 
 #include "xpplim.h"
 #include "getvar.h"
 #include "volterra.h"
 #include <math.h>
 #include <stdio.h>
+#include "parserslow.h"
+
+
 #define MAX(a,b) ((a)>(b)?(a):(b))
 #define MIN(a,b) ((a)<(b)?(a):(b))
 /* #define Set_ivar(a,b) variables[(a)]=(b) */
@@ -63,7 +72,7 @@ double ker_val(in)
  return(kernel[in].k_n1);
 }
 
-alloc_v_memory()  /* allocate stuff for volterra equations */
+void alloc_v_memory()  /* allocate stuff for volterra equations */
 {
   int i,len,formula[256],j;
   
@@ -72,7 +81,7 @@ alloc_v_memory()  /* allocate stuff for volterra equations */
   for(i=0;i<NKernel;i++){
      kernel[i].k_n=0.0;
      if(add_expr(kernel[i].expr,formula,&len)){
-    printf("Illegal kernel %s=%s\n",kernel[i].name,kernel[i].expr);
+    plintf("Illegal kernel %s=%s\n",kernel[i].name,kernel[i].expr);
     exit(0); /* fatal error ... */
   }
      kernel[i].formula=(int *)malloc((len+2)*sizeof(int));
@@ -82,7 +91,7 @@ alloc_v_memory()  /* allocate stuff for volterra equations */
      }
      if(kernel[i].flag==CONV){
        if(add_expr(kernel[i].kerexpr,formula,&len)){
-	 printf("Illegal convolution %s=%s\n",
+	 plintf("Illegal convolution %s=%s\n",
 		kernel[i].name,kernel[i].kerexpr);
 	 exit(0); /* fatal error ... */
        }
@@ -95,7 +104,7 @@ alloc_v_memory()  /* allocate stuff for volterra equations */
   allocate_volterra(MaxPoints,0);
 }
 
-allocate_volterra(npts,flag)
+void allocate_volterra(npts,flag)
      int npts,flag;
 {
   int i,oldmem=MaxPoints,j;
@@ -111,7 +120,7 @@ allocate_volterra(npts,flag)
   }
  
   if(i<ntot&&flag==0){
-      printf("Not enough memory... make Maxpts smaller \n");
+      plintf("Not enough memory... make Maxpts smaller \n");
       exit(0);
     }
   if(i<ntot){
@@ -126,7 +135,7 @@ allocate_volterra(npts,flag)
   alloc_kernels(flag);
 }
 
-re_evaluate_kernels()
+void re_evaluate_kernels()
 {
   int i,j,n=MaxPoints;
 
@@ -141,12 +150,12 @@ re_evaluate_kernels()
   }
 }
 
-alloc_kernels(flag)
+void alloc_kernels(flag)
      int flag;
 {
   int i,n=MaxPoints;
   int j;
-  double z,t,mu;
+  double mu;
   for(i=0;i<NKernel;i++){
     if(kernel[i].flag==CONV){
       if(flag==1)free(kernel[i].cnv);
@@ -180,12 +189,12 @@ alloc_kernels(flag)
        K(t,t',u,u') someday...
 ***/
 
-init_sums(t0,n,dt,i0,iend,ishift)
+void init_sums(t0,n,dt,i0,iend,ishift)
      double t0,dt;
      int n,i0,iend,ishift;
 {
    double t=t0+n*dt,tp=t0+i0*dt;
-   double sum[MAXODE],al,bet,alpbet,mu;
+   double sum[MAXODE],al,alpbet,mu;
    int nvar=FIX_VAR+NODE+NMarkov;
    int l,ioff,ker,i;
    SETVAR(0,t);
@@ -259,11 +268,11 @@ double betnn(mu,dt,t0,t)
  return(.5*pow(dt,m1)/m1);
 }
 
-get_kn(y,t)             /* uses the guessed value y to update Kn  */
+void get_kn(y,t)             /* uses the guessed value y to update Kn  */
      double t,*y;
 {
   int i;
-  double z;
+
   SETVAR(0,t);
   SETVAR(PrimeStart,t);
   for(i=0;i<NODE;i++)
@@ -276,11 +285,11 @@ get_kn(y,t)             /* uses the guessed value y to update Kn  */
 	kernel[i].betnn*evaluate(kernel[i].formula)*kernel[i].cnv[0];
     else 
       kernel[i].k_n=kernel[i].sum+kernel[i].betnn*evaluate(kernel[i].formula);
-    /* printf(" Value t=%g %d =%g %g\n",t,i,kernel[i].k_n,y[i]); */
+    /* plintf(" Value t=%g %d =%g %g\n",t,i,kernel[i].k_n,y[i]); */
   }
 }
      
-volterra(y,t,dt,nt,neq,istart,work)
+int volterra(y,t,dt,nt,neq,istart,work)
     double *y,*t,dt,*work;
      int nt,neq,*istart;
 {
@@ -342,7 +351,7 @@ volterra(y,t,dt,nt,neq,istart,work)
 
 
 
-volt_step(y,t,dt,neq,yg,yp,yp2,ytemp,errvec,jac)
+int volt_step(y,t,dt,neq,yg,yp,yp2,ytemp,errvec,jac)
      double *y,t,dt,*yg,*yp,*yp2,*ytemp,*errvec,*jac;
      int neq;
 {
@@ -375,7 +384,7 @@ volt_step(y,t,dt,neq,yg,yp,yp2,ytemp,errvec,jac)
      SETVAR(i+1,evaluate(my_ode[i])); 
    for(i=0;i<NODE;i++){
      yp[i]=evaluate(my_ode[i]);
-    /*  printf(" yp[%d]=%g\n",i,yp[i]); */
+    /*  plintf(" yp[%d]=%g\n",i,yp[i]); */
      if(EqType[i])errvec[i]=-yg[i]+yp[i];
      else errvec[i]=-yg[i]+dt2*yp[i]+yp2[i];
    }

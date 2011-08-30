@@ -1,17 +1,28 @@
+#include "lunch-new.h"
+#include "parserslow.h"
+#include "edit_rhs.h"
+#include "browse.h"
+#include "ggets.h"
+#include "graf_par.h"
+#include "volterra2.h"
+#include "storage.h"
+#include "init_conds.h"
+
+#include "numerics.h"
 #include <stdlib.h> 
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-
+#include "arrayplot.h"
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <time.h>
 #include "xpplim.h"
 #include "struct.h"
 #include "shoot.h"
-
-
-
+#include "load_eqn.h"
+#include "adj2.h"
+#include "integrate.h"
 
 #define READEM 1
 #define VOLTERRA 6
@@ -23,10 +34,6 @@ extern int Xup;
 extern GRAPH *MyGraph;
 
  extern BC_STRUCT my_bc[MAXODE];
-
-typedef struct {
-  char *name,*value;
-} FIXINFO;
 
 int set_type=0;
 
@@ -46,7 +53,7 @@ extern int MaxPoints;
  extern char *ode_names[MAXODE],*fix_names[MAXODE];
 
 
-file_inf()
+void file_inf()
 {
   int ok;
   FILE *fp;
@@ -62,8 +69,31 @@ file_inf()
     fclose(fp);
 }
 
- 
-do_info(fp)
+
+void ps_write_pars(FILE *fp)
+{ int div,rem,i,j;
+  double z;
+
+  fprintf(fp,"\n %%%% %s \n %%%% Parameters ...\n",this_file);
+ div=NUPAR/4;
+ rem=NUPAR%4;
+ for(j=0;j<div;j++){
+   for(i=0;i<4;i++)
+     {
+       get_val(upar_names[i+4*j],&z);
+       fprintf(fp,"%%%% %s=%.16g   ",upar_names[i+4*j],z);
+     }
+   fprintf(fp,"\n");
+ }
+    for(i=0;i<rem;i++){
+      get_val(upar_names[i+4*div],&z);
+      fprintf(fp,"%%%% %s=%.16g   ",upar_names[i+4*div],z);
+    }
+   
+ fprintf(fp,"\n");
+} 
+
+void do_info(fp)
 FILE *fp;
 {
  int i;
@@ -141,7 +171,7 @@ FILE *fp;
 }
   
 
-read_lunch(FILE *fp)
+int read_lunch(FILE *fp)
 {
   int f=READEM,ne,np,temp;
   char bob[256];
@@ -158,7 +188,7 @@ read_lunch(FILE *fp)
    /* io_int(&ne,fp,f); */
    io_int(&np,fp,f," ");
    if(ne!=NEQ||np!=NUPAR){
-     printf("Set file has incompatible parameters\n");
+     plintf("Set file has incompatible parameters\n");
      return 0;
    }
    io_numerics(f,fp);
@@ -181,7 +211,7 @@ read_lunch(FILE *fp)
    return 1;
 }
 
-do_lunch(f) /* f=1 to read and 0 to write */
+void do_lunch(f) /* f=1 to read and 0 to write */
 int f;
 
 {
@@ -262,12 +292,12 @@ sprintf(filename,"%s.set",this_file);
  
  
 
-dump_eqn(fp)
+void dump_eqn(fp)
 FILE *fp;
 {
  int i;
  
- char bob[200];
+
  char fstr[15];
  fprintf(fp,"RHS etc ...\n");
  for(i=0;i<NEQ;i++){
@@ -290,7 +320,7 @@ FILE *fp;
 }
     
 
-io_numerics(f,fp)
+void io_numerics(f,fp)
 int f;
 FILE *fp;
 {
@@ -298,7 +328,7 @@ char *method[]={"Discrete","Euler","Mod. Euler",
         "Runge-Kutta","Adams","Gear","Volterra","BackEul",
                       "Qual RK","Stiff","CVode","DorPrin5","DorPri8(3)"};
 char *pmap[]={"Poincare None","Poincare Section","Poincare Max","Period"};
-char temp[256],string[256];
+char temp[256];
 if(f==READEM&&set_type==1){
   fgets(temp,255,fp); /* skip a line */}
 if(f!=READEM)
@@ -345,7 +375,7 @@ io_int(&MyStart,fp,f,"MyStart");
 io_int(&INFLAG,fp,f,"INFLAG");
 }
 
-io_parameter_file(char *fn,int flag)
+void io_parameter_file(char *fn,int flag)
 {
   char fnx[256],c;
   int i,j=0;
@@ -368,6 +398,8 @@ io_parameter_file(char *fn,int flag)
       }
       io_int(&np,fp,flag," ");
       if(np!=NUPAR){
+      	printf("%d",np);
+	printf("%d",NUPAR);
 	err_msg("Incompatible parameters");
      fclose(fp);
      return;
@@ -389,13 +421,68 @@ io_parameter_file(char *fn,int flag)
   fprintf(fp,"\n\nFile:%s\n%s",this_file, ctime(&ttt));
   fclose(fp);
 }
+
+
+void io_ic_file(char *fn,int flag)
+{
+  char fnx[256],c;
+  int i,j=0;
   
-io_parameters(f,fp)
+  FILE *fp;
+  
+  for(i=0;i<strlen(fn);i++){
+    c=fn[i];
+    if(c!=' '){
+      fnx[j]=c;
+      j++;
+    }
+  }
+  fnx[j]=0;
+  if(flag==READEM) {
+    fp=fopen(fnx,"r");
+      if(fp==NULL){
+	err_msg("Cannot open file");
+	return;
+      }
+      
+      for(i=0;i<NODE;i++)
+      fscanf(fp,"%lg",&last_ic[i]);
+    fclose(fp);
+    }  
+      
+     /* io_int(&np,fp,flag," ");
+      if(np!=NUPAR){
+	err_msg("Incompatible parameters");
+     fclose(fp);
+     return;
+      }
+      io_parameters(flag,fp);
+      fclose(fp);
+      redo_stuff();
+
+      return;
+  }
+  fp=fopen(fnx,"w");
+  if(fp==NULL){
+	err_msg("Cannot open file");
+	return;
+      }
+  io_int(&NUPAR,fp,flag,"Number params");
+  io_parameters(flag,fp);
+  ttt=time(0);
+  fprintf(fp,"\n\nFile:%s\n%s",this_file, ctime(&ttt));
+  fclose(fp);
+  */
+} 
+
+
+
+void io_parameters(f,fp)
 int f;
 FILE *fp;
 {
  int i;
- char bob[256],temp[256];
+ 
  double z;
  for(i=0;i<NUPAR;i++){
   if(f!=READEM){
@@ -409,12 +496,12 @@ FILE *fp;
  }
 }
 
-io_exprs(f,fp)
+void io_exprs(f,fp)
 int f;
 FILE *fp;
 {
  int i;
- char bob[256],temp[256];
+ char temp[256];
  double z;
  if(f==READEM&&set_type==1){
   fgets(temp,255,fp); /* skip a line */}
@@ -464,11 +551,11 @@ if(f!=READEM)
 
 
 
-io_graph(f,fp)
+void io_graph(f,fp)
 int f;
 FILE *fp;
 {
- int n,j,k;
+ int j,k;
  char temp[256];
  if(f==READEM&&set_type==1){
   fgets(temp,255,fp); /* skip a line */}
@@ -525,7 +612,7 @@ if(f!=READEM)
 }
 
  
-io_int(i,fp,f,ss)
+void io_int(i,fp,f,ss)
 int *i,f;
 FILE *fp;
 char *ss;
@@ -539,7 +626,7 @@ char *ss;
  fprintf(fp,"%d   %s\n",*i,ss);
 }
 
-io_double(z,fp,f,ss)
+void io_double(z,fp,f,ss)
 int f;
 FILE *fp;
 double *z;
@@ -554,7 +641,7 @@ char bob[256];
  fprintf(fp,"%.16g  %s\n",*z,ss); 
 }
 
-io_float(z,fp,f,ss)
+void io_float(z,fp,f,ss)
 int f;
 FILE *fp;
 char *ss;
@@ -587,7 +674,7 @@ FILE *fp;
 
 }
 */
-io_string(s,len,fp,f)
+void io_string(s,len,fp,f)
 FILE *fp;
 char *s;
 int f,len;

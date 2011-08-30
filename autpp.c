@@ -1,10 +1,14 @@
 #include <stdlib.h> 
 #include "f2c.h"
-
+#include "auto_nox.h"
 #include "autlim.h"
+#include "derived.h"
+#include "pp_shoot.h"
+
+
 /*    Hooks to xpp RHS     */
 
-extern (*rhs)();
+extern int (*rhs)();
 extern double constants[],last_ic[];
 
 extern int Auto_index_to_array[5];
@@ -79,7 +83,7 @@ integer *ndim;
 doublereal *u, *par,*t;
 {
   int i;
-  int in;
+
   double p;
   for(i=0;i<NAutoPar;i++)
     par[i] = constants[Auto_index_to_array[i]];
@@ -103,7 +107,7 @@ integer *i;
 integer *nuzr;
 doublereal *par;
 {
-  doublereal ret_val;
+
   int i0=*i-1;
 
   if(i0<0||i0>=NAutoUzr)return(1.0);

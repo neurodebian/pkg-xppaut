@@ -1,3 +1,7 @@
+#include "userbut.h"
+
+#include "color.h"
+#include "ggets.h"
 #include <stdlib.h> 
 #include <string.h>
 #include <stdio.h>
@@ -7,24 +11,19 @@
 
 #define USERBUTCOLOR 24
 #define USERBUTMAX 20
-typedef struct {
-  Window w;
-  char bname[10];
-  int com;
-} USERBUT;
 
 int nuserbut=0;
 
 USERBUT userbut[USERBUTMAX];
 
-
+extern int MyAddedButtonColor;
 extern Display *display;
 extern Window main_win;
 Window make_fancy_window();
 extern int DCURYs,DCURXs,CURY_OFFs;
 extern GC small_gc;
 
-user_button_events(XEvent report)
+void user_button_events(XEvent report)
 {
 switch(report.type){
   case Expose:
@@ -42,26 +41,29 @@ switch(report.type){
     break;
   }
 }
-user_button_press(Window w)
+void user_button_press(Window w)
 {
   int i;
-  for(i=0;i<nuserbut;i++){
+  for(i=0;i<nuserbut;i++)
+  {
     if(w==userbut[i].w)
-      run_the_commands(userbut[i].com);
+    {
+    	run_the_commands(userbut[i].com);
+    }
   }
 }
   
-user_button_draw(Window w)
+void user_button_draw(Window w)
 {
   int i;
   for(i=0;i<nuserbut;i++){
     if(w==userbut[i].w)
-      XDrawString(display,w,small_gc,0,CURY_OFFs,
+      XDrawString(display,w,small_gc,5,CURY_OFFs,
 		  userbut[i].bname,strlen(userbut[i].bname));
   }
 }
  
-user_button_cross(Window w,int b)
+void user_button_cross(Window w,int b)
 {
   int i;
   for(i=0;i<nuserbut;i++)
@@ -70,6 +72,7 @@ user_button_cross(Window w,int b)
       return;
     }
 }
+
 int get_button_info(char *s,char *bname,char *sc)
 {
   int i=0,j=0,f=0,n=strlen(s);
@@ -99,12 +102,13 @@ int get_button_info(char *s,char *bname,char *sc)
     }
   }
   sc[j]=0;
-    
+
+ return(1); 
 }
 
 int find_kbs(char *sc)
 {
-  int i=0,end=0;
+  int i=0;
   while(1){
     if(strcmp(sc,kbs[i].seq)==0)
       return kbs[i].com;
@@ -113,7 +117,7 @@ int find_kbs(char *sc)
   }
 }
 
-add_user_button(char *s)
+void add_user_button(char *s)
 {
   char bname[10],sc[10];
   int z;
@@ -123,24 +127,34 @@ add_user_button(char *s)
   if(strlen(bname)==0||strlen(sc)==0)return;
   z=find_kbs(sc);
   if(z==-1){
-    printf("%s - not implemented\n",sc);
+    plintf("%s - not implemented\n",sc);
     return;
+  }
+  /*Don't add buttons with same functionality twice*/
+  int i;
+  for (i=0;i<nuserbut;i++)
+  {
+  	if (userbut[i].com == z)
+	{
+		plintf("But=%s:%s already implemented as button '%s'\n",bname,sc,userbut[i].bname);
+		return;	
+	}
   }
   userbut[nuserbut].com=z;
   strcpy(userbut[nuserbut].bname,bname);
-  printf(" added button(%d)  -- %s %d\n",
+  plintf(" added button(%d)  -- %s %d\n",
 	 nuserbut,userbut[nuserbut].bname,userbut[nuserbut].com); 
   nuserbut++;
 }
 
-create_user_buttons(int x0,int y0, Window base)
+void create_user_buttons(int x0,int y0, Window base)
 {
   int i;
   int x=x0;
   int l;
   if(nuserbut==0)return;
   for(i=0;i<nuserbut;i++){
-    l=DCURXs*strlen(userbut[i].bname);
+    l=DCURXs*(strlen(userbut[i].bname)+2);
     userbut[i].w=make_fancy_window(base,x,y0,l,DCURYs,
 				   1,ColorMap(20),ColorMap(USERBUTCOLOR));
     x=x+l+DCURXs;

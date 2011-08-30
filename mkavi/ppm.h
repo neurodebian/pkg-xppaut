@@ -19,7 +19,8 @@
 #ifndef PPM_INCLUDED
 #define PPM_INCLUDED
 
-#include <iostream.h>
+/*#include <iostream.h> <- This is now deprecated. Use the following instead*/
+#include <iostream>
 #include <assert.h>
 
 class ppm {
