@@ -1,3 +1,9 @@
+#include "extra.h"
+
+#include "init_conds.h"
+#include "ggets.h"
+#include "read_dir.h"
+#include "parserslow.h"
 #include <stdlib.h> 
 #include <string.h>
 /* this is a way to communicate XPP with other stuff
@@ -59,11 +65,11 @@ DLFUN dlf;
 void *dlhandle;
 double (*fun)();
 
-auto_load_dll()
+void auto_load_dll()
 {
   if(dll_flag==3){
     get_directory(cur_dir);
-    printf("DLL lib %s/%s with function %s \n",cur_dir,dll_lib,dll_fun);
+    plintf("DLL lib %s/%s with function %s \n",cur_dir,dll_lib,dll_fun);
     sprintf(dlf.libfile,"%s",dll_lib);
     sprintf(dlf.libname,"%s/%s",cur_dir,dlf.libfile);
     sprintf(dlf.fun,"%s",dll_fun);
@@ -71,7 +77,7 @@ auto_load_dll()
   }
 }
  
-load_new_dll()
+void load_new_dll()
 {
   int status;
   if(dlf.loaded!=0&&dlhandle!=NULL)
@@ -82,21 +88,32 @@ load_new_dll()
   new_string("Function name:",dlf.fun);
   dlf.loaded=0;
 }
-my_fun(double *in, double *out, int nin,int nout,double *v,double *c)
+int my_fun(double *in, double *out, int nin,int nout,double *v,double *c)
 {
   char *error;
-  if(dlf.loaded==-1)return;
+  if(dlf.loaded==-1)return(0);
   if(dlf.loaded==0){
     dlhandle=dlopen (dlf.libname, RTLD_LAZY);  
     if(!dlhandle){
-      printf(" Cant find the library \n");
+      plintf(" Cant find the library \n");
       dlf.loaded=-1;
       return 0;
-    }
-     fun=dlsym(dlhandle,dlf.fun);
+    }  
+       /*From the man pages:
+       ...the correct way to test
+       for  an  error  is  to call dlerror() to clear any old error conditions, then
+       call dlsym(), and then call dlerror() again, saving its return value  into  a
+       variable, and check whether this saved value is not NULL.
+       */
+     dlerror();
+     /*fun=dlsym(dlhandle,dlf.fun);*/
+     /*Following is the new C99 standard way to do this.  
+     See the Example in the dlsym man page
+     for detailed explanation...*/
+     *(void **) (&fun)=dlsym(dlhandle,dlf.fun);
      error=dlerror();
      if(error!= NULL){
-       printf("Problem with function..\n");
+       plintf("Problem with function..\n");
        dlf.loaded=-1;
        return 0;
      }
@@ -104,6 +121,7 @@ my_fun(double *in, double *out, int nin,int nout,double *v,double *c)
     
   }  /* Ok we have a nice function */
   fun(in,out,nin,nout,v,c);
+  return(1);
 }  
 #else
 load_new_dll()
@@ -127,7 +145,7 @@ auto_load_dll()
 
 
 
-do_in_out()
+void do_in_out()
 {
   int i;
   if(in_out.nin==0||in_out.nout==0)return;
@@ -147,7 +165,7 @@ do_in_out()
   }  
 }
 
-add_export_list(char *in,char *out)
+void add_export_list(char *in,char *out)
 {
   int l1=strlen(in);
   int l2=strlen(out);
@@ -166,19 +184,19 @@ add_export_list(char *in,char *out)
   in_out.outtype=(int *)malloc((i+1)*sizeof(int));
   in_out.vout=(double *)malloc((i+1)*sizeof(double));
   in_out.nout=i;
-  /* printf(" in %d out %d \n",in_out.nin,in_out.nout); */
+  /* plintf(" in %d out %d \n",in_out.nin,in_out.nout); */
 
 }
   
-check_inout()
+void check_inout()
 {
   int i;
   for(i=0;i<in_out.nin;i++)
-    printf(" type=%d index=%d \n",in_out.intype[i],in_out.in[i]);
+    plintf(" type=%d index=%d \n",in_out.intype[i],in_out.in[i]);
   for(i=0;i<in_out.nout;i++)
-  printf(" type=%d index=%d \n",in_out.outtype[i],in_out.out[i]);  
+  plintf(" type=%d index=%d \n",in_out.outtype[i],in_out.out[i]);  
 }
-get_export_count(char *s)
+int get_export_count(char *s)
 {
   int i=0;
   int j;
@@ -189,7 +207,7 @@ get_export_count(char *s)
   return(i);
 }
 
-do_export_list()
+void do_export_list()
 {
  if(in_out.nin==0||in_out.nout==0)return;
  parse_inout(in_out.lin,0);
@@ -197,7 +215,7 @@ do_export_list()
  /* check_inout(); */
 }
 
-parse_inout(char *l,int flag)
+void parse_inout(char *l,int flag)
 {
   int i=0,j=0;
   int k=0,index;
@@ -236,7 +254,7 @@ parse_inout(char *l,int flag)
 		  in_out.out[k]=index;
 		  in_out.outtype[k]=VAR;
 		}
-		/*  printf(" variable %s =%d k=%d \n",new,index,k); */ 
+		/*  plintf(" variable %s =%d k=%d \n",new,index,k); */ 
 		k++;
 	      }
 	  } /* it is a parameter */
@@ -252,7 +270,7 @@ parse_inout(char *l,int flag)
 	      in_out.out[k]=index;
 	      in_out.outtype[k]=PAR;
 	    }
-	    /* printf(" parameter %s =%d k=%d \n",new,index,k); */ 
+	    /* plintf(" parameter %s =%d k=%d \n",new,index,k); */ 
 	    k++;
 
 	  }

@@ -1,3 +1,15 @@
+#include "adj2.h"
+#include "my_rhs.h"
+#include "pop_list.h"
+#include "browse.h"
+#include "ggets.h"
+#include "do_fit.h"
+#include "lunch-new.h"
+#include "gear.h"
+#include "integrate.h"
+#include "parserslow.h"
+
+
 #include <stdlib.h> 
 #include <string.h>
 /*
@@ -58,7 +70,7 @@ extern int NSYM,NSYM_START,NCON,NCON_START;
 /* extern Window main_win; */
 extern int DCURY;
 
-init_trans()
+void init_trans()
 {
   my_trans.here=0;
   strcpy(my_trans.firstcol,uvar_names[0]);
@@ -70,7 +82,7 @@ init_trans()
   my_trans.col0=2;
 }
 
-dump_transpose_info(fp,f)
+void dump_transpose_info(fp,f)
      FILE *fp;
      int f;
 {
@@ -88,7 +100,8 @@ dump_transpose_info(fp,f)
 
 
 }
-do_transpose()
+
+int do_transpose()
 {
  int i,status;
  static char *n[]={"*0Column 1","NCols","ColSkip","Row 1","NRows","RowSkip"};
@@ -131,7 +144,7 @@ do_transpose()
  
 }
  
-create_transpose()
+int create_transpose()
 {
   int i,j;
   int inrow,incol;
@@ -164,7 +177,7 @@ create_transpose()
 }
 			 
 
-alloc_h_stuff()
+void alloc_h_stuff()
 {
   int i;
  for(i=0;i<NODE ;i++){
@@ -175,7 +188,7 @@ alloc_h_stuff()
 }
  
 
-data_back()
+void data_back()
 {
  FOUR_HERE=0;
  set_browser_data(storage,1); 
@@ -184,7 +197,7 @@ data_back()
  refresh_browser(storind); 
 }
 
-adj_back()
+void adj_back()
 {
  if(ADJ_HERE){
    set_browser_data(my_adj,1);
@@ -195,7 +208,7 @@ adj_back()
  }
 }
 
-h_back()
+void h_back()
 {
  if(H_HERE){
    set_browser_data(my_h,1);
@@ -207,7 +220,7 @@ h_back()
  }
 }
 
-make_adj_com(int com)
+void make_adj_com(int com)
 {
 static char key[]="nmaohp";
  switch(key[com]){
@@ -232,13 +245,15 @@ static char key[]="nmaohp";
  
  }
 }
-adjoint_parameters()
+
+
+void adjoint_parameters()
 {
   new_int("Maximum iterates :",&ADJ_MAXIT);
   new_float("Adjoint error tolerance :",&ADJ_ERR);
 }
 
-new_h_fun()
+void new_h_fun()
 {
  int i,n=2;
  if(!ADJ_HERE){
@@ -277,7 +292,7 @@ new_h_fun()
   
 }
 
-dump_h_stuff(fp,f)
+void dump_h_stuff(fp,f)
      FILE *fp;
      int f;
 {
@@ -291,7 +306,9 @@ dump_h_stuff(fp,f)
    io_string(coup_string[i],79,fp,f);
 
 }
-make_h(orb,adj,h,nt,dt,node)
+
+
+int make_h(orb,adj,h,nt,dt,node)
 float **orb,**adj,**h;
 double dt;
 int node,nt;
@@ -323,7 +340,7 @@ int node,nt;
          set_ivar(i+n0+1,(double)orb[i+1][k2]);
        }
        z=0.0;
-       
+       update_based_on_current(); 
 
        for(i=0;i<node;i++){
 	
@@ -356,7 +373,7 @@ int node,nt;
  
    
 
-new_adjoint()
+void new_adjoint()
 {
  int i,n=NODE +1;
  if(ADJ_HERE){
@@ -380,7 +397,7 @@ new_adjoint()
   
 
 
-test_test()
+void test_test()
 {
   double x[2];
   x[0]=.35249;
@@ -389,11 +406,11 @@ test_test()
  
 }
 
-compute_one_orbit(double *ic,double per)
+void compute_one_orbit(double *ic,double per)
 {
   double oldtotal=TEND;
   TEND=per;
-  /*   printf(" %g %g \n",ic[0],ic[1]); */
+  /*   plintf(" %g %g \n",ic[0],ic[1]); */
   run_from_x(ic);
   new_adjoint();
   TEND=oldtotal;
@@ -422,15 +439,15 @@ compute_one_orbit(double *ic,double per)
     t in the first column.
   */
 
- adjoint(orbit,adjnt,nt,dt,eps,minerr,maxit,node)
+int adjoint(orbit,adjnt,nt,dt,eps,minerr,maxit,node)
  float **orbit,**adjnt;
  double dt,eps,minerr;
  int nt,node,maxit;
  {
   double **jac,*yold,ytemp,*fold,*fdev;
   double *yprime,*work;
-  double t,prod,sup,del;
-  int i,j,k,l,k2,rval=0,iout;
+  double t,prod,del;
+  int i,j,k,l,k2,rval=0;
   int n2=node*node;
   double error;
    
@@ -483,7 +500,7 @@ compute_one_orbit(double *ic,double per)
     fdev[i]=yold[i];
   }
 	
-  printf("%f %f \n",yold[0],yold[1]);
+  plintf("%f %f \n",yold[0],yold[1]);
       
  for(l=0;l<maxit;l++){
 	for(k=0;k<nt-1;k++){
@@ -516,7 +533,7 @@ compute_one_orbit(double *ic,double per)
 			     fdev[i]=yold[i];
 			   }
 	printf("%f %f \n",yold[0],yold[1]);
-        printf("err=%f \n",error);
+        plintf("err=%f \n",error);
 	if(error<minerr)break; /*  exit if error small   */
  }
  /*  onelast time to compute the adjoint  */
@@ -544,7 +561,7 @@ compute_one_orbit(double *ic,double per)
 
         	 
 	prod=prod/t;
-  printf(" Multiplying the adjoint by 1/%g to normalize\n",prod);
+  plintf(" Multiplying the adjoint by 1/%g to normalize\n",prod);
   for(k=0;k<nt;k++){
      for(j=0;j<node;j++)adjnt[j+1][k]=adjnt[j+1][k]/(float)prod;
      adjnt[0][k]=orbit[0][k];
@@ -565,7 +582,7 @@ compute_one_orbit(double *ic,double per)
  
  
 
-eval_rhs(jac,k1,k2,t,y,yp,node)
+void eval_rhs(jac,k1,k2,t,y,yp,node)
      double t,**jac,*y,*yp;
      int node,k1,k2;
 {
@@ -578,7 +595,7 @@ eval_rhs(jac,k1,k2,t,y,yp,node)
   }
 }
 
-rk_interp(jac,k1,k2,y,work,neq,del,nstep)
+int rk_interp(jac,k1,k2,y,work,neq,del,nstep)
 double *y,del,*work,**jac;
 int neq,k1,k2,nstep;
 {
@@ -618,7 +635,7 @@ return(1);
 }
  
 	 
-step_eul(jac,k,k2,yold,work,node,dt)
+int step_eul(jac,k,k2,yold,work,node,dt)
 double *work,*yold,**jac,dt;
 int k,k2,node;
 {
@@ -660,7 +677,7 @@ return(1);
    to get an approximation
 */
 
-do_liapunov()
+void do_liapunov()
 {
   double z;
   int i;
@@ -684,7 +701,7 @@ do_liapunov()
   free(my_liap[1]);
 }
 
-alloc_liap(int n)
+void alloc_liap(int n)
 {
   if(LIAP_FLAG==0)return;
   my_liap[0]=(float *)malloc(sizeof(float)*(n+1));
@@ -693,17 +710,19 @@ alloc_liap(int n)
   LIAP_I=0;
 }
 
-do_this_liaprun(int i,double p)
+void do_this_liaprun(int i,double p)
 {
  double liap;
  if(LIAP_FLAG==0)return;
  my_liap[0][i]=p;
  hrw_liapunov(&liap,1,NEWT_ERR);
  my_liap[1][i]=liap;
- /* printf("p=%g lambda=%g \n",p,liap); */
+ /* plintf("p=%g lambda=%g \n",p,liap); */
  LIAP_I++;
 }
-norm_vec(v,mu,n) /* returns the length of the vector and the unit vector */
+
+
+void norm_vec(v,mu,n) /* returns the length of the vector and the unit vector */
      double *v,*mu;
      int n;
 {
@@ -720,10 +739,10 @@ norm_vec(v,mu,n) /* returns the length of the vector and the unit vector */
 }
 
 
-hrw_liapunov(double *liap,int batch,double eps)
+int hrw_liapunov(double *liap,int batch,double eps)
 {
- double y[MAXODE],yt[MAXODE];
- double yp[MAXODE],nrm,nrm2,dy[MAXODE];
+ double y[MAXODE];
+ double yp[MAXODE],nrm,dy[MAXODE];
  double t0,t1;
  double sum=0.0;
  char bob[256];
@@ -757,7 +776,7 @@ hrw_liapunov(double *liap,int batch,double eps)
      sum=sum+log(nrm);
     for(i=0;i<NODE;i++)
       dy[i]=eps*yp[i];
-     /*  printf("%d %g %g %g %g %g  \n",j,nrm,log(nrm),sum/((double)(j+1)),
+     /*  plintf("%d %g %g %g %g %g  \n",j,nrm,log(nrm),sum/((double)(j+1)),
 	 yp[0],yp[1]); */
 
    }

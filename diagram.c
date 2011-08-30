@@ -1,28 +1,21 @@
+#include "diagram.h"
+#include "autevd.h"
+#include "init_conds.h"
+#include "ggets.h"
+#include "my_ps.h"
+#include "my_ps.h"
+#include "graphics.h"
+#include "auto_nox.h"
 #include <stdlib.h> 
 #include <stdio.h>
 #include "autlim.h"
 #define DALLOC(a) (double *)malloc((a)*sizeof(double))
 
-typedef struct {
-  int irot;
-  int nrot[1000];
-  double torper;
-} ROTCHK;
 
 extern ROTCHK blrtn;
-  
+extern int PS_Color;  
 
 
-typedef struct diagram {
-  int package;
-  int ibr,ntot,itp,lab;
-  double norm,*uhi,*ulo,*u0,*ubar,*evr,*evi;
-  double par[20],per,torper;
-  int index,nfpar;
-  int icp1,icp2,icp3,icp4,icp5,flag2;
-  struct diagram *prev;
-  struct diagram *next;
-} DIAGRAM;
 
 #define PACK_AUTO 0
 #define PACK_LBF 1
@@ -33,7 +26,7 @@ int NBifs=0;
 extern int NAutoPar;
 DIAGRAM *bifd;
 
-start_diagram(n)
+void start_diagram(n)
      int n;
 {
   NBifs=1;
@@ -50,13 +43,13 @@ start_diagram(n)
   DiagFlag=0;
 }
 
-find_diagram(irs,n,index,ibr,ntot,itp,nfpar,a,uhi,ulo,u0,par,per,icp1,icp2)
-     int *index,*ibr,*ntot,*itp,*nfpar,*icp1,*icp2;
+int find_diagram(irs,n,index,ibr,ntot,itp,nfpar,a,uhi,ulo,u0,par,per,icp1,icp2)
+     int *index,*ibr,*ntot,*itp,*nfpar,*icp1,*icp2,irs,n;
      double *par,*per,*a;
      double *uhi,*ulo,*u0;
 {
   int i,found=0;
-  DIAGRAM *d,*dnew;
+  DIAGRAM *d;
   d=bifd;
 
   while(d->next!=NULL){
@@ -87,7 +80,7 @@ find_diagram(irs,n,index,ibr,ntot,itp,nfpar,a,uhi,ulo,u0,par,per,icp1,icp2)
   return(0);
 }
     
-edit_start(ibr,ntot,itp,lab,nfpar,a,uhi,ulo,u0,ubar,
+void edit_start(ibr,ntot,itp,lab,nfpar,a,uhi,ulo,u0,ubar,
 par,per,n,icp1,icp2,evr,evi)
      int ibr,ntot,itp,lab,nfpar,n,icp1,icp2;
      double *par,per,a;
@@ -98,11 +91,11 @@ par,per,n,icp1,icp2,evr,evi)
 	       par,per,n,icp1,icp2,AutoTwoParam,evr,evi,blrtn.torper);
 }
 
-edit_diagram(d,ibr,ntot,itp,lab,nfpar,a,uhi,ulo,u0,ubar,
+void edit_diagram(d,ibr,ntot,itp,lab,nfpar,a,uhi,ulo,u0,ubar,
 	     par,per,n,icp1,icp2,
 	     flag2,evr,evi,tp)
      DIAGRAM *d;
-     int ibr,ntot,itp,lab,nfpar,n,icp1,icp2;
+     int ibr,ntot,itp,lab,nfpar,n,icp1,icp2,flag2;
      double *par,per,a;
      double *uhi,*ulo,*u0,*ubar;
      double *evr,*evi,tp;
@@ -133,15 +126,15 @@ edit_diagram(d,ibr,ntot,itp,lab,nfpar,a,uhi,ulo,u0,ubar,
   d->torper=tp;
 }
   
-add_diagram(ibr,ntot,itp,lab,nfpar,a,uhi,ulo,u0,ubar,
+void add_diagram(ibr,ntot,itp,lab,nfpar,a,uhi,ulo,u0,ubar,
 	    par,per,n,icp1,icp2,flag2,evr,evi)
-     int ibr,ntot,itp,lab,n,icp1,icp2,flag2;
+     int ibr,ntot,itp,lab,n,icp1,icp2,flag2,nfpar;
      double *par,per,a;
      double *uhi,*ulo,*u0,*ubar;
      double *evr,*evi;
 {
  DIAGRAM *d,*dnew;
- int i;
+
  d=bifd;
  while(d->next != NULL){
    d=(d->next);
@@ -163,7 +156,7 @@ add_diagram(ibr,ntot,itp,lab,nfpar,a,uhi,ulo,u0,ubar,
  
 }
 
-kill_diagrams()
+void kill_diagrams()
 {
   DIAGRAM *d,*dnew;
   d=bifd;
@@ -198,9 +191,9 @@ kill_diagrams()
   start_diagram(NODE);
 }
 
-redraw_diagram()
+void redraw_diagram()
 {
-  DIAGRAM *d,*dnew;
+  DIAGRAM *d;
   int type,flag=0;
   draw_bif_axes();
   d=bifd;
@@ -217,15 +210,15 @@ redraw_diagram()
   }
 }
 
-write_info_out()
+void write_info_out()
 {
  char filename[256];
-  DIAGRAM *d,*dnew;
+  DIAGRAM *d;
   int type,flag=0,i;
   int status;
   int icp1,icp2;
   double *par;
-  double x,y1,y2,par1,par2=0,a,*uhigh,*ulow,*ubar,*u0,per;
+  double par1,par2=0,a,*uhigh,*ulow,*ubar,*u0,per;
   FILE *fp;
   sprintf(filename,"allinfo.dat");
   /* status=get_dialog("Write all info","Filename",filename,"Ok","Cancel",60);
@@ -278,15 +271,15 @@ write_info_out()
 }
 
 
-write_init_data_file()
+void write_init_data_file()
 {
  char filename[256];
-  DIAGRAM *d,*dnew;
+  DIAGRAM *d;
   int type,flag=0,i;
   int status;
   int icp1,icp2;
   double *par;
-  double x,y1,y2,par1,par2=0,a,*uhigh,*ulow,*ubar,*u0,per;
+  double par1,par2=0,a,*uhigh,*ulow,*ubar,*u0,per;
   FILE *fp;
   sprintf(filename,"initdata.dat");
   /* status=get_dialog("Write all info","Filename",filename,"Ok","Cancel",60);
@@ -333,10 +326,12 @@ write_init_data_file()
   fclose(fp);
 
 }
-write_pts()
+
+
+void write_pts()
 {
   char filename[256];
-  DIAGRAM *d,*dnew;
+  DIAGRAM *d;
   int type,flag=0;
   int status;
   int icp1,icp2;
@@ -379,17 +374,18 @@ write_pts()
   }
   fclose(fp);
 }
-post_auto()
+
+void post_auto()
 {
   char filename[256];
-  DIAGRAM *d,*dnew;
+  DIAGRAM *d;
   int type,flag=0;
   int status;
   sprintf(filename,"auto.ps");
   /* status=get_dialog("Postscript","Filename",filename,"Ok","Cancel",60); */
   status=file_selector("Postscript",filename,"*.ps");
   if(status==0)return;
-  if(!ps_init(filename,0))
+  if(!ps_init(filename,PS_Color))
     return;
    draw_ps_axes();
   d=bifd;
@@ -409,12 +405,12 @@ post_auto()
 }
 
 
-bound_diagram(xlo,xhi,ylo,yhi)
+void bound_diagram(xlo,xhi,ylo,yhi)
      double *xlo,*xhi,*ylo,*yhi;
 {
-  DIAGRAM *d,*dnew;
+  DIAGRAM *d;
   int type,flag=0;
-  double x,y1,y2,par1,par2;
+  double x,y1,y2,par1,par2=0.0;
   d=bifd;
   if(d->next==NULL)return;
   *xlo=1.e16;
@@ -440,12 +436,12 @@ bound_diagram(xlo,xhi,ylo,yhi)
 
 
 
-save_diagram(fp,n)
+int save_diagram(fp,n)
      FILE *fp;
      int n;
 {
   int i;
-  DIAGRAM *d,*dnew;
+  DIAGRAM *d;
   fprintf(fp,"%d\n",NBifs-1);
   if(NBifs==1)
     return(-1);
@@ -470,7 +466,7 @@ save_diagram(fp,n)
 
 
  
-load_diagram(fp,node)
+int load_diagram(fp,node)
      FILE *fp;
      int node;
 {

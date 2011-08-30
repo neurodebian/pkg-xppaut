@@ -1,5 +1,22 @@
+#include "init_conds.h"
+#include "parserslow.h"
+#include "tabular.h"
+#include "nullcline.h"
+#include "menudrive.h"
+
+#include "arrayplot.h"
+#include "lunch-new.h"
+#include "volterra2.h"
+#include "calc.h"
+#include "delay_handle.h"
+#include "integrate.h"
+#include "eig_list.h"
+#include "graf_par.h"
+
 #include <stdlib.h> 
 #include <string.h>
+#include <strings.h>
+
 /*    This makes a big box with windows that have the names of the
        variables and their current initial data, parameters, BCs
        etc
@@ -10,7 +27,7 @@
 This also has the clone gadget
 */
 
- 
+#include <dirent.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <stdio.h>
@@ -28,6 +45,13 @@ This also has the clone gadget
 #include "delay.bitmap"
 #include "bc.bitmap"
 #include "shoot.h"
+#include "ggets.h"
+
+#include "pop_list.h"
+#include "read_dir.h"
+#include "derived.h"
+#include "form_ode.h"
+#include "many_pops.h"
 
 #include "mykeydef.h"
 #define HOTWILD 2
@@ -46,7 +70,7 @@ extern GC gc, small_gc;
 extern Window main_win;
 extern int DCURX,DCURXs,DCURY,DCURYs,CURY_OFFs,CURY_OFF;
 extern int NDELAYS;
-
+extern char UserBGBitmap[100];
 extern double DELAY;
 
 extern int noicon;
@@ -63,27 +87,14 @@ extern int noicon;
 
 #define BOXDONE -2
 
+#define EDIT_WAIT 0
 #define EDIT_NEXT 1
 #define EDIT_ESC 2
 #define EDIT_DONE 3
 
+
 extern char cur_dir[];
 
-typedef struct {
-  char **dirnames,**filenames;
-  int nfiles,ndirs;
-} FILEINFO;
-
-#define FILESELNWIN 10
-typedef struct {
- int n,n0,here;
- Window base,cancel,ok,up,dn,pgup,pgdn,file,wild,w[FILESELNWIN],dir;
- Window fw,ww;
- char wildtxt[256],filetxt[256];
- int nwin,minwid,minhgt;
- int off,pos,hot;
- 
-} FILESEL;
 
 FILESEL filesel;
 
@@ -95,43 +106,8 @@ extern char delay_string[MAXODE][80];
 extern double default_val[MAXPAR];
 extern double last_ic[MAXODE];
 extern double default_ic[MAXODE];
-typedef struct {
-  		int use,type;
-		int n;
-		Window base;
-                Window cancel,ok,def,go;
-		Window *w;
-                Window *we;
-                char **value;
-                int mc,*off,*pos;
-		} BoxListold;
-
-typedef struct {
-  		int use,type,xuse;
-		int n,n0;
-                int nwin,minwid,minhgt;
-                Window up,dn;
-                Window pgup,pgdn;
-		Window base;
-                Window cancel,ok,def,go,close;
-                Window xvt,pp,arr;
-		Window *w;
-                Window *we;
-                Window *ck;
-                char **value,*iname,*wname;
-                int *isck;
-                int mc,*off,*pos;
-		} BoxList;
 
 
-typedef struct {
-  int use,pos,l; 
-  char parname[20];
-  double lo,hi,val;
-  int hgt;
-  int type,index;
-  Window left,right,top,main,slide,go;
-} PAR_SLIDER;
 
 PAR_SLIDER my_par_slide[3];
 
@@ -152,19 +128,11 @@ double atof();
 
 extern char this_file[100];
 
-typedef struct {
- int pos,n,n0,npos;
- int ihot,twid;
- int max;
- char **v;
- Window side,up,down,text;
-} SCROLL_LIST;
-
 #define SB_DIM 5
 #define SB_SPC 2
 /* scroll-list gadget */
 
-create_scroll_list(Window base,int x,int y,int width, 
+void create_scroll_list(Window base,int x,int y,int width, 
 		   int height,SCROLL_LIST *sl)
 {
 
@@ -187,7 +155,7 @@ sl->max=height/(DCURYs+3);
 }
 
 
-free_scroll_list(SCROLL_LIST *sl)
+void free_scroll_list(SCROLL_LIST *sl)
 {
  int n=sl->n;
  int i;
@@ -197,7 +165,7 @@ free_scroll_list(SCROLL_LIST *sl)
  sl->n=0;
 }
 
-add_scroll_item(char *v,SCROLL_LIST *sl)
+void add_scroll_item(char *v,SCROLL_LIST *sl)
 {
   int n=sl->n;
   int m=strlen(v);
@@ -207,7 +175,7 @@ add_scroll_item(char *v,SCROLL_LIST *sl)
   sl->n=n+1;
 }
 
-expose_scroll_list(Window w,SCROLL_LIST sl)
+int expose_scroll_list(Window w,SCROLL_LIST sl)
 {
   int i;
   if(w==sl.up){
@@ -232,9 +200,10 @@ expose_scroll_list(Window w,SCROLL_LIST sl)
     redraw_scroll_list(sl);
     return 1;
   }
+  return(0);
 }
 
-redraw_scroll_list(SCROLL_LIST sl)
+void redraw_scroll_list(SCROLL_LIST sl)
 {
  int i,n=sl.n,j;
  int y;
@@ -253,35 +222,35 @@ redraw_scroll_list(SCROLL_LIST sl)
   }
  }
 }
-c_hints()
+void c_hints()
 {
   int i,index;
-  printf("#include <math.h>\n\n extern double constants[]; \n");
-  printf("main(argc,argv)\n char **argv; \n int argc;\n{\n do_main(argc,argv);\n }\n");
+  plintf("#include <math.h>\n\n extern double constants[]; \n");
+  plintf("main(argc,argv)\n char **argv; \n int argc;\n{\n do_main(argc,argv);\n }\n");
 
-  printf("/* defines for %s  */ \n",this_file);
+  plintf("/* defines for %s  */ \n",this_file);
   for(i=0;i<NUPAR;i++){
     index=get_param_index(upar_names[i]);
-    printf("#define %s constants[%d]\n",upar_names[i],index);
+    plintf("#define %s constants[%d]\n",upar_names[i],index);
   }
   for(i=0;i<NODE;i++){
-    printf("#define %s y[%d]\n",uvar_names[i],i);
-    printf("#define %sDOT ydot[%d]\n",uvar_names[i],i);
+    plintf("#define %s y[%d]\n",uvar_names[i],i);
+    plintf("#define %sDOT ydot[%d]\n",uvar_names[i],i);
   }
   for(i=NODE;i<NEQ;i++)
-    printf("#define %s y[%d]\n",uvar_names[i],i);
-  printf("my_rhs(t,y,ydot,neq)\n double t,*y,*ydot; \n int neq;\n{\n  }\n");
-  printf("set_fix_rhs(t,y,neq)\n double y,*y;\n int neq;\n{\n }\n");
-  printf("extra(y,t,nod,neq)\n double t,*y; \n int nod,neq;\n{\n  }\n");
+    plintf("#define %s y[%d]\n",uvar_names[i],i);
+  plintf("my_rhs(t,y,ydot,neq)\n double t,*y,*ydot; \n int neq;\n{\n  }\n");
+  plintf("set_fix_rhs(t,y,neq)\n double y,*y;\n int neq;\n{\n }\n");
+  plintf("extra(y,t,nod,neq)\n double t,*y; \n int nod,neq;\n{\n  }\n");
 
 }
 /* CLONE */
-clone_ode()
+void clone_ode()
 {
   int i,j,x,y;
   FILE *fp;
   char clone[256];
-  char bob[1024];
+  
   char *s;
   time_t ttt;
   double z;
@@ -349,7 +318,7 @@ clone_ode()
     
 
     
-find_user_name(type,oname)
+int find_user_name(type,oname)
 int type;
 char *oname;
 {
@@ -370,7 +339,7 @@ char *oname;
 	return(-1);
  }
 
-create_par_sliders(base,x0,h0)
+void create_par_sliders(base,x0,h0)
      Window base;
      int x0,h0;
 {
@@ -379,32 +348,37 @@ create_par_sliders(base,x0,h0)
     make_par_slider(base,x0+i*36*DCURXs,h0,100,i);
 }
 
-resize_par_slides(h)
+void resize_par_slides(h)
      int h;
 {
   int i;
    for(i=0;i<3;i++)
-    XMoveResizeWindow(display,my_par_slide[i].main,10+36*i*DCURXs,
+   {
+	XMoveResizeWindow(display,my_par_slide[i].main,10+36*i*DCURXs,
 		      h,32*DCURXs,3*(DCURYs+2));
+   }
 }
 
-slide_button_press(w)
+void slide_button_press(w)
      Window w;
+
 {
   int i;
   for(i=0;i<3;i++)
     do_slide_button(w,&my_par_slide[i]);
 }
 
-do_slide_button(w,p)
+void do_slide_button(w,p)
+     int w;
      PAR_SLIDER *p;
+
 {
   static char *n[]={"*3Par/Var","Value","Low","High"};
   char values[4][MAX_LEN_SBOX];
-  int status,i;
+  int status;
   double lo,hi,val;
   if(w==p->go&&p->use==1)
-  run_now();
+    run_now();
 
 
   if(w!=p->top)return;
@@ -454,7 +428,9 @@ do_slide_button(w,p)
 
   
 }
-expose_selector(w)
+
+
+void expose_selector(w)
 Window w;
 {
 display_file_sel(filesel,w);
@@ -462,13 +438,13 @@ display_file_sel(filesel,w);
 
 /* this is rather lazy and slow but hey it works */
 
-redraw_directory()
+void redraw_directory()
 {
 XClearWindow(display,filesel.dir);
 expose_selector(filesel.dir);
 }
 
-redraw_file_list()
+void redraw_file_list()
 {
   int i;
   for(i=0;i<filesel.nwin;i++){
@@ -477,7 +453,7 @@ redraw_file_list()
   }
 }
 
-redraw_fs_text(string,w,flag)
+void redraw_fs_text(string,w,flag)
 char *string;
 Window w;
 int flag;
@@ -490,49 +466,54 @@ int flag;
 }
 
 
-display_file_sel(f,w)
+void display_file_sel(f,w)
 Window w;
 FILESEL f;
 {
  int i,i0;
  char t[256]; 
  if(f.here!=1)return;
- if(f.ok==w)XDrawString(display,w,small_gc,2,CURY_OFFs,"Ok",2);
-  if(f.cancel==w)XDrawString(display,w,small_gc,2,CURY_OFFs,"Cancel",6);
- if(f.up==w)XDrawString(display,w,small_gc,2,CURY_OFFs,"^",1);
- if(f.dn==w)XDrawString(display,w,small_gc,2,CURY_OFFs,"vv",1);
- if(f.pgup==w)XDrawString(display,w,small_gc,2,CURY_OFFs,"^^",2);
- if(f.pgdn==w)XDrawString(display,w,small_gc,2,CURY_OFFs,"vv",2);
+ if(f.ok==w)XDrawString(display,w,small_gc,5,CURY_OFFs,"Ok",2);
+  if(f.cancel==w)XDrawString(display,w,small_gc,5,CURY_OFFs,"Cancel",6);
+ if(f.up==w)XDrawString(display,w,small_gc,5+DCURX/2,CURY_OFFs,"^",1);
+ if(f.dn==w)XDrawString(display,w,small_gc,5+DCURX/2,CURY_OFFs,"vv",1);
+ if(f.pgup==w)XDrawString(display,w,small_gc,5,CURY_OFFs,"^^",2);
+ if(f.pgdn==w)XDrawString(display,w,small_gc,5,CURY_OFFs,"vv",2);
  if(f.file==w){XClearWindow(display,w);
  XDrawString(display,w,small_gc,2,CURY_OFFs,
 	     f.filetxt,strlen(f.filetxt));}
  if(f.wild==w){XClearWindow(display,w);
  XDrawString(display,w,small_gc,2,
 	     CURY_OFFs,f.wildtxt,strlen(f.wildtxt));}
- if(f.fw==w)XDrawString(display,w,small_gc,0,
+ if(f.fw==w)XDrawString(display,w,small_gc,5,
 			  CURY_OFFs,"File: ",6);
- if(f.ww==w)XDrawString(display,w,small_gc,0,
+ if(f.ww==w)XDrawString(display,w,small_gc,5,
 			  CURY_OFFs,"Wild: ",6);
  if(f.dir==w){
-      sprintf(t,"DIR: %s",cur_dir);
-      XDrawString(display,w,small_gc,0,
-			  CURY_OFFs,t,strlen(t));
+      sprintf(t," %s",f.title);
+      XDrawString(display,w,small_gc,0,CURY_OFFs,t,strlen(t));
+      XTextProperty windowName;
+      sprintf(t,"%s - %s",f.wildtxt,cur_dir);
+      char *nameit[]={t};
+      XStringListToTextProperty(nameit,1,&windowName);
+      XSetWMName(display,f.base,&windowName);
  }
  for(i=0;i<f.nwin;i++){
    if(w==f.w[i]){
      i0=i+f.n0;
-     if(i0>=f.n)XDrawString(display,w,small_gc,0,CURY_OFFs," ",1);
+     if(i0>=f.n)XDrawString(display,w,small_gc,5,CURY_OFFs," ",1);
      else {
        if(i0<my_ff.ndirs)
 	 sprintf(t,"<>%s",my_ff.dirnames[i0]);
        else
 	 sprintf(t,"%s",my_ff.filenames[i0-my_ff.ndirs]);
-       XDrawString(display,w,small_gc,0,CURY_OFFs,t,strlen(t));
+       XDrawString(display,w,small_gc,5,CURY_OFFs,t,strlen(t));
      }
    }
  }
 }
-new_wild()
+
+void new_wild()
 {
   free_finfo(&my_ff); /* delete the old file info */
   filesel.n0=0; /* back to the top of the list */
@@ -541,7 +522,8 @@ new_wild()
   redraw_file_list();
   XFlush(display);
 }
-fs_scroll(i)
+
+void fs_scroll(i)
 int i;
 {
  int n0=filesel.n0;
@@ -598,7 +580,17 @@ Window w;
       get_fileinfo(filesel.wildtxt,cur_dir,&my_ff);
       filesel.n=my_ff.ndirs+my_ff.nfiles;
 
-     
+      strcpy(filesel.filetxt,cur_dir);
+      
+      int m = strlen(filesel.filetxt);
+      if (filesel.filetxt[m-1] != '/')
+      {
+	      strcat(filesel.filetxt,"/");
+      }
+      
+      
+      
+      redraw_fs_text(filesel.filetxt,filesel.file,1);
       redraw_file_list();
       XFlush(display);
 
@@ -615,7 +607,8 @@ Window w;
  }
  return 0;
 }
-crossing_selector(w,c)
+
+void crossing_selector(w,c)
      Window w;
      int c;
 {
@@ -632,11 +625,11 @@ crossing_selector(w,c)
     XSetWindowBorderWidth(display,w,t2);
 }
  
-do_file_select_events()
+int do_file_select_events()
 {
  int done;
  XEvent ev;
- /* printf("Xup=%d\n",Xup); */
+ /* plintf("Xup=%d\n",Xup); */
  while(1){
    XNextEvent(display,&ev);
    switch(ev.type){
@@ -666,7 +659,9 @@ do_file_select_events()
  }
  
 } 
-create_file_selector(title,file,wild)
+
+
+void create_file_selector(title,file,wild)
  char *title;
  char *wild,*file;
 {
@@ -674,21 +669,26 @@ create_file_selector(title,file,wild)
  int nwin=FILESELNWIN;
  int wid,hgt,i;
  int width,height;
- Window base,w;
+ 
+ Window base;
  XTextProperty winname;
  XSizeHints size_hints;
  filesel.n=n;
  filesel.n0=0;
  filesel.nwin=nwin;
+ strcpy(filesel.title,title);
  strcpy(filesel.wildtxt,wild);
  strcpy(filesel.filetxt,file);
- width=40*DCURXs;
+ width=80*DCURXs;
  wid=30*DCURXs;
  hgt=DCURYs+4;
  height=(5+nwin)*hgt;
  filesel.minwid=width;
  filesel.minhgt=height;
- base=make_window(RootWindow(display,screen),0,0,width,height,4);
+ /* plintf("Title=%s\n",title); */
+ /* printf("Here now 23!\n");*/
+ base=make_plain_window(RootWindow(display,screen),0,0,width,height,4);
+ /* printf("Here now 23!\n"); */
  filesel.base=base;
  XStringListToTextProperty(&title,1,&winname);
  size_hints.flags=PPosition|PSize|PMinSize;
@@ -702,20 +702,21 @@ create_file_selector(title,file,wild)
  size_hints.max_height=height; 
  XSetWMProperties(display,base,&winname,NULL,NULL,0,&size_hints,NULL,NULL);
  
- filesel.up=make_window(base,DCURXs,2+4*hgt,2*DCURXs,DCURYs,1);
- filesel.dn=make_window(base,DCURXs,2+5*hgt,2*DCURXs,DCURYs,1);
- filesel.pgup=make_window(base,DCURXs,2+7*hgt,3*DCURXs,DCURYs,1);
- filesel.pgdn=make_window(base,DCURXs,2+8*hgt,3*DCURXs,DCURYs,1);
- filesel.dir=make_window(base,7*DCURXs,2,wid,DCURYs,0);
- filesel.wild=make_window(base,7*DCURXs,2+hgt,wid,DCURYs,1);
+ filesel.up=make_window(base,DCURXs,2+4*hgt,3*DCURXs+5,DCURYs,1);
+ filesel.dn=make_window(base,DCURXs,2+5*hgt,3*DCURXs+5,DCURYs,1);
+ filesel.pgup=make_window(base,DCURXs,2+7*hgt,3*DCURXs+5,DCURYs,1);
+ filesel.pgdn=make_window(base,DCURXs,2+8*hgt,3*DCURXs+5,DCURYs,1);
+ filesel.dir=make_plain_window(base,7*DCURXs,2,width-7*DCURXs-5,DCURYs,0);
+ filesel.wild=make_window(base,7*DCURXs,2+hgt,width-7*DCURXs-5,DCURYs,1);
  filesel.ww=make_window(base,2,2+hgt,6*DCURXs+2,DCURYs,0);
- filesel.file=make_window(base,7*DCURXs,2+2*hgt,wid,DCURYs,1);
+ filesel.file=make_window(base,7*DCURXs,2+2*hgt,width-7*DCURXs-5,DCURYs,1);
  filesel.fw=make_window(base,2,2+2*hgt,6*DCURXs+2,DCURYs,0);
  for(i=0;i<nwin;i++){
-   filesel.w[i]=make_window(base,6*DCURXs,2+(3+i)*hgt,wid,DCURYs,0);
-}
-  filesel.ok=make_window(base,3*DCURXs,height-hgt,2*DCURXs+3,DCURYs,1);
-  filesel.cancel=make_window(base,9*DCURXs,height-hgt,6*DCURXs+3,DCURYs,1);
+   filesel.w[i]=make_window(base,6*DCURXs+5,2+(3+i)*hgt,width-6*DCURXs-10,DCURYs,0);
+} 
+
+  filesel.ok=make_window(base,width/2-7*DCURXs-3,height-hgt,7*DCURXs,DCURYs,1);
+  filesel.cancel=make_window(base,width/2+3,height-hgt,7*DCURXs,DCURYs,1);
   /*  XSelectInput(display,filesel.wild,BOXEVENT);
       XSelectInput(display,filesel.file,BOXEVENT); */
   filesel.here=1;
@@ -724,14 +725,37 @@ create_file_selector(title,file,wild)
   filesel.off=0;
 }
 
-edit_fitem(ch,string,w,off1,pos1,mc)
+
+void stringintersect(target,sother)
+char *target,*sother;
+{
+	int m = strlen(target);
+	int n = strlen(sother);
+	if (n<m)
+	{
+		m = n;
+	}
+	int j=0;
+	while (j<m)
+	{
+		if (target[j] != sother[j])
+		{
+			break;
+		}
+		j++;
+	}
+	target[j] = '\0';
+}
+
+
+int edit_fitem(ch,string,w,off1,pos1,mc)
 char ch,*string;
 Window w;
 int *off1,*pos1,mc;
 {
   int l=strlen(string),cp;
   int off=*off1,pos=*pos1,wpos=pos-off;
-  /*  printf(" pos=%d off=%d s=%s \n", 
+  /*  plintf(" pos=%d off=%d s=%s \n", 
       pos,off,string); */
   switch(ch){
   case LEFT:
@@ -812,7 +836,148 @@ int *off1,*pos1,mc;
     else
       ping();
     break;
-  case TAB: return 0;
+  case TAB:/*TAB completion of file names */
+  {
+     
+     struct dirent *dp;
+     char ft[100];
+     char ftpath[100];
+     /*User may have typed ahead (maybe they remember the path they want)"*/
+     /*Try to change to that new directory if it is one.*/
+     if ((dp=(struct dirent*)opendir(filesel.filetxt))!=NULL)
+     {
+     	if (strcmp(cur_dir,filesel.filetxt)!=0)
+	{
+		change_directory(filesel.filetxt);
+     		get_directory(cur_dir);
+      		redraw_directory();
+      		free_finfo(&my_ff); /* delete the old file info */
+      		filesel.n0=0; /* back to the top of the list */
+      		get_fileinfo(filesel.wildtxt,cur_dir,&my_ff);
+      		filesel.n=my_ff.ndirs+my_ff.nfiles;
+		strcpy(filesel.filetxt,cur_dir);
+		int m = strlen(filesel.filetxt);
+		if (filesel.filetxt[m-1] != '/')
+		{
+			strcat(filesel.filetxt,"/");
+		}
+      		redraw_fs_text(filesel.filetxt,filesel.file,1);
+		redraw_file_list();
+		XFlush(display);
+	}
+	return(EDIT_WAIT); /*Wait for further instruction...*/
+     }
+      
+     int m=strlen(filesel.filetxt)+1;
+     strcpy(ft,filesel.filetxt);
+    
+     while ((dp=(struct dirent*)opendir(ft))==NULL)
+     {
+     	/*This WHILE is perhaps a bit clunky but since we can't be sure of 
+	path separator user will type in the box a trial-by-error 
+	approach may be more robust.*/
+	
+        ft[m] = '\0';
+     	m--;
+	if ((ft[m] != '/') & (ft[m] != '\\'))
+     	{
+		ft[m] = '\0';
+     		m--;
+     	}
+	
+	if (m==0)
+	{
+		break;
+	}
+     }
+     
+     
+     int n=0;
+     ft[0] = '\0'; 
+     if (m>  strlen(filesel.filetxt))
+     {
+     	return(EDIT_WAIT);
+     }	
+     for (n=0;n<strlen(filesel.filetxt)-m;n++)
+     {
+        ft[n]=filesel.filetxt[m+n+1];
+	ft[n+1] = '\0';
+     }
+     strcat(ft,"*");
+     strcpy(ftpath,filesel.filetxt);
+     ftpath[m+1]='\0';
+     /*Make sure we are in the correct directory now
+     since user could have moved cursor back up _several_ 
+     branches in directory tree before hitting tab key.*/
+     change_directory(ftpath);
+     free_finfo(&my_ff); 
+     filesel.n0=0; 
+     get_fileinfo_tab(ft,ftpath,&my_ff);
+     filesel.n=my_ff.ndirs+my_ff.nfiles;
+     if ((my_ff.ndirs+my_ff.nfiles)==1)
+     {
+     	if (my_ff.ndirs == 1) /*Only possible directory -- take it.*/
+	{
+		change_directory(my_ff.dirnames[0]);
+      		get_directory(cur_dir);
+      		redraw_directory();
+      		free_finfo(&my_ff); /* delete the old file info */
+      		filesel.n0=0; /* back to the top of the list */
+      		get_fileinfo(filesel.wildtxt,cur_dir,&my_ff);
+      		filesel.n=my_ff.ndirs+my_ff.nfiles;
+		strcpy(filesel.filetxt,cur_dir);
+		int m = strlen(filesel.filetxt);
+		if (filesel.filetxt[m-1] != '/')
+		{
+			strcat(filesel.filetxt,"/");
+		}
+      		redraw_fs_text(filesel.filetxt,filesel.file,1);
+	}
+	else /*Must be that (my_ff.nfiles == 1) -- but best wait for user to confim they actually want this file by clicking on it.*/ 
+	{
+		
+	}
+     }
+     else if (filesel.n > 1) /*Expand the file text to most generic currently represented*/
+     {
+     		int j=0;
+		char U[256];
+		if (my_ff.ndirs > 0)
+		{
+			strcpy(U,my_ff.dirnames[0]);
+		}
+		else 
+		{
+			strcpy(U,my_ff.filenames[0]);	
+		}
+		
+		for (j=0;j<filesel.n;j++)
+		{
+			if (j<my_ff.ndirs)
+			{
+				stringintersect(U,my_ff.dirnames[j]);
+			}
+			else
+			{
+				stringintersect(U,my_ff.filenames[j-my_ff.ndirs]);
+			}
+			
+			if (strlen(U) == 0)/*No common substring*/
+			{
+				break;
+			}
+		}
+		strcpy(filesel.filetxt,ftpath);
+		strcat(filesel.filetxt,U);
+		/*Actually don't want to force appending of path separator here
+		since we want user to decide between matching directory and files.
+		*/
+      		redraw_fs_text(filesel.filetxt,filesel.file,1);
+     }
+     redraw_file_list();
+     XFlush(display);
+   return 0;
+   }
   default:
     if( (ch>=' ') && (ch <= '~')){
       if(strlen(string)>=256)
@@ -834,9 +999,7 @@ int *off1,*pos1,mc;
     break;   
     }
 /* all done lets save everything */
-  off=pos-wpos;
-
-
+  off=pos-wpos;  
   *off1=off;
   *pos1=pos;
  XClearWindow(display,w);
@@ -846,13 +1009,13 @@ int *off1,*pos1,mc;
   return 0;
 }    
 
-selector_key(ev)
+int selector_key(ev)
 XEvent ev;
 {
- Window w=ev.xkey.window;
+ 
  char ch;
  int flag;
- /* printf(" hot=%d pos=%d \n",filesel.hot,filesel.pos); */
+ /* plintf(" hot=%d pos=%d \n",filesel.hot,filesel.pos); */
  ch=get_key_press(&ev);
  switch(filesel.hot){
  case HOTFILE:
@@ -877,7 +1040,7 @@ XEvent ev;
    
 
  
-destroy_selector()
+void destroy_selector()
 {
  filesel.here=0;
  XDestroySubwindows(display,filesel.base);
@@ -885,7 +1048,8 @@ destroy_selector()
  free_finfo(&my_ff);
 }
 
-file_selector(title,file,wild)
+ 
+int file_selector(title,file,wild)
  char *title;
  char *wild,*file;
 {
@@ -894,19 +1058,20 @@ file_selector(title,file,wild)
  return 0;
  if(!get_fileinfo(wild,cur_dir,&my_ff))
   return 0;
+  
  create_file_selector(title,file,wild);
  i=do_file_select_events();
  destroy_selector();
  if(i==0)return 0;
- /* printf(" Got a file: %s \n",filesel.filetxt); */
+ /* plintf(" Got a file: %s \n",filesel.filetxt); */
  strcpy(file,filesel.filetxt);
  return 1; /* got a file name */
 
 }
 
-reset_sliders()
+void reset_sliders()
 {
-  int i,j;
+  int i;
   double val;
   PAR_SLIDER *p;
   for(i=0;i<3;i++){
@@ -924,7 +1089,7 @@ reset_sliders()
   }
 }
     
-redraw_slide(p)
+void redraw_slide(p)
      PAR_SLIDER *p;
 {
   expose_slider(p->slide,p);
@@ -933,7 +1098,7 @@ redraw_slide(p)
   expose_slider(p->right,p);
 }
 
-set_slide_pos(p)
+void set_slide_pos(p)
      PAR_SLIDER *p;
 {
   double pos;
@@ -945,7 +1110,7 @@ set_slide_pos(p)
   p->pos=ip;
 }
 
-slide_release(w)
+void slide_release(w)
      Window w;
 {
   int i;
@@ -953,7 +1118,8 @@ slide_release(w)
     do_slide_release(w,&my_par_slide[i]);
 }
 
-do_slide_release(w,p)
+void do_slide_release(w,p)
+     int w;
      PAR_SLIDER *p;
 {
   if(p->use==0)return;
@@ -965,22 +1131,25 @@ do_slide_release(w,p)
     redraw_params();
   }
 }
-slider_motion(ev)
+
+void slider_motion(ev)
      XEvent ev;
 {
   int x,i;
   Window w;
   w=ev.xmotion.window;
   x=ev.xmotion.x;
+  /* printf(" state=%d\n",ev.xmotion.state); */
   for(i=0;i<3;i++)
-    do_slide_motion(w,x,&my_par_slide[i]);
+    do_slide_motion(w,x,&my_par_slide[i],ev.xmotion.state);
 }
 
 
-do_slide_motion(w,x,p)
+
+void do_slide_motion(w,x,p,s)
      PAR_SLIDER *p;
      Window w;
-     int x;
+     int x,s;
 {
   if(w==p->slide){
     p->pos=x;
@@ -992,11 +1161,19 @@ do_slide_motion(w,x,p)
     if(p->use){
       p->val=p->lo+ (p->hi-p->lo)*(double)(p->pos-2)/(double)(p->l-4);
       expose_slider(p->top,p);
+      set_val(p->parname,p->val);
+        if(p->type==ICBOX)
+      last_ic[p->index]=p->val;
+	if(s<300) {clear_draw_window();
+	create_new_cline();
+	redraw_dfield();
+	run_now();}
     }
   }
 }
       
-enter_slides(w,val)
+
+void enter_slides(w,val)
      Window w;
      int val;
 {
@@ -1005,7 +1182,8 @@ enter_slides(w,val)
     enter_slider(w,&my_par_slide[i],val);
 }
 
-enter_slider(w,p,val)
+
+void enter_slider(w,p,val)
      Window w;
      int val;
      PAR_SLIDER *p;
@@ -1014,7 +1192,8 @@ enter_slider(w,p,val)
       XSetWindowBorderWidth(display,w,val+1);
 }
 
-expose_slides(w)
+
+void expose_slides(w)
      Window w;
 {
   int i;
@@ -1022,7 +1201,8 @@ expose_slides(w)
     expose_slider(w,&my_par_slide[i]);
 }
 
-expose_slider(w,p)
+
+void expose_slider(w,p)
      PAR_SLIDER *p;
      Window w;
 {
@@ -1031,7 +1211,7 @@ expose_slider(w,p)
   char top[256];
   if(w==p->slide){draw_slider(w,p->pos,p->hgt,p->l);return;}
   if(w==p->go){
-      XDrawString(display,w,small_gc,2,CURY_OFFs/2,"go",2);
+      XDrawString(display,w,small_gc,2,0.75*CURY_OFFs,"go",2);
       return;
     }
   if(p->use){
@@ -1069,7 +1249,8 @@ expose_slider(w,p)
     
 }
  
-draw_slider(w,x,hgt,l)
+
+void draw_slider(w,x,hgt,l)
      int x,hgt,l;
      Window w;
 {
@@ -1081,7 +1262,8 @@ draw_slider(w,x,hgt,l)
     XDrawLine(display,w,small_gc,x0+i,0,x0+i,hgt);
 }
      
-make_par_slider(base,x,y,width,index)
+
+void make_par_slider(base,x,y,width,index)
      Window base;
      int x,y,width,index;
 {
@@ -1091,11 +1273,11 @@ make_par_slider(base,x,y,width,index)
     Window w;
   if(mainwid<(width+4))mainwid=width+4;
 
-  w=make_window(base,x,y,mainwid,mainhgt,1);
+  w=make_plain_window(base,x,y,mainwid,mainhgt,1);
   my_par_slide[index].main=w;
   xs=(mainwid-width-4)/2;
   my_par_slide[index].slide=make_window(w,xs,DCURYs+5,width+4,DCURYs-4,1);
-  my_par_slide[index].go=make_window(w,xs+width+8,DCURYs+4,3*DCURXs,DCURYs-3,1);
+  my_par_slide[index].go=make_window(w,xs+width+8,DCURYs+5,3*DCURXs,DCURYs-3,1);
   my_par_slide[index].top=make_window(w,2,2,mainwid-6,DCURYs,1);
   my_par_slide[index].left=make_window(w,2,2*DCURYs+3,12*DCURXs,DCURYs,0);
   my_par_slide[index].right=make_window(w,mainwid-12*DCURXs-4,2*DCURYs+3,
@@ -1116,27 +1298,30 @@ make_par_slider(base,x,y,width,index)
                     |
                     V
   */
-make_new_ic_box()
+
+void make_new_ic_box()
 {
   if(ICBox.xuse){
     XRaiseWindow(display,ICBox.base);
     return;
   }
   make_box_list_window(&ICBox,ICBOX);
-  make_icon(ic_bits,ic_width,ic_height,ICBox.base);
+  make_icon((char*)ic_bits,ic_width,ic_height,ICBox.base);
   
 }
 
-make_new_bc_box()
+
+void make_new_bc_box()
 {
     if(BCBox.xuse){
       XRaiseWindow(display,BCBox.base);
       return;
     }
   make_box_list_window(&BCBox,BCBOX);
-  make_icon(bc_bits,bc_width,bc_height,BCBox.base);
+  make_icon((char*)bc_bits,bc_width,bc_height,BCBox.base);
 }
-make_new_delay_box()
+
+void make_new_delay_box()
 { 
   if(DelayBox.use==0)return;
  if( DelayBox.xuse==1){
@@ -1144,9 +1329,10 @@ make_new_delay_box()
    return;
  }
   make_box_list_window(&DelayBox,DELAYBOX);
-  make_icon(delay_bits,delay_width,delay_height,DelayBox.base);
+  make_icon((char*)delay_bits,delay_width,delay_height,DelayBox.base);
 }
-make_new_param_box()
+
+void make_new_param_box()
 {
   if(ParamBox.use==0)return;
   if(ParamBox.xuse==1){
@@ -1154,9 +1340,10 @@ make_new_param_box()
     return;
   }
   make_box_list_window(&ParamBox,PARAMBOX);
-  make_icon(param_bits,param_width,param_height,ParamBox.base);
+  make_icon((char*)param_bits,param_width,param_height,ParamBox.base);
 }
-initialize_box()
+
+void initialize_box()
 {
  
   make_box_list(&ICBox,"Initial Data","ICs",NODE+NMarkov,ICBOX,1);
@@ -1178,7 +1365,8 @@ initialize_box()
   } */ 
 }
 
-resize_par_box(win)
+
+void resize_par_box(win)
 Window win;
 {
   unsigned int h,w;
@@ -1191,7 +1379,7 @@ Window win;
     ok=1;
     b=&ICBox;
     get_new_size(win,&w,&h);
-    get_nrow_from_hgt(h,&nwin,&w);
+    get_nrow_from_hgt(h,&nwin,(int*)&w);
 
   }
   
@@ -1199,21 +1387,21 @@ Window win;
     ok=2;
     b=&ParamBox;
     get_new_size(win,&w,&h);
-    get_nrow_from_hgt(h,&nwin,&w);
+    get_nrow_from_hgt(h,&nwin,(int*)&w);
 
   }
   if(BCBox.xuse==1&&win==BCBox.base){
     ok=3;
     b=&BCBox;
     get_new_size(win,&w,&h);
-    get_nrow_from_hgt(h,&nwin,&w);
+    get_nrow_from_hgt(h,&nwin,(int*)&w);
 
   }
   if(DelayBox.xuse==1&&win==DelayBox.base){
     ok=4;
     b=&DelayBox;
     get_new_size(win,&w,&h);
-    get_nrow_from_hgt(h,&nwin,&w);
+    get_nrow_from_hgt(h,&nwin,(int*)&w);
 
   }
   if(ok==0)return;
@@ -1246,7 +1434,8 @@ Window win;
 /* this returns the fixed width, the number of entries
     allowed 
 */
-get_nrow_from_hgt(h,n,w)
+
+void get_nrow_from_hgt(h,n,w)
      int h;
      int *n;
      int *w;
@@ -1255,9 +1444,10 @@ get_nrow_from_hgt(h,n,w)
  *w=28*DCURXs;
   *n= h/(hgt+4)-3;
 }
-destroy_box(BoxList *b)
+
+void destroy_box(BoxList *b)
 {
-  int i;
+
   int n,nrow;
   if(b->xuse==0)return;
   b->xuse=0;
@@ -1278,17 +1468,18 @@ destroy_box(BoxList *b)
   XFlush(display);
 }
 
-make_box_list_window(BoxList *b,int type)
+
+void make_box_list_window(BoxList *b,int type)
 {
 int nrow,n;
  int x,y;
  int xb1,xb2,xb3,xb4;
- int i1,i2,i,wid1,wid2;
+ int i,wid1,wid2;
  int width,height,wid,hgt;
- int widmin;
- char sss[256];
- double dtemp,z;
- Window base,w;
+ 
+ 
+ 
+ Window base;
   XTextProperty winname,iconame;
    XSizeHints size_hints;
    n=b->n;
@@ -1297,15 +1488,15 @@ int nrow,n;
 
 
 
- wid1=10*DCURXs;
+ wid1=16*DCURXs;
  wid2=22*DCURXs;
  wid=wid1+wid2+DCURXs;
  hgt=DCURYs+4;
  height=(nrow+2)*(hgt+4)+2*hgt;
- width=wid+5*DCURXs;
+ width=wid+8*DCURXs;
  b->minwid=width;
  b->minhgt=height; 
- base=make_window(RootWindow(display,screen),0,0,width,height,4);
+ base=make_plain_window(RootWindow(display,screen),0,0,width,height,4);
  b->base=base;
  XStringListToTextProperty(&b->wname,1,&winname);
  XStringListToTextProperty(&b->iname,1,&iconame);
@@ -1327,29 +1518,44 @@ int nrow,n;
    for(i=0;i<n;i++)
      b->isck[i]=0;
 }
+ /*
  xb1=(width-19*DCURXs)/2;
+ */
+ xb1 = 2+7*DCURXs+14;
+ /*
  xb2=xb1+4*DCURXs;
  xb3=xb2+9*DCURXs;
  xb4=xb3+8*DCURXs;
+ */
+ xb2=xb1+7*DCURXs+14;
+ xb3=xb2+7*DCURXs+14;
+ xb4=xb3+7*DCURXs+14;
+ /*
  b->close=make_window(base,2,5,5*DCURXs,DCURYs,1);
  b->ok=make_window(base,xb1,5,2*DCURXs,DCURYs,1);
  b->def=make_window(base,xb2,5,7*DCURXs,DCURYs,1);
  b->cancel=make_window(base,xb3,5,6*DCURXs,DCURYs,1);
   b->go=make_window(base,xb4,5,2*DCURXs,DCURYs,1);
+  */
+  b->close=make_window(base,2,5,7*DCURXs+10,DCURYs,1);
+ b->ok=make_window(base,xb1,5,7*DCURXs+10,DCURYs,1);
+ b->def=make_window(base,xb2,5,7*DCURXs+10,DCURYs,1);
+ b->cancel=make_window(base,xb3,5,7*DCURXs+10,DCURYs,1);
+  b->go=make_window(base,xb4,5,7*DCURXs+10,DCURYs,1);
   xb1=DCURXs+wid1+wid2+12;
-  b->up=make_window(base,xb1,2*DCURYs,2*DCURXs,DCURYs,1);
-  b->dn=make_window(base,xb1,2*DCURYs+DCURYs+4,2*DCURXs,DCURYs,1);
-  b->pgup=make_window(base,xb1,2*DCURYs+2*DCURYs+8,2*DCURXs,DCURYs,1);
-  b->pgdn=make_window(base,xb1,2*DCURYs+3*DCURYs+12,2*DCURXs,DCURYs,1);
+  b->up=make_window(base,xb1,2*DCURYs,3*DCURXs,DCURYs,1);
+  b->dn=make_window(base,xb1,2*DCURYs+DCURYs+4,3*DCURXs,DCURYs,1);
+  b->pgup=make_window(base,xb1,2*DCURYs+2*DCURYs+8,3*DCURXs,DCURYs,1);
+  b->pgdn=make_window(base,xb1,2*DCURYs+3*DCURYs+12,3*DCURXs,DCURYs,1);
 
  for(i=0;i<nrow;i++){
         x=DCURXs;
 	y=DCURYs+(hgt+4)*i+1.5*hgt;
-	b->w[i]=make_window(base,x,y,wid1,hgt,0);
-	b->we[i]=make_window(base,x+wid1+2,y,wid2,hgt,1);
+	b->w[i]=make_plain_window(base,x,y,wid1,hgt,0);
+	b->we[i]=make_plain_window(base,x+wid1+2,y,wid2,hgt,1);
 	 XSelectInput(display,b->w[i],BOXEVENT);
         if(type==ICBOX){
-	  b->ck[i]=make_window(base,1,y,6,DCURYs,1);
+	  b->ck[i]=make_plain_window(base,1,y,6,DCURYs,1);
 	}
 
 	}
@@ -1365,14 +1571,15 @@ if(type==ICBOX){
  b->xuse=1;
 }
 
-make_box_list(b,wname,iname,n,type,use)
+
+void make_box_list(b,wname,iname,n,type,use)
 BoxList *b;
 char *wname,*iname;
 int n,type,use;
 {
  int nrow,i;
  char sss[256];
- double dtemp,z;
+ double z;
 
    nrow=10;
 
@@ -1423,10 +1630,11 @@ if(n<10)nrow=n;
      exposure of the boxes is easily taken care of
   */
 
-do_box_expose(w)
+
+void do_box_expose(w)
 Window w;
 {
- int i;
+ 
 
  if(ICBox.xuse)display_box(ICBox,w);
  if(BCBox.xuse)display_box(BCBox,w);
@@ -1437,7 +1645,8 @@ Window w;
  
 
 
-justify_string(w1,s1)
+
+void justify_string(w1,s1)
      Window w1;
      char *s1;
 {
@@ -1456,13 +1665,14 @@ justify_string(w1,s1)
     if the index is beyond this dont draw it
 */
  
-draw_one_box(b,index)
+
+void draw_one_box(b,index)
 int index;
 BoxList b;
 {
  Window w,we;
- char string[80];
- double z;
+
+ 
  int n0=b.n0;
  int n1=n0+b.nwin-1;
  int i;
@@ -1496,7 +1706,8 @@ BoxList b;
   }
 
 
-redraw_params()
+
+void redraw_params()
 {
  int i;
  double z;
@@ -1509,12 +1720,14 @@ redraw_params()
  reset_sliders();
 }
 
-redraw_delays()
+
+void redraw_delays()
 {
  int i;
  if(DelayBox.use)for(i=0;i<NODE;i++)draw_one_box(DelayBox,i);
 }
-redraw_ics()
+
+void redraw_ics()
 {
  int i,in;
  for(i=0;i<NODE+NMarkov;i++){
@@ -1532,12 +1745,14 @@ redraw_ics()
  }
 
 }
-redraw_bcs()
+
+void redraw_bcs()
 {
  int i;
  for(i=0;i<NODE;i++)draw_one_box(BCBox,i);
 }
-display_box(b,w)
+
+void display_box(b,w)
 BoxList b;
 Window w;
 {
@@ -1546,31 +1761,31 @@ Window w;
  int n1=n0+b.nwin;
  int index;
  if(b.xuse==0)return;
- if(b.close==w)XDrawString(display,w,small_gc,0,CURY_OFFs,
+ if(b.close==w)XDrawString(display,w,small_gc,5,CURY_OFFs,
 	"Close",5);
- if(b.go==w)XDrawString(display,w,small_gc,0,CURY_OFFs,
+ if(b.go==w)XDrawString(display,w,small_gc,5,CURY_OFFs,
 	"Go",2);
- if(b.ok==w)XDrawString(display,w,small_gc,0,CURY_OFFs,
+ if(b.ok==w)XDrawString(display,w,small_gc,5,CURY_OFFs,
 	"Ok",2);
- if(b.cancel==w)XDrawString(display,w,small_gc,0,CURY_OFFs,
+ if(b.cancel==w)XDrawString(display,w,small_gc,5,CURY_OFFs,
 	"Cancel",6);
-if(b.def==w)XDrawString(display,w,small_gc,0,CURY_OFFs,
+if(b.def==w)XDrawString(display,w,small_gc,5,CURY_OFFs,
 	"Default",7);
-if(b.up==w)XDrawString(display,w,small_gc,0,CURY_OFFs,
+if(b.up==w)XDrawString(display,w,small_gc,5+DCURX,CURY_OFFs,
 	"^",1);
- if(b.dn==w)XDrawString(display,w,small_gc,0,CURY_OFFs,
+ if(b.dn==w)XDrawString(display,w,small_gc,5+DCURX,CURY_OFFs,
 	"v",1);
- if(b.pgup==w)XDrawString(display,w,small_gc,0,CURY_OFFs,
+ if(b.pgup==w)XDrawString(display,w,small_gc,5,CURY_OFFs,
 	"^^",2);
-if(b.pgdn==w)XDrawString(display,w,small_gc,0,CURY_OFFs,
+if(b.pgdn==w)XDrawString(display,w,small_gc,5,CURY_OFFs,
 	"vv",2);
  if(b.type==ICBOX){
    if(b.xvt==w)
-     XDrawString(display,w,small_gc,0,CURY_OFFs,"xvst",4);
+     XDrawString(display,w,small_gc,3,CURY_OFFs,"xvst",4);
    if(b.pp==w)
-     XDrawString(display,w,small_gc,0,CURY_OFFs,"xvsy",4);
+     XDrawString(display,w,small_gc,3,CURY_OFFs,"xvsy",4);
    if(b.arr==w)
-     XDrawString(display,w,small_gc,0,CURY_OFFs,"arry",4);
+     XDrawString(display,w,small_gc,3,CURY_OFFs,"arry",4);
  }
  for(i=0;i<b.nwin;i++)
  if(b.w[i]==w||b.we[i]==w){
@@ -1582,13 +1797,14 @@ if(b.pgdn==w)XDrawString(display,w,small_gc,0,CURY_OFFs,
      index=i+b.n0;
      if(index>=n0&&index<n1){
        if(b.ck[i]==w&&b.isck[index]==1)
-	 XDrawString(display,w,small_gc,0,CURY_OFFs,"*",1);
+	 XDrawString(display,w,small_gc,5,CURY_OFFs,"*",1);
      }
    }
  } 
 }
 
-box_enter_events(w,yn)
+
+void box_enter_events(w,yn)
      Window w;
      int yn;
 {
@@ -1611,7 +1827,8 @@ if(ICBox.xuse)box_enter(ICBox,w,val);
 
 }
 
-box_enter(b,w,val)
+
+void box_enter(b,w,val)
      BoxList b;
      Window w;
      int val;
@@ -1622,13 +1839,14 @@ box_enter(b,w,val)
 
 }
 
-find_the_box(b,w,index)
+
+int find_the_box(b,w,index)
 BoxList b;
 Window w;
 int *index;
 {
  int i;
- if(b.xuse==0)return;
+ if(b.xuse==0)return(0);
  for(i=0;i<b.nwin;i++)
  if(w==b.we[i]){
 		*index=i+b.n0;
@@ -1639,7 +1857,8 @@ int *index;
 }
  
 
-set_up_xvt()
+
+void set_up_xvt()
 {
   int i;
   int plot_list[10];
@@ -1658,7 +1877,8 @@ set_up_xvt()
     graph_all(plot_list,n,0);
 }
 
-set_up_pp()
+
+void set_up_pp()
 {
 int i;
 int plot_list[3],n=0;
@@ -1677,7 +1897,8 @@ int plot_list[3],n=0;
    graph_all(plot_list,n,1);
 }
 
-set_up_arry()
+
+void set_up_arry()
 {
 int i;
 int plot_list[2],n=0;
@@ -1696,7 +1917,8 @@ int plot_list[2],n=0;
   optimize_aplot(plot_list);
 }
 
-redraw_entire_box(b)
+
+void redraw_entire_box(b)
      BoxList *b;
 {
   if(b->xuse==0)return;
@@ -1716,7 +1938,8 @@ redraw_entire_box(b)
   }
 }
 
-do_box_button(b,w)
+
+void do_box_button(b,w)
      BoxList *b;
      Window w;
 {
@@ -1777,7 +2000,8 @@ do_box_button(b,w)
    
 
 
-box_list_scroll(b,i)
+
+void box_list_scroll(b,i)
      BoxList *b;
      int i;
 {
@@ -1815,7 +2039,8 @@ box_list_scroll(b,i)
 }
 
 
-box_buttons(w)
+
+void box_buttons(w)
 Window w;
 {
   
@@ -1826,7 +2051,8 @@ Window w;
 
 }
 
-box_keypress(ev,used)
+
+void box_keypress(ev,used)
      XEvent ev;
      int *used;
 {
@@ -1839,7 +2065,8 @@ box_keypress(ev,used)
 
 }
 
-do_box_key(b,ev,used)
+
+void do_box_key(b,ev,used)
      int *used;
      BoxList *b;
      XEvent ev;
@@ -1887,11 +2114,12 @@ do_box_key(b,ev,used)
 	  
 
 
-man_ic()
+
+void man_ic()
 {
   int done,index=0;
   double z;
-  char name[256],value[256],junk[256];
+  char name[256],junk[256];
   while(1){
     sprintf(name,"%s :",uvar_names[index]);
     z=last_ic[index];
@@ -1907,7 +2135,8 @@ man_ic()
     if(done==-1)return;
   }
 }
-new_parameter()
+
+void new_parameter()
 {
   int done,index;
   double z;
@@ -1952,7 +2181,8 @@ new_parameter()
   }
 }
 
-  redo_stuff()
+
+void   redo_stuff()
     {
       evaluate_derived();
    re_evaluate_kernels();
@@ -1960,7 +2190,8 @@ new_parameter()
         evaluate_derived();
 }
 	
-  set_default_ics()
+
+void   set_default_ics()
 {
   int i;
   for(i=0;i<NODE+NMarkov;i++)
@@ -1969,7 +2200,8 @@ new_parameter()
 }
 
   
-  set_default_params()
+
+void   set_default_params()
  {
 
  int i;
@@ -1991,7 +2223,8 @@ new_parameter()
 
 	
  
-draw_editable(win,string,off,cursor,mc) 
+
+void draw_editable(win,string,off,cursor,mc) 
      Window win;
      char *string;
      int off,cursor,mc;
@@ -2010,7 +2243,8 @@ draw_editable(win,string,off,cursor,mc)
 } 
 }     
  
-put_edit_cursor(w,pos)
+
+void put_edit_cursor(w,pos)
      Window w;
      int pos;
 {
@@ -2023,7 +2257,8 @@ put_edit_cursor(w,pos)
 
 
 
-edit_bitem(b,i,ch)
+
+int edit_bitem(b,i,ch)
      int i;
      BoxList *b;
      char ch;
@@ -2147,7 +2382,8 @@ edit_bitem(b,i,ch)
   return 0;
 }    
 
-add_edit_float(b,i,z)
+
+void add_edit_float(b,i,z)
      double z;
      int i;
      BoxList *b;
@@ -2157,7 +2393,8 @@ add_edit_float(b,i,z)
   add_editval(b,i,junk);
 }
 
-set_edit_params(b,i,string)
+
+void set_edit_params(b,i,string)
 BoxList *b;
      int i;
      char *string;
@@ -2171,7 +2408,8 @@ BoxList *b;
     b->pos[i]=l;
 }
 
-add_editval(b,i,string)
+
+void add_editval(b,i,string)
      BoxList *b;
      int i;
      char *string;
@@ -2185,7 +2423,8 @@ add_editval(b,i,string)
     draw_editable(b->we[iw],string,b->off[i],b->pos[i],b->mc);
 }
 	
-check_box_cursor()
+
+void check_box_cursor()
 {
   int n0;
   if(HotBoxItem<0||HotBox->xuse==0)return;
@@ -2196,15 +2435,17 @@ check_box_cursor()
   HotBoxItem=-1;
 }
 
-prt_focus()
+
+void prt_focus()
 {
   Window focus;
   int rev;
    XGetInputFocus(display,&focus,&rev);
-   printf(" focus=%d\n",focus);
+   plintf(" focus=%d\n",focus);
 }
 	
-to_float(s,z)
+
+int to_float(s,z)
      char *s;
      double *z;
 {
@@ -2217,9 +2458,11 @@ to_float(s,z)
       return 0;
     }
   *z=atof(s);
+  return(0);
 }
   
-set_value_from_box(b,i)
+
+void set_value_from_box(b,i)
      BoxList *b;
      int i;
 {
@@ -2250,7 +2493,8 @@ set_value_from_box(b,i)
   } 
 }
  
-load_entire_box(b)
+
+void load_entire_box(b)
      BoxList *b;
 {
   int i,n=b->n;

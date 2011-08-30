@@ -16,7 +16,8 @@
  */
 
 
-#include <iostream.h>
+/*#include <iostream.h> <- This is now deprecated. Use the following instead*/
+#include <iostream>
 #include <strings.h>
 #include <assert.h>
 
@@ -24,7 +25,7 @@
 
 avi_header::avi_header(chunkstream *cs, codec *cd, int w, int h, int nframes,
   int fps)
-  : listchunk(cs, "hdrl list", 0, "hdrl")
+  : listchunk(cs, (char *)"hdrl list", 0, (char *)"hdrl")
 {
 	this->cd = cd;
 	this->w = w;
@@ -33,7 +34,7 @@ avi_header::avi_header(chunkstream *cs, codec *cd, int w, int h, int nframes,
 	this->fps = fps;
 
 	this->avih = new chunk_avih(this);
-	this->strl = new listchunk(cs, "strl list", 1, "strl");
+	this->strl = new listchunk(cs, (char *)"strl list", 1, (char *)"strl");
 	this->strh = new chunk_strh(this);
 	this->strf = cd->strf();
 	this->strd = cd->strd();
@@ -45,9 +46,9 @@ void avi_header::WRITE()
 {
 	chunkstream *cs = this->cs;
 	
-	cs->wr_str("LIST");
+	cs->wr_str((char *)"LIST");
 	cs->wr32(0);
-	cs->wr_str("hdrl");
+	cs->wr_str((char *)"hdrl");
 	this->end_of_chunk();
 
 	this->avih->write();
@@ -74,7 +75,7 @@ void chunk_avih::WRITE()
 {
 	chunkstream *cs = this->cs;
 
-	cs->wr_str("avih");
+	cs->wr_str((char *)"avih");
 	cs->wr32(0);
 	cs->wr32(1000000 / ah->fps);
 	cs->wr32(0);  // MaxBytesPerSec
@@ -96,9 +97,9 @@ void chunk_strh::WRITE()
 {
 	chunkstream *cs = this->cs;
 
-	cs->wr_str("strh");
+	cs->wr_str((char *)"strh");
 	cs->wr32(0);
-	cs->wr_str("vids");
+	cs->wr_str((char *)"vids");
 	/* assert(4 == strlen(ah->cd->type_str())); */
 	cs->wr_str(ah->cd->type_str());
 	cs->wr32(0);  // Flags
@@ -114,13 +115,13 @@ void chunk_strh::WRITE()
 }
 
 chunk_avih::chunk_avih(avi_header *ah)
-  : chunk(ah->cs, "avih", 0)
+  : chunk(ah->cs, (char *)"avih", 0)
 {
 	this->ah = ah;
 }
 
 chunk_strh::chunk_strh(avi_header *ah)
-  : chunk(ah->cs, "strh", 0)
+  : chunk(ah->cs, (char *)"strh", 0)
 {
 	this->ah = ah;
 }

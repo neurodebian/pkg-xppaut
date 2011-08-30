@@ -1,4 +1,0 @@
-k(t)=5*exp(-2*t)-4*exp(-t)
-f(u,v)=v+u*(1-u^2-v^2)
-u'=f(k(t)#u,u)
-done

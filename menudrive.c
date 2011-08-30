@@ -1,4 +1,6 @@
-#include <stdlib.h> 
+#include <stdlib.h>  
+
+#include <sys/wait.h>
 #include <unistd.h>
 /* the menu for XPP commands 
    this calls any command
@@ -6,16 +8,42 @@
    
 */
 
+#include "browse.h"
+#include "calc.h"
+#include "init_conds.h"
+#include "kinescope.h"
+#include "main.h"
+
+#include "graf_par.h"
+#include "integrate.h"
+#include "lunch-new.h"
+#include "edit_rhs.h"
+#include "many_pops.h"
+#include "torus.h"
+#include "nullcline.h"
+#include "numerics.h"
+#include "markov.h"
+#include "extra.h"
+#include "pop_list.h"
+#include "tabular.h"
+#include "pp_shoot.h"
+#include "adj2.h"
+#include "txtread.h"
+#include "auto.h"
+#include "ggets.h"
+
+
 #include <stdio.h>
 #include <string.h>
 #include <X11/Xlib.h>
 #include "menudrive.h"
 extern char *info_message,*ic_hint[],*sing_hint[],
 *null_hint[],*flow_hint[],*null_freeze[], *bvp_hint[],*color_hint[],
-  *stoch_hint[];;
+  *stoch_hint[];
 extern char *no_hint[],*wind_hint[],*view_hint[],*frz_hint[];
 extern char *graf_hint[], *cmap_hint[],*half_hint[],*map_hint[]; 
-extern *text_hint[],*edit_hint[];
+extern char *text_hint[];
+extern char *edit_hint[];
 extern char *adj_hint[];
 extern char *phas_hint[],*kin_hint[],*view_hint[],*tab_hint[];
 extern Window info_pop,main_win,draw_win;
@@ -27,6 +55,7 @@ extern int DisplayHeight,DisplayWidth;
 extern int AutoFreezeFlag,NTable;
 extern Display *display;
 int screen;
+int status; 
 
 extern int TORUS;
 typedef struct {
@@ -40,25 +69,44 @@ MSGBOXSTRUCT MsgBox;
 char *getenv();
 
 
-xpp_hlp()
+void xpp_hlp()
 {
   char cmd[256];
-  if(getenv("XPPHELP")==NULL||getenv("BROWSER")==NULL){
-    err_msg("XPPHELP or BROWSER undefined");
-    return;
+
+  if(getenv("XPPHELP")==NULL)
+  {
+  	err_msg("Environment variable XPPHELP undefined.");
+    	return;
   }
+  
+  if (getenv("XPPBROWSER")==NULL)
+  {
+    	err_msg("Environment variable XPPBROWSER undefined.");
+    	return;
+  }
+  
   sprintf(cmd,"file:///%s",getenv("XPPHELP"));
+  
   if(fork()==0){
-      execlp(getenv("BROWSER"),getenv("BROWSER"),cmd,(char *)0);
+    
+           execlp(getenv("XPPBROWSER"),getenv("XPPHELP"),cmd,(char *)0); 
+      perror("Unable to open browser. Check your XPPBROWSER and XPPHELP environement variables.");
+      exit(1); 
   }
+  else 
+  { 
+      wait(&status);
+      
+  } 
+ 
 }
 
 
-MessageBox(char *m)
+void MessageBox(char *m)
 {
  int wid=strlen(m)*DCURX+20;
  int hgt=4*DCURY;
- MsgBox.w=make_window(RootWindow(display,screen),
+ MsgBox.w=make_plain_window(RootWindow(display,screen),
 		      DisplayWidth/2,DisplayHeight/2, wid,hgt,4);
  MsgBox.here=1;
  set_window_title(MsgBox.w,"Yo!");
@@ -66,40 +114,58 @@ MessageBox(char *m)
  ping(); 
 
 }
-RedrawMessageBox(Window w)
+void RedrawMessageBox(Window w)
 {
- if(w==MsgBox.w)
+  if(w==MsgBox.w){
+    /*    plintf("%s \n",MsgBox.text); */
  Ftext(10,2*DCURY,MsgBox.text,MsgBox.w);
+  }
+
 }
-KillMessageBox()
+void KillMessageBox()
 {
   if(MsgBox.here==0)return;
   MsgBox.here=0;
   XDestroyWindow(display,MsgBox.w);
-
 }
 int TwoChoice(char *c1,char *c2, char *q,char *key)
 {
  return two_choice(c1,c2,q,key,DisplayWidth/2,DisplayHeight/2,
 		   RootWindow(display,screen)); 
 }
-GetMouseXY(int *x,int *y)
+int GetMouseXY(int *x,int *y)
 {
  return get_mouse_xy(x,y,draw_win);
 }
 
-FlushDisplay()
+void FlushDisplay()
 {
  XFlush(display);
 }
-clear_draw_window()
+void clear_draw_window()
 {
   clr_scrn();
   hi_lite(draw_win);
 }
 
+void drw_all_scrns(){
+ int i;
+ int ic=current_pop;
+ if(SimulPlotFlag==0){
+    redraw_all();
+ return;
+ }
  
-clr_all_scrns()
+ for(i=0;i<num_pops;i++){
+   make_active(ActiveWinList[i]);
+   redraw_all();
+ }
+ 
+ make_active(ic);
+ hi_lite(draw_win);
+}
+ 
+void clr_all_scrns()
 {
  int i;
  int ic=current_pop;
@@ -119,7 +185,7 @@ clr_all_scrns()
 }
 
 
-run_the_commands(int com)
+void run_the_commands(int com)
 {
 
   if(com<0)return;
@@ -131,6 +197,7 @@ run_the_commands(int com)
     cont_integ();
     return;
   }
+  
   if(com>=M_SG&&com<=M_SC){
     find_equilib_com(com-M_SG);
     return;
@@ -144,7 +211,7 @@ run_the_commands(int com)
   if(com>=M_DD&&com<=M_DS){
     direct_field_com(com-M_DD); return;}
 
-  if(com>=M_WW&&com<=M_WF){
+  if(com>=M_WW&&com<=M_WD){
     window_zoom_com(com-M_WW); return;}
 
   if(com>=M_AA&&com<=M_AC){
@@ -178,7 +245,7 @@ run_the_commands(int com)
     return;
   }
   if(com==M_R){
-    redraw_all();
+    drw_all_scrns();
     return;
   }
 
@@ -225,6 +292,8 @@ run_the_commands(int com)
     find_bvp_com(com-M_BR);
     return;
   }
+  
+  
   if(com>=M_V2&&com<=M_VT)change_view_com(com-M_V2);
   if(com>=M_UAN&&com<=M_UAP)make_adj_com(com-M_UAN);
   if(com>=M_UCN&&com<=M_UCA)set_col_par_com(com-M_UCN);
@@ -233,12 +302,12 @@ run_the_commands(int com)
   if(com>=M_UT && com<=M_UC)quick_num(com-M_UT);
 }
 
-do_stochast()
+void do_stochast()
 {
 static char *n[]={"New seed","Compute","Data","Mean","Variance","Histogram",
 		  "Old hist","Fourier","Power","fIt data","Stat","Liapunov",
-		  "stAutocor","crosscoR","spEc.dns","2D-hist"};
- static char key[]="ncdmvhofpislare2";
+		  "stAutocor","Xcorrel etc","spEc.dns","2D-hist"};
+ static char key[]="ncdmvhofpislaxe2";
  Window temp=main_win;
  char ch;
  int i;
@@ -249,7 +318,8 @@ static char *n[]={"New seed","Compute","Data","Mean","Variance","Histogram",
 
  if(i>=0&&i<16)run_the_commands(M_UHN+i);
 }
-get_pmap_pars()
+
+void get_pmap_pars()
 {
   static char *map[]={"(N)one","(S)ection","(M)ax/min","(P)eriod"};
   static char mkey[]="nsmp";
@@ -267,7 +337,7 @@ get_pmap_pars()
 
 }
 
-set_col_par()
+void set_col_par()
 {
   char ch;
   Window tempw=main_win;
@@ -282,7 +352,7 @@ set_col_par()
   if(i>=0&&i<3)run_the_commands(i+M_UCN);
 }
   
-make_adj()
+void make_adj()
 {
  Window temp=main_win;
  static char *n[]={"(N)ew adj","(M)ake H","(A)djoint","(O)rbit","(H)fun","(P)arameters"};
@@ -297,7 +367,7 @@ make_adj()
    run_the_commands(M_UAN+i);
 }
 
-do_file_com(int com)
+void do_file_com(int com)
 {
   switch(com){
   case M_FT:
@@ -358,7 +428,7 @@ do_file_com(int com)
   }
 }
 
-do_gr_objs()
+void do_gr_objs()
 {
  char ch;
  int i;
@@ -395,12 +465,11 @@ do_gr_objs()
 
 
 
-new_lookup()
+void new_lookup()
 {
   static char *n[]={"(E)dit","(V)iew"};
   static char key[]="ev";
   char ch;
-  int i;
     Window temp=main_win;
    if(NTable==0)return;
   ch=(char)pop_up_list(&temp,"Tables",n,key,2,12,1,10,11*DCURY+8,
@@ -408,14 +477,15 @@ new_lookup()
   if(ch==key[0])run_the_commands(M_UKE);
     if(ch==key[1])run_the_commands(M_UKV);
 }
-find_bvp()
+
+void find_bvp()
 {
  static char *n[]={"(R)ange","(N)o show","(S)how","(P)eriodic","(H)omoclinic"};
  static char key[]="rnsph";
  char ch;
  int i;
   Window temp=main_win;
-ch=(char)pop_up_list(&temp,"Bndry Value Prob",n,key,5,12,1,10,6*DCURY+8,
+ch=(char)pop_up_list(&temp,"Bndry Value Prob",n,key,5,16,1,10,6*DCURY+8,
 		      bvp_hint,info_pop,info_message);
  if(ch==27)return;
  for(i=0;i<5;i++)
@@ -424,7 +494,7 @@ ch=(char)pop_up_list(&temp,"Bndry Value Prob",n,key,5,12,1,10,6*DCURY+8,
 
 }
 
-change_view()
+void change_view()
 {
 Window temp=main_win;
  static char *n[]={"2D" ,"3D","Array","Toon"};
@@ -440,9 +510,9 @@ Window temp=main_win;
 }
 
 
-do_windows()
+void do_windows()
 {
- int com=-1,i;
+ int i;
 char ch;
  static char *list[]={"(C)reate","(K)ill all","(D)estroy","(B)ottom",
 		"(A)uto","(M)anual","(S)imPlot On"};
@@ -467,7 +537,7 @@ char ch;
 }
  
 
-add_a_curve()
+void add_a_curve()
 {
   int com=-1;
   static char *na[]={"(A)dd curve","(D)elete last","(R)emove all",
@@ -536,24 +606,25 @@ add_a_curve()
 
 
 
-do_movie()
+void do_movie()
 {
  int i;
  char ch;
- static char *list[]={"(C)apture","(R)eset","(P)layback","(A)utoplay","(S)ave","(M)ake AniGif"};
- static char key[]="crpasm";
+ int nkc=6;
+ static char *list[]={"(C)apture","(R)eset","(P)layback","(A)utoplay","(S)ave","(M)ake AniGif","(X)tra"};
+ static char key[]="crpasmx";
  Window temp=main_win;
- ch=(char)pop_up_list(&temp,"Kinescope",list,key,6,11,0,10,8*DCURY+8,
+ ch=(char)pop_up_list(&temp,"Kinescope",list,key,nkc,11,0,10,8*DCURY+8,
 		      kin_hint,info_pop,info_message);
- for(i=0;i<6;i++)
+ for(i=0;i<nkc;i++)
    if(ch==key[i])
      break;
- if(i>=0&&i<6)
+ if(i>=0&&i<nkc)
    run_the_commands(i+M_KC);
 }
 
 
-do_torus()
+void do_torus()
 {
   Window temp=main_win;
   static char *n[]={"(A)ll","(N)one","(C)hoose"};
@@ -569,24 +640,24 @@ do_torus()
    run_the_commands(M_AA+i);
 }
 
-window_zoom()
+void window_zoom()
 {
 
-static char *n[]={"(W)indow","(Z)oom In", "Zoom (O)ut", "(F)it"};
- static char key[]="wzof";
+static char *n[]={"(W)indow","(Z)oom In", "Zoom (O)ut", "(F)it","(D)efault"};
+ static char key[]="wzofd";
  char ch;
  int i;
   Window temp=main_win;
-   ch=(char)pop_up_list(&temp,"Window",n,key,4,13,0,10,13*DCURY+8,
+   ch=(char)pop_up_list(&temp,"Window",n,key,5,13,0,10,13*DCURY+8,
 			wind_hint,info_pop,info_message);
-for(i=0;i<4;i++)
+for(i=0;i<5;i++)
   if(ch==key[i])
     break;
-if(i>=0&&i<4)
+if(i>=0&&i<5)
   run_the_commands(M_WW+i);
 }
   
-direct_field()
+void direct_field()
 {
   int i;
   static char *n[]={"(D)irect Field","(F)low","(N)o dir. fld.","(C)olorize",
@@ -603,7 +674,8 @@ direct_field()
  if(i>=0&&i<5)
    run_the_commands(M_DD+i);
 }
-new_clines()
+
+void new_clines()
 {
   int i;
   Window temp=main_win;
@@ -618,7 +690,8 @@ new_clines()
   if(i>=0&&i<6)
     run_the_commands(M_NN+i);
 }
-froz_cline_stuff()
+
+void froz_cline_stuff()
 {
  Window temp=main_win;
   static char *n[]={"(F)reeze","(D)elete all","(R)ange","(A)nimate"};
@@ -634,7 +707,8 @@ froz_cline_stuff()
    if(i>=0&&i<4)
      run_the_commands(M_NFF+i);
 }
-find_equilibrium()
+
+void find_equilibrium()
 { 
   int i;
   static char *n[]={"(G)o","(M)ouse","(R)ange","monte(C)ar"};
@@ -654,8 +728,9 @@ find_equilibrium()
    run_the_commands(i+M_SG);
 }
  
-ini_data_menu()
+void ini_data_menu()
 {
+ 
  int i;
 Window temp=main_win;
  static char *n[]={"(R)ange","(2)par range","(L)ast","(O)ld","(G)o","(M)ouse","(S)hift","(N)ew",
@@ -679,12 +754,12 @@ Window temp=main_win;
  
 }
 
-new_param()
+void new_param()
 {
  run_the_commands(M_P);
 }
 
-clear_screens()
+void clear_screens()
 {
   run_the_commands(M_EE);
 
@@ -692,19 +767,19 @@ clear_screens()
 
 
 
-x_vs_t()
+void x_vs_t()
 {
  run_the_commands(M_X);
 }
 
 
-redraw_them_all()
+void redraw_them_all()
 {
   run_the_commands(M_R);
 
 }
 
-get_3d_par()
+void get_3d_par()
 {
   run_the_commands(M_3);
 }

@@ -1,4 +1,11 @@
-#define LPAREN 1
+#ifndef _newpars_h
+#define _newpars_h
+
+
+/*#define LPAREN 1
+*/
+
+
 #define COMMENT 2
 #define SPACE 3
 #define EQUAL 4
@@ -21,9 +28,23 @@
 #define SOL_VAR 14
 
 #define EXPORT 15
-#define ONLY 25
 
-#define GROUP 26
+/*New pHtools stuff*/
+#define MKSOL 16
+#define ADDTOSOL 17
+#define TRACKSOL 18
+#define DPHDT 19
+#define PHSOL 20
+#define SPECIE 21
+#define MIXSOL 22
+#define STRENGTH 23
+#define BUFFCAP 24
+#define CB 25
+
+
+#define ONLY 26
+
+#define GROUP 27
 
 #define NAMLEN 10
 #define MAXARG 20
@@ -35,10 +56,12 @@ typedef struct var_info {
   struct var_info *next,*prev;
 } VAR_INFO;
 
-int start_var_info=0;
+/*int start_var_info=0;
+
 VAR_INFO *my_varinfo;
+*/
 
-
+#endif
 
 
 

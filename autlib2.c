@@ -2,9 +2,10 @@
    You must link the resulting object file with the libraries:
 	-lF77 -lI77 -lm -lc   (in that order)
 */
+#include "autlib2.h"
 
-#include "f2c.h"
-#include "autlim.h"
+#include "auto_x11.h"
+
 int FLOWK;
 /* Common Block Declarations */
 
@@ -179,7 +180,7 @@ static integer c__2 = 2;
 /*     ---------- ------ */
 /* Subroutine */ int cnrlbv_(funi, bcni, icni, stpnt, fnbpbv, ibr, m1aa, m2aa,
 	 aa, m1bb, m2bb, bb, m1cc, cc, m1dd, dd, wbrbd, m1u, ups, uoldps, 
-	upoldp, udotps, rhsa, rhsd, tint, uint, dups, eqf, uneq, tm, dtm, tm2,
+	upoldp, udotps, rhsa, rhsd, tint, uintt, dups, eqf, uneq, tm, dtm, tm2,
 	 u, f, m1df, dfdu, dfdp, itm, ial, ubc0, ubc1, m1bc, dbc, uicd, ficd, 
 	m1ic, dicd, ir, ic, iwbrbd, p0, p1, poin, ev, wkev, ndim2, smat, 
 	rnllv)
@@ -194,7 +195,7 @@ doublereal *cc;
 integer *m1dd;
 doublereal *dd, *wbrbd;
 integer *m1u;
-doublereal *ups, *uoldps, *upoldp, *udotps, *rhsa, *rhsd, *tint, *uint, *dups,
+doublereal *ups, *uoldps, *upoldp, *udotps, *rhsa, *rhsd, *tint, *uintt, *dups,
 	 *eqf, *uneq, *tm, *dtm, *tm2, *u, *f;
 integer *m1df;
 doublereal *dfdu, *dfdp;
@@ -215,7 +216,7 @@ doublereal *smat, *rnllv;
     integer aa_dim1, aa_dim2, aa_offset, bb_dim1, bb_dim2, bb_offset, cc_dim1,
 	     cc_offset, dd_dim1, dd_offset, ups_dim1, ups_offset, uoldps_dim1,
 	     uoldps_offset, upoldp_dim1, upoldp_offset, udotps_dim1, 
-	    udotps_offset, rhsa_dim1, rhsa_offset, uint_dim1, uint_offset, 
+	    udotps_offset, rhsa_dim1, rhsa_offset, uintt_dim1, uintt_offset, 
 	    dups_dim1, dups_offset, dfdu_dim1, dfdu_offset, dfdp_dim1, 
 	    dfdp_offset, dbc_dim1, dbc_offset, dicd_dim1, dicd_offset, 
 	    p0_dim1, p0_offset, p1_dim1, p1_offset, poin_dim1, poin_offset, 
@@ -300,9 +301,9 @@ doublereal *smat, *rnllv;
     dups_dim1 = *m1u;
     dups_offset = dups_dim1 + 1;
     dups -= dups_offset;
-    uint_dim1 = *m1u;
-    uint_offset = uint_dim1 + 1;
-    uint -= uint_offset;
+    uintt_dim1 = *m1u;
+    uintt_offset = uintt_dim1 + 1;
+    uintt -= uintt_offset;
     --tint;
     --rhsd;
     rhsa_dim1 = *m1u;
@@ -358,7 +359,7 @@ doublereal *smat, *rnllv;
 
     rsptbv_(funi, stpnt, &rds, &istop, &ntot, &lab, ibr, m1u, &ups[ups_offset]
 	    , &uoldps[uoldps_offset], &udotps[udotps_offset], &upoldp[
-	    upoldp_offset], &tint[1], &uint[uint_offset], &eqf[1], &uneq[1], &
+	    upoldp_offset], &tint[1], &uintt[uintt_offset], &eqf[1], &uneq[1], &
 	    dups[dups_offset], &tm[1], &dtm[1], &tm2[1], &itm[1], &ial[1], &u[
 	    1], &f[1], m1df, &dfdu[dfdu_offset], &dfdp[dfdp_offset], &ev[1], 
 	    ndim2, &smat[smat_offset], &rnllv[1], &ir[1], &ic[1], &nodir);
@@ -419,7 +420,7 @@ L1:
     if (ntot % blcde_1.iad == 0) {
 	adapt_(&blcde_1.ntst, &blcde_1.ncol, &blcde_1.ntst, &blcde_1.ncol, &
 		tm[1], &dtm[1], m1u, &ups[ups_offset], &uoldps[uoldps_offset],
-		 &tint[1], &uint[uint_offset], &eqf[1], &uneq[1], &dups[
+		 &tint[1], &uintt[uintt_offset], &eqf[1], &uneq[1], &dups[
 		dups_offset], &tm2[1], &itm[1], &ial[1]);
     }
 L2:
@@ -457,7 +458,7 @@ L4:
     if (blbcn_1.ilp == 0) {
 	goto L5;
     }
-    lcspbv_(fnlpbv_, funi, bcni, icni, &istop, &itp, &rlp, &nitps, ibr, &ntot,
+    lcspbv_((doublereal (*)(void))fnlpbv_, funi, bcni, icni, &istop, &itp, &rlp, &nitps, ibr, &ntot,
 	     m1aa, m2aa, &aa[aa_offset], m1bb, m2bb, &bb[bb_offset], m1cc, &
 	    cc[cc_offset], m1dd, &dd[dd_offset], &wbrbd[1], m1u, &ups[
 	    ups_offset], &uoldps[uoldps_offset], &udotps[udotps_offset], &
@@ -483,11 +484,11 @@ L4:
 /* Check for bifurcation. */
 
 L5:
-    if (blcde_1.isp == 0 || blcde_1.isp == 1 && blbcn_1.ips == 4) {
+    if ((blcde_1.isp == 0) || ((blcde_1.isp == 1) && (blbcn_1.ips == 4))) {
 	goto L55;
     }
 
-    lcspbv_(fnbpbv, funi, bcni, icni, &istop, &itp, &sp1, &nitps, ibr, &ntot, 
+    lcspbv_((doublereal(*)(void))fnbpbv, funi, bcni, icni, &istop, &itp, &sp1, &nitps, ibr, &ntot, 
 	    m1aa, m2aa, &aa[aa_offset], m1bb, m2bb, &bb[bb_offset], m1cc, &cc[
 	    cc_offset], m1dd, &dd[dd_offset], &wbrbd[1], m1u, &ups[ups_offset]
 	    , &uoldps[uoldps_offset], &udotps[udotps_offset], &upoldp[
@@ -531,7 +532,7 @@ L55:
     i__1 = bllim_1.nuzr;
     for (i = 1; i <= i__1; ++i) {
 	blusz_1.iuzr = i;
-	lcspbv_(fnuzbv_, funi, bcni, icni, &istop, &itp, &uzr[i - 1], &nitps, 
+	lcspbv_((doublereal (*)(void))fnuzbv_, funi, bcni, icni, &istop, &itp, &uzr[i - 1], &nitps, 
 		ibr, &ntot, m1aa, m2aa, &aa[aa_offset], m1bb, m2bb, &bb[
 		bb_offset], m1cc, &cc[cc_offset], m1dd, &dd[dd_offset], &
 		wbrbd[1], m1u, &ups[ups_offset], &uoldps[uoldps_offset], &
@@ -583,7 +584,7 @@ integer n, ntst, ndx;
 doublereal *ups;
 {
     /* System generated locals */
-    integer ups_dim1, ups_offset, i__1,j;
+    integer ups_dim1, ups_offset;
     doublereal d__1;
 
     /* Builtin functions */
@@ -602,14 +603,14 @@ doublereal *ups;
     /* Function Body */
     blrtn.irot = 0;
     /* for(j=0;j<=ntst;j++)
-      printf("%g %g %g \n",ups[j+ups_offset],ups[j+ups_dim1+ups_offset],
+      plintf("%g %g %g \n",ups[j+ups_offset],ups[j+ups_dim1+ups_offset],
       ups[j+ups_offset+2*ups_dim1] ); */
     for (i__ = 0; i__ < n; ++i__) {
 
 	d__1 = (ups[ntst+ i__ * ups_dim1+ups_offset] - ups[i__ * ups_dim1+ups_offset]) / 
 		blrtn.torper;
 	blrtn.nrot[i__ ] = i_dnnt(&d__1);
-	/* printf(" i=%d nrot=%d  tp=%g \n",i__,blrtn.nrot[i__],blrtn.torper); 
+	/* plintf(" i=%d nrot=%d  tp=%g \n",i__,blrtn.nrot[i__],blrtn.torper); 
          */
 	if (blrtn.nrot[i__] != 0) {
 	    blrtn.irot = 1;
@@ -1965,13 +1966,13 @@ L20:
 
 /*     ---------- ------ */
 /* Subroutine */ int rsptbv_(funi, stpnt, rds, istop, ntot, lab, ibr, m1u, 
-	ups, uoldps, udotps, upoldp, tint, uint, eqf, uneq, dups, tm, dtm, 
+	ups, uoldps, udotps, upoldp, tint, uintt, eqf, uneq, dups, tm, dtm, 
 	tm2, itm, ial, u, f, m1df, dfdu, dfdp, ev, ndim2, smat, rnllv, ir, ic,
 	 nodir)
 /* Subroutine */ int (*funi) (), (*stpnt) ();
 doublereal *rds;
 integer *istop, *ntot, *lab, *ibr, *m1u;
-doublereal *ups, *uoldps, *udotps, *upoldp, *tint, *uint, *eqf, *uneq, *dups, 
+doublereal *ups, *uoldps, *udotps, *upoldp, *tint, *uintt, *eqf, *uneq, *dups, 
 	*tm, *dtm, *tm2;
 integer *itm, *ial;
 doublereal *u, *f;
@@ -1984,7 +1985,7 @@ integer *ir, *ic, *nodir;
 {
     /* System generated locals */
     integer ups_dim1, ups_offset, uoldps_dim1, uoldps_offset, udotps_dim1, 
-	    udotps_offset, upoldp_dim1, upoldp_offset, uint_dim1, uint_offset,
+	    udotps_offset, upoldp_dim1, upoldp_offset, uintt_dim1, uintt_offset,
 	     dups_dim1, dups_offset, dfdu_dim1, dfdu_offset, dfdp_dim1, 
 	    dfdp_offset, smat_dim1, smat_offset, i__1, i__2;
 
@@ -2041,9 +2042,9 @@ integer *ir, *ic, *nodir;
     dups -= dups_offset;
     --uneq;
     --eqf;
-    uint_dim1 = *m1u;
-    uint_offset = uint_dim1 + 1;
-    uint -= uint_offset;
+    uintt_dim1 = *m1u;
+    uintt_offset = uintt_dim1 + 1;
+    uintt -= uintt_offset;
     --tint;
     upoldp_dim1 = *m1u;
     upoldp_offset = upoldp_dim1 + 1;
@@ -2081,7 +2082,7 @@ integer *ir, *ic, *nodir;
     if (blcde_1.ntst != ntstrs || blcde_1.ncol != ncolrs) {
 	adapt_(&ntstrs, &ncolrs, &blcde_1.ntst, &blcde_1.ncol, &tm[1], &dtm[1]
 		, m1u, &ups[ups_offset], &udotps[udotps_offset], &tint[1], &
-		uint[uint_offset], &eqf[1], &uneq[1], &dups[dups_offset], &
+		uintt[uintt_offset], &eqf[1], &uneq[1], &dups[dups_offset], &
 		tm2[1], &itm[1], &ial[1]);
     }
 
@@ -3513,7 +3514,7 @@ OF MULTIPLIERS IN UNIT CIRCLE =\002,i3)";
 
 
 /* Order the Floquet multipliers by distance from z=1. */
-    send_mult(*ibr,*ntot+1,blbcn_1.ndim,&ev[1]);
+    send_mult(*ibr,*ntot+1,blbcn_1.ndim,(dcomplex *)&ev[1]);
     i__1 = blbcn_1.ndim - 1;
     for (i = 1; i <= i__1; ++i) {
 	amin = blrcn_1.rlarge;
@@ -4013,7 +4014,7 @@ L2:
 	*itp = blitp_1.itpst * 10 + 8;
 	blbcn_1.par[11] = asin((d_imag(&ev[loc1])));
 /* SGLE   PAR(12)= ASIN(AIMAG(EV(LOC1))) */
-    } else if (dreal_(&ev[loc1]) < -blrcn_1.half) {
+    } else if (dreal_((dcomplex*)&ev[loc1]) < -blrcn_1.half) {
 /* SGLE ELSE IF( REAL(EV(LOC1)).LT.-HALF)THEN */
 /*       ** period doubling */
 	*itp = blitp_1.itpst * 10 + 7;

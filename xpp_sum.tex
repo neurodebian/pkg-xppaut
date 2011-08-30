@@ -168,14 +168,28 @@ only be set outside the program.}  They are:
 will be kept in memory.  The default is 5000.  If you want to perform 
 very long integrations change this to some large number.  
 \item BACK= {\tt \{Black,White\}} sets the background to black or white.
-\item SMALL={\tt fontname} where {\tt fontname} is some font available
+\item SMALLFONT={\tt fontname} where {\tt fontname} is some font available
 to your X-server.  This sets the ``small'' font which is used in the
 Data Browser and in some other windows.  
-\item BIG={\tt fontname} sets the font for all the menus and popups.  
+\item BIGFONT={\tt fontname} sets the font for all the menus and popups.  
 \item SMC=\{0,...,10\} sets the stable manifold color
 \item UMC=\{0,...,10\} sets the unstable manifold color
 \item XNC=\{0,...,10\} sets the X-nullcline color
 \item YNC=\{0,...,10\} sets the Y-nullcline color
+\item SEC,UEC,SPC,UPC=color set the colors for the screen on AUTO for stable eq, unstable eq, stable per, unstable per.
+\item OUTPUT=filename sets the filename to which you want to write for
+``silent'' integration.  The default is ``output.dat''. 
+
+\item DWCOLOR,MWCOLOR,BACKCOLOR,FORECOLOR=HEXCOLOR. Set drawing window,mainwindow,background color,foreground color as a hexadecimal, e.g. FF0000 is pure red, 090909 is medium grey, 000000 is black, FFFFFF is white. 
+\item GRADS=\{0,1\} turn off or on gradients in the XPP buttons </LI>
+\item HEIGHT=pixels,WIDTH=pixels, sets the height and width of the main window intially 
+\item RUNNOW=1 run the simulation as soon as the windows are up (Don't wait for Init conds Go, e.g.
+\item BUT=name:kbs defines button on the top of the main window. You
+can define up to 20 such buttons. They will appear across the top  when
+you press them, they will execute an XPP keyboard shortcut. For
+example,  {\bf BUT=Fit:wf} will create a button labeled {\bf Fit}
+and when you press it, it will be as if you had clicked {\bf 
+Window/zoom Fit} Most of the menu items are available.
 \end{itemize}
 
 The remaining options can be set from within the program. They are 
@@ -240,8 +254,6 @@ the plane so setting these to $\pm2$ works well for 3D plots.
 \item
 XMAX=value, XMIN=value, YMAX=value, YMIN=value, ZMAX=value, ZMIN=value set
 the scaling for three-d plots.
-\item OUTPUT=filename sets the filename to which you want to write for
-``silent'' integration.  The default is ``output.dat''. 
 \item POIMAP={\tt \{ section,maxmin, period\} } sets up a Poincare map for
 either sections of a variable, the extrema, or period.  
 \item POIVAR=name sets the variable name whose section you are
@@ -266,10 +278,12 @@ set: {\tt NTST, NMAX, NPR, DSMIN, DSMAX, DS, PARMIN, PARMAX, NORMMIN,
 NORMMAX, AUTOXMIN, AUTOXMAX, AUTOYMIN, AUTOYMAX, AUTOVAR}.  The last
 is the variable to plot on the y-axis. The x-axis variable is always
 the first parameter in the ODE file unless you change it within AUTO. 
+\item DLL\_LIB={\tt file} Dynamically linked library
+\item  DLL\_FUN={\tt name} Dynamically linked function.
 \end{itemize}
 
 \bigskip 
-\noindent {\bf COLOR MEANING} 0-Black/White; 1-Red; 2-Red Orange; 3-Orange;
+\noindent {\bf COLOR MEANING} 0-Foreground color; 1-Red; 2-Red Orange; 3-Orange;
 4-Yellow Orange; 5-Yellow; 6-Yellow Green; 7-Green; 8-Blue Green; 9-Blue;
 10-Purple.
 
@@ -282,8 +296,8 @@ than their meaning here.
 sin cos tan atan atan2 sinh cosh tanh
 exp delay ln log log10 t pi if then else
 asin acos heav sign ceil flr ran abs del\_shft 
-max min normal besselj bessely erf erfc poisson
-arg1 ... arg9  @ $ + - / * ^ ** shift
+max min normal besselj bessely besseli erf erfc poisson
+lgamma arg1 ... arg9  @ $ + - / * ^ ** shift
 | > < == >= <= != not \# int sum of i'
 \end{verbatim}
 
@@ -296,10 +310,11 @@ These are mainly self-explanatory. The nonobvious ones are:
 \item {\tt sign(arg)} which is the sign of the argument (zero has sign 0)
 \item {\tt ran(arg)} produces a uniformly distributed random number
 between 0 and {\tt arg.}
-\item {\tt besselj, bessely } take two arguments, $n,x$ and return
-respectively, $J_n(x)$ and $Y_n(x),$ the Bessel functions.
+\item {\tt besselj, bessely, besseli  } take two arguments, $n,x$ and return
+$J_n(x)$ $Y_n(x),I_n(x)$ the Bessel functions.
 \item { \tt erf(x), erfc(x)} are the error function and the
 complementary function. 
+\item {\tt lgamma(x)} is the log of the gamma function. 
 \item {\tt normal(arg1,arg2)} produces a normally distributed random number
 with mean {\tt arg1}  and variance {\tt arg2}.
 \item {\tt poisson(arg)} produces the number of events from a Poisson process with parameter {\tt arg}.  It is a random number.  
@@ -340,6 +355,17 @@ be evaluated to 55.  Another example combines the sum with the shift
 operator.  {\tt sum(0,4)of(shift(u0,i'))} will sum up {\tt u0} and the
 next four variables that were defined after it.  
 \end{itemize}
+
+
+\medskip
+\noindent Call {\tt xppaut -help} to get the command line arguments. There are many.
+
+\medskip
+\noindent Add a {\tt .xpprc} file to set your favorite options, e.g
+\begin{verbatim}
+@ bell=0,grads=0,dwcolor=eeddff
+@ bigfont=lucidasanstypewriter-bold-14
+\end{verbatim}
 \end{document}
 
 

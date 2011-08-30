@@ -1,3 +1,8 @@
+#ifndef _menudrive_h_
+#define _menudrive_h_
+
+#include <X11/Xlib.h>
+
 #define M_IR 0
 #define M_I2 1
 #define M_IL 2
@@ -46,6 +51,7 @@
 #define M_WZ 71
 #define M_WO 72
 #define M_WF 73
+#define M_WD 74
 
 #define M_AA 80
 #define M_AN 81
@@ -58,7 +64,7 @@
 #define M_KA 93
 #define M_KS 94
 #define M_KM 95
-
+#define M_KX 96
 
 
 
@@ -102,6 +108,8 @@
 #define M_X 143
 
 #define M_3 144
+
+
 
 #define M_MC 150
 #define M_MK 151
@@ -206,3 +214,50 @@
 #define M_UB 408
 #define M_UE 409
 #define M_UC 410
+
+
+void xpp_hlp(void);
+void MessageBox(char *m);
+void RedrawMessageBox(Window w);
+void KillMessageBox(void);
+int TwoChoice(char *c1, char *c2, char *q, char *key);
+int GetMouseXY(int *x, int *y);
+void FlushDisplay(void);
+void clear_draw_window(void);
+void drw_all_scrns(void);
+void clr_all_scrns(void);
+void run_the_commands(int com);
+void do_stochast(void);
+void get_pmap_pars(void);
+void set_col_par(void);
+void make_adj(void);
+void do_file_com(int com);
+void do_gr_objs(void);
+void new_lookup(void);
+void find_bvp(void);
+void change_view(void);
+void do_windows(void);
+void add_a_curve(void);
+void do_movie(void);
+void do_torus(void);
+void window_zoom(void);
+void direct_field(void);
+void new_clines(void);
+void froz_cline_stuff(void);
+void find_equilibrium(void);
+void ini_data_menu(void);
+void new_param(void);
+void clear_screens(void);
+void x_vs_t(void);
+void redraw_them_all(void);
+void get_3d_par(void);
+
+
+
+#endif
+
+
+
+
+
+

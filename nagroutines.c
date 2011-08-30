@@ -5296,7 +5296,7 @@ L_dgemv:
 
 /*     Quick return if possible. */
 
-    if (*m == 0 || *n == 0 || *alpha == 0. && *beta == 1.) {
+    if ((*m == 0) || (*n == 0) || ((*alpha == 0.) && (*beta == 1.))) {
 	return 0;
     }
 
@@ -6199,7 +6199,7 @@ L_dgemm:
 
 /*     Quick return if possible. */
 
-    if (*m == 0 || *n == 0 || (*alpha == 0. || *k == 0) && *beta == 1.) {
+    if ((*m == 0) || (*n == 0) || ((*alpha == 0. || *k == 0) && (*beta == 1.))) {
 	return 0;
     }
 
@@ -7734,8 +7734,7 @@ ne \002,a,\002: IFAIL\002,\002 =\002,i6)";
     /* Function Body */
     if (*ierror != 0) {
 /*        Abnormal exit from calling routine */
-	if (*ifail == -1 || *ifail == 0 || *ifail == -13 || *ifail > 0 && *
-		ifail / 10 % 10 != 0) {
+	if ((*ifail == -1) || (*ifail == 0) || (*ifail == -13) || ((*ifail > 0) && (*ifail / 10 % 10 != 0))) {
 /*           Noisy exit */
 	    x04aaf_(&c__0, &nerr);
 	    i__1 = *nrec;
@@ -8026,8 +8025,7 @@ ne \002,a)";
 	}
 L40:
 /*        Abnormal exit from calling routine */
-	if (*ifail == -1 || *ifail == 0 || *ifail == -13 || *ifail > 0 && *
-		ifail / 10 % 10 != 0) {
+	if ((*ifail == -1) || (*ifail == 0) || (*ifail == -13) || ((*ifail > 0) && (*ifail / 10 % 10 != 0))) {
 /*           Noisy exit */
 	    x04aaf_(&c__0, &nerr);
 	    i__1 = *nrec;

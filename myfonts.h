@@ -1,3 +1,6 @@
+#ifndef _myfonts_h_
+#define _myfonts_h_
+
 /*
 char *timesfonts[]={
 "-adobe-times-medium-r-normal--10-100-75-75-p-54-iso8859-1",
@@ -29,4 +32,4 @@ char *symbolfonts[]={
 "*-symbol-medium-r-*-18-180-*",
 "*-symbol-medium-r-*-24-240-*"};
 
-
+#endif

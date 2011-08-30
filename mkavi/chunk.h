@@ -18,6 +18,7 @@
 
 #ifndef CHUNK_INCLUDED
 #define CHUNK_INCLUDED
+#include <string.h> /*Needed for strlen, strcpy etc.*/
 
 #define BUFSZ (1024)
 

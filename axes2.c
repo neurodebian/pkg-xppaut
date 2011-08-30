@@ -1,3 +1,5 @@
+#include  "axes2.h"
+
 #include <stdlib.h> 
 #include <string.h>
  /* All new improved axes !!  */
@@ -9,7 +11,10 @@
 #include <X11/Xutil.h>
 #include "xpplim.h"
 #include "struct.h"
-
+#include "ggets.h"
+#include "graphics.h"
+#include "main.h"
+#include "many_pops.h"
 
 
 #define NOAXES 0
@@ -37,14 +42,15 @@ extern char uvar_names[MAXODE][12];
 extern int DLeft,DRight,DTop,DBottom,VTic,HTic,VChar,HChar;
 extern int TextJustify,TextAngle;
 extern double XMin,XMax,YMin,YMax;
-re_title()
+
+void re_title()
 {
  char bob[40];
  make_title(bob);
  title_text(bob);
 }
 
-get_title_str(s1,s2,s3)
+void get_title_str(s1,s2,s3)
      char *s1,*s2,*s3;
 {
  int i;
@@ -58,7 +64,7 @@ if((i=MyGraph->zv[0])==0)strcpy(s3,"T");
  else strcpy(s3,uvar_names[i-1]);
 }
 
-make_title(str)
+void make_title(str)
 char *str;
 {
  int i;
@@ -112,10 +118,10 @@ double tmin,tmax;
   return(tic);
 }
 
-find_max_min_tic(tmin,tmax,tic)
+void find_max_min_tic(tmin,tmax,tic)
      double *tmin,*tmax,tic;
 {
-  double t1=*tmin,t2=*tmax;
+  double t1=*tmin;
   t1=tic*floor(*tmin/tic);
   if(t1<*tmin)t1+=tic;
   *tmin=t1;
@@ -124,7 +130,7 @@ find_max_min_tic(tmin,tmax,tic)
   *tmax=t1;
 }
  
-redraw_cube_pt(double theta,double phi)
+void redraw_cube_pt(double theta,double phi)
 {
   char bob[50];
   set_linestyle(0);
@@ -134,9 +140,10 @@ redraw_cube_pt(double theta,double phi)
   sprintf(bob,"theta=%g phi=%g",theta,phi);
   canvas_xy(bob);
 }
-do_axes()
+
+void do_axes()
 {
-    float xmid,ymid;
+    
     char s1[20],s2[20],s3[20];
   get_title_str(s1,s2,s3);  
     set_linestyle(0);
@@ -152,7 +159,7 @@ do_axes()
   SmallBase();
  }
 
-redraw_cube(double theta,double phi)
+void redraw_cube(double theta,double phi)
 {
   char bob[50];
   set_linestyle(0);
@@ -163,7 +170,7 @@ redraw_cube(double theta,double phi)
   canvas_xy(bob);
 }
 
-draw_unit_cube()
+void draw_unit_cube()
 {
   line3d(-1.,-1.,-1.,1.,-1.,-1.);
   line3d(1.,-1.,-1.,1.,1.,-1.);
@@ -180,13 +187,13 @@ draw_unit_cube()
     
 }
 
-Frame_3d()
+void Frame_3d()
 {
   double tx,ty,tz;
   float x1,y1,z1,x2,y2,z2,dt=.03;
   float x0=MyGraph->xorg,y0=MyGraph->yorg,z0=MyGraph->zorg;
   char bob[20];
-  char xn[20],yn[20],zn[20];
+  
   double xmin=MyGraph->xmin,xmax=MyGraph->xmax,ymin=MyGraph->ymin;
   double ymax=MyGraph->ymax,zmin=MyGraph->zmin,zmax=MyGraph->zmax;
   float x4=xmin,y4=ymin,z4=zmin,x5=xmax,y5=ymax,z5=zmax;
@@ -239,9 +246,13 @@ Frame_3d()
   text3d(x2,-1-2.*dt,-1.0,bob);
   text3d(0.0,-1-dt,-1.0,MyGraph->xlabel);
   TextJustify=0;
-  sprintf(bob,"%g",ymin,bob);
+  sprintf(bob,"%g",ymin);
+  /*sprintf(bob,"%g",ymin,bob);
+  */
   text3d(1+dt,y1,-1.0,bob);
-  sprintf(bob,"%g",ymax,bob);
+  sprintf(bob,"%g",ymax);
+  /*sprintf(bob,"%g",ymax,bob);
+  */
   text3d(1+dt,y2,-1.0,bob);
   text3d(1+dt,0.0,-1.0,MyGraph->ylabel);
   TextJustify=2;
@@ -259,7 +270,7 @@ Frame_3d()
 
 
 
-Box_axis(x_min,x_max,y_min,y_max,sx,sy,flag)
+void Box_axis(x_min,x_max,y_min,y_max,sx,sy,flag)
      double x_min,x_max,y_min,y_max;
      int flag;
      char *sx,*sy;
@@ -297,14 +308,14 @@ Box_axis(x_min,x_max,y_min,y_max,sx,sy,flag)
 }
 
 
-draw_ytics(s1,start, incr, end)
+void draw_ytics(s1,start, incr, end)
      double start, incr, end;
      char *s1;
 		
 {
   double ticvalue,place;
   double y_min=YMin,y_max=YMax,
-  x_min=XMin,x_max=XMax;
+  x_min=XMin;
   char bob[100];
   int xt,yt,s=1;
   TextJustify=2; /* Right justification  */
@@ -325,13 +336,13 @@ draw_ytics(s1,start, incr, end)
 }
 
 
-draw_xtics(s2,start, incr, end)
+void draw_xtics(s2,start, incr, end)
      double start, incr, end;
      char *s2;
 		
 {
   double ticvalue,place;
-  double y_min=YMin,y_max=YMax,
+  double y_min=YMin,
   x_min=XMin,x_max=XMax;
 
   char bob[100];

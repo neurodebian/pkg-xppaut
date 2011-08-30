@@ -1,3 +1,5 @@
+#include "auto.h"
+
 #include <stdlib.h> 
 #include <stdio.h>
 #include <X11/Xlib.h>
@@ -849,7 +851,7 @@ add_ps_point(par,per,uhigh,ulow,ubar,a,type,flag,lab,npar,icp1,icp2,flag2,
     if(icp1!=Auto.icp1)break;
     if(flag2==1&&Auto.icp2!=icp2)break;
     PointType=UPT;
-   /*  printf("UP: %g %g %g\n",x,y1,y2); */
+   /* plintf("UP: %g %g %g\n",x,y1,y2); */
     point_abs((float)x,(float)y1);
     point_abs((float)x,(float)y2);
     break;
@@ -857,7 +859,7 @@ add_ps_point(par,per,uhigh,ulow,ubar,a,type,flag,lab,npar,icp1,icp2,flag2,
     set_linestyle(0);
     if(icp1!=Auto.icp1)break;
     if(flag2==1&&Auto.icp2!=icp2)break;
-   /*  printf("SP: %g %g %g\n",x,y1,y2); */
+   /* plintf("SP: %g %g %g\n",x,y1,y2); */
     PointType=SPT;
     point_abs((float)x,(float)y1);
     point_abs((float)x,(float)y2); 
@@ -1042,40 +1044,6 @@ new_info(ibr,pt,ty,lab,par,norm,u0,per,flag2,icp1,icp2)
   XFlush(display);
 }
 
-traverse_out(d,ix,iy)
-     int *ix,*iy;
-     DIAGRAM *d;
-{
-  double norm,per,*par,par1,par2=0,*evr,*evi;
-  int pt,itp,ibr,lab,icp1,icp2,flag2;
-  double x,y1,y2;
-  char symb[3];
-  norm=d->norm;
-  par=d->par;
-
-  per=d->per;
-  lab=d->lab;
-  itp=d->itp;
-  ibr=d->ibr;
-  icp1=d->icp1;
-  icp2=d->icp2;
-  flag2=d->flag2;
-  pt=d->ntot;
-  evr=d->evr;
-  evi=d->evi;
- 
-  get_bif_sym(symb,itp);
- par1=par[icp1];
-  if(icp2<NAutoPar)par2=par[icp2];  
-    auto_xy_plot(&x,&y1,&y2,par1,par2,per,d->uhi,d->ulo,d->ubar,norm);
-  
-    *ix=IXVal(x);
-    *iy=IYVal(y1);
-    XORCross(*ix,*iy);
-  plot_stab(evr,evi,NODE);
-  new_info(ibr,pt,symb,lab,par,norm,d->u0[Auto.var],per,flag2,icp1,icp2);
- 
-}
      
      
 
@@ -1093,7 +1061,7 @@ traverse_diagram()
   
   
   d=bifd;
-  traverse_out(d,&ix,&iy);
+  traverse_out(d,&ix,&iy,1);
   
 
   while(done==0){
@@ -1106,7 +1074,7 @@ traverse_diagram()
 	if(dnew==NULL)dnew=bifd;
 	XORCross(ix,iy);
 	d=dnew;
-	traverse_out(d,&ix,&iy);
+	traverse_out(d,&ix,&iy,1);
 	break;
 	
       case LEFT:
@@ -1114,7 +1082,7 @@ traverse_diagram()
 	if(dnew==NULL)dnew=bifd;
 	XORCross(ix,iy);
 	d=dnew;
-	traverse_out(d,&ix,&iy);
+	traverse_out(d,&ix,&iy,1);
 	break;
  
       case TAB:
@@ -1125,7 +1093,7 @@ traverse_diagram()
 	  d=dnew;
 	  if(d->lab!=0)break;
 	}
-	traverse_out(d,&ix,&iy);
+	traverse_out(d,&ix,&iy,1);
 	break;
 	
       case FINE:
@@ -1418,7 +1386,7 @@ make_auto(wname,iname)  /* this makes the auto window  */
  hgt=addhgt+2*DCURY+STD_HGT+ymargin+hinthgt;
  x=addwid+5;
  y=DCURY;
- base=make_window(RootWindow(display,screen),0,0,wid,hgt,4);
+ base=make_plain_window(RootWindow(display,screen),0,0,wid,hgt,4);
  Auto.base=base;
  strcpy(Auto.hinttxt,"hint");
  XSelectInput(display,base,ExposureMask|KeyPressMask|ButtonPressMask|
@@ -1532,7 +1500,7 @@ auto_start_at_bvp()
  compile_bvp();
   if(BVP_FLAG==0)
     return; 
-  printf(" Starting at BVP \n");
+ plintf(" Starting at BVP \n");
  Auto.ips=4;
   Auto.irs=0;
   Auto.itp=0;
@@ -1875,7 +1843,7 @@ auto_2p_limit(ips)
   Auto.isp=2;
   Auto.ips=ips;
   AutoTwoParam=1;
-  /* printf(" IPS = %d \n",ips); */
+  /*plintf(" IPS = %d \n",ips); */
   do_auto(OPEN_3,APPEND,Auto.itp);
 }
 
@@ -2020,7 +1988,7 @@ auto_run()
   itp1=itp%10;
   itp2=itp/10;
   ips=Auto.ips;
-/*   printf(" itp= %d %d\n",itp1,itp2); */
+/*  plintf(" itp= %d %d\n",itp1,itp2); */
   if(itp1==3||itp2==3){  /* its a HOPF Point  */
     hopf_choice();
     ping();return;

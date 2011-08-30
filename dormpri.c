@@ -5,6 +5,9 @@
 #include <limits.h>
 #include <memory.h>
 #include "dormpri.h"
+#include "flags.h"
+#include "ggets.h"
+
 extern double *WORK;
 
 static long      nfcn, nstep, naccpt, nrejct;
@@ -22,7 +25,7 @@ void dprhs(unsigned n, double t, double *y, double *f)
 
 }
 
-dp_err(int k)
+void dp_err(int k)
 { 
   ping();
   switch(k){
@@ -39,7 +42,7 @@ dp_err(int k)
     
 int dp(istart,y,t,n,tout,tol,atol,flag,kflag)
     double *y,*t,tout,*tol,*atol;
-     int flag,*istart,*kflag;
+     int flag,*istart,*kflag,n;
 {
  int err=0;
  if(NFlags==0)
@@ -58,7 +61,7 @@ int dp(istart,y,t,n,tout,tol,atol,flag,kflag)
 */
 int dormprin(istart,y,t,n,tout,tol,atol,flag,kflag)
      double *y,*t,tout,*tol,*atol;
-     int flag,*istart,*kflag;
+     int flag,*istart,*kflag,n;
 {
   double hg=0.0;
   if(*istart==0)hg=hout;
@@ -75,6 +78,7 @@ int dormprin(istart,y,t,n,tout,tol,atol,flag,kflag)
            *t=tout;
      return 1;
   }
+  return(-1);
 }
 
 
@@ -224,7 +228,7 @@ static int dopcor (unsigned n, FcnEqDiff fcn, double x, double* y, double xend,
 		   double beta, double fac1, double fac2, unsigned* icont)
 {
   double   facold, expo1, fac, facc1, facc2, fac11, posneg, xph;
-  double   atoli, rtoli, hlamb, err, sk, hnew, yd0, ydiff, bspl;
+  double   atoli, rtoli, hlamb, err, sk, hnew, ydiff, bspl;
   double   stnum, stden, sqr, err2, erri, deno;
   int      iasti, iord, irtrn, reject, last, nonsti;
   unsigned i, j;
@@ -600,14 +604,18 @@ static int dopcor (unsigned n, FcnEqDiff fcn, double x, double* y, double xend,
 	  nonsti = 0;
 	  iasti++;
 	  if (iasti == 15)
+	  {
 	    if (fileout)
+	    {
 	      fprintf (fileout, "The problem seems to become stiff at t = %.16e\r\n", x);
+	    }
 	    else
 	    {
 	      xout = x;
 	      hout = h;
 	      return -4;
 	    }
+	  }
 	}
 	else
 	{
@@ -927,7 +935,7 @@ int dop853
 /* dense output function */
 double contd8 (unsigned ii, double x)
 {
-  unsigned i, j;
+  unsigned i;
   double   s, s1;
 
   i = UINT_MAX;
@@ -939,7 +947,7 @@ double contd8 (unsigned ii, double x)
 
   if (i == UINT_MAX)
   {
-    printf ("No dense output available for %uth component", ii);
+    plintf ("No dense output available for %uth component", ii);
     return 0.0;
   }
 
@@ -1150,17 +1158,23 @@ static int dopcor5 (unsigned n, FcnEqDiff fcn, double x, double* y, double xend,
       yy1[i] = y[i] + h * (a71*k1[i] + a73*k3[i] + a74*k4[i] + a75*k5[i] + a76*k6[i]);
     fcn (n, xph, yy1, k2);
     if (iout == 2)
+    {
       if (nrds == n)
+      {
 	for (i = 0; i < n; i++)
 	{
 	  rcont5[i] = h * (d1*k1[i] + d3*k3[i] + d4*k4[i] + d5*k5[i] + d6*k6[i] + d7*k2[i]);
 	}
+      }
       else
+      {
 	for (j = 0; j < nrds; j++)
 	{
 	  i = icont[j];
 	  rcont5[j] = h * (d1*k1[i] + d3*k3[i] + d4*k4[i] + d5*k5[i] + d6*k6[i] + d7*k2[i]);
 	}
+      } 
+    }
     for (i = 0; i < n; i++)
       k4[i] = h * (e1*k1[i] + e3*k3[i] + e4*k4[i] + e5*k5[i] + e6*k6[i] + e7*k2[i]);
     nfcn += 6;
@@ -1217,14 +1231,18 @@ static int dopcor5 (unsigned n, FcnEqDiff fcn, double x, double* y, double xend,
 	  nonsti = 0;
 	  iasti++;
 	  if (iasti == 15)
+	  {
 	    if (fileout)
+	    {
 	      fprintf (fileout, "The problem seems to become stiff at t = %.16e\r\n", x);
+	    }
 	    else
 	    {
 	      xout = x;
 	      hout = h;
 	      return -4;
 	    }
+	  }
 	}
 	else
 	{
@@ -1235,7 +1253,9 @@ static int dopcor5 (unsigned n, FcnEqDiff fcn, double x, double* y, double xend,
       }
 
       if (iout == 2)
+      {
 	if (nrds == n)
+	{
 	  for (i = 0; i < n; i++)
 	  {
 	    yd0 = y[i];
@@ -1246,7 +1266,9 @@ static int dopcor5 (unsigned n, FcnEqDiff fcn, double x, double* y, double xend,
 	    rcont3[i] = bspl;
 	    rcont4[i] = -h * k2[i] + ydiff - bspl;
 	  }
+	}
 	else
+	{
 	  for (j = 0; j < nrds; j++)
 	  {
 	    i = icont[j];
@@ -1258,7 +1280,8 @@ static int dopcor5 (unsigned n, FcnEqDiff fcn, double x, double* y, double xend,
 	    rcont3[j] = bspl;
 	    rcont4[j] = -h * k2[i] + ydiff - bspl;
 	  }
-
+	}
+      }
       memcpy (k1, k2, n * sizeof(double)); 
       memcpy (y, yy1, n * sizeof(double));
       xold = x;
@@ -1478,7 +1501,7 @@ int dopri5
 /* dense output function */
 double contd5 (unsigned ii, double x)
 {
-  unsigned i, j;
+  unsigned i;
   double   theta, theta1;
 
   i = UINT_MAX;
@@ -1490,7 +1513,7 @@ double contd5 (unsigned ii, double x)
 
   if (i == UINT_MAX)
   {
-    printf ("No dense output available for %uth component", ii);
+    plintf ("No dense output available for %uth component", ii);
     return 0.0;
   }
 

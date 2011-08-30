@@ -80,9 +80,15 @@ double ndrand48();
 double ker_val();
 double hom_bcs();
 double BoxMuller;
+
+#ifdef NOLGAMMA
+double lgamma();
+#endif
+
 int BoxMullerFlag=0;
 int RandSeed=12345678;
 typedef void (*pf)(void);
+
 
 extern int newseed;
 
@@ -194,6 +200,12 @@ void zz_bessel_j()
 {
     SP--;
     SM1=jn((int)SM1,S0);
+}
+
+void zz_bessel_i()
+{
+    SP--;
+    SM1=bessi((int)SM1,S0);
 }
 
 void zz_bessel_y()
@@ -333,6 +345,10 @@ void zz_hom_bcs()
 void zz_rndom()
 {
     SM1=rndom(SM1);
+}
+void zz_lgamma()
+{
+  SM1=lgamma(SM1);
 }
 
 /* How to add a new hardcoded function to XPP
@@ -512,10 +528,10 @@ char *junk;
  convert(junk,string);
  len=strlen(string);
  if(len<1){
-   printf("Empty parameter - remove spaces\n");
+   plintf("Empty parameter - remove spaces\n");
    return 1;
  }
- if(len>MXLEN){ len=MXLEN; printf("Error: name %s too long \n",string); }
+ if(len>MXLEN){ len=MXLEN; plintf("Error: name %s too long \n",string); }
  strncpy(my_symb[NSYM].name,string,len);
  my_symb[NSYM].name[len]='\0';
  my_symb[NSYM].len=len;
@@ -559,16 +575,16 @@ add_kernel(name,mu,expr)
   int len,i,in=-1;
   if(duplicate_name(name)==1)return(1);
   if(NKernel==MAXKER){
-    printf("Too many kernels..\n");
+    plintf("Too many kernels..\n");
     return(1);
   }
   if(mu<0||mu>=1.0){
-    printf(" mu must lie in [0,1.0) \n");
+    plintf(" mu must lie in [0,1.0) \n");
     return(1);
   }
   convert(name,string);
   len=strlen(string);
-  if(len>MXLEN){ len=MXLEN; printf("Error: name %s too long \n",string); };
+  if(len>MXLEN){ len=MXLEN; plintf("Error: name %s too long \n",string); };
   strncpy(my_symb[NSYM].name,string,len);
   my_symb[NSYM].name[len]='\0';
   my_symb[NSYM].len=len;
@@ -583,7 +599,7 @@ add_kernel(name,mu,expr)
   for(i=0;i<strlen(expr);i++)
     if(expr[i]=='#')in=i;
   if(in==0||in==(strlen(expr)-1)){
-    printf("Illegal use of convolution...\n");
+    plintf("Illegal use of convolution...\n");
     return(1);
   }
   if(in>0){
@@ -594,7 +610,7 @@ add_kernel(name,mu,expr)
     kernel[NKernel].kerexpr[in]=0;
     for(i=in+1;i<strlen(expr);i++)kernel[NKernel].expr[i-in-1]=expr[i];
     kernel[NKernel].expr[strlen(expr)-in-1]=0;
-    printf("Convolving %s with %s\n",
+    plintf("Convolving %s with %s\n",
 	   kernel[NKernel].kerexpr,kernel[NKernel].expr);
   }
   else {
@@ -626,7 +642,7 @@ double value;
  }
  convert(junk,string);
  len=strlen(string);
- if(len>MXLEN){ len=MXLEN; printf("Error: name %s too long \n",string); };
+ if(len>MXLEN){ len=MXLEN; plintf("Error: name %s too long \n",string); };
  strncpy(my_symb[NSYM].name,string,len);
  my_symb[NSYM].name[len]='\0';
  my_symb[NSYM].len=len;
@@ -650,12 +666,12 @@ int *command, *length;
  int com2[1024],ilen2;
  int err,i;
  convert(expr,dest);
- /* printf(" Making token  for %s\n",expr);   */
+ /* plintf(" Making token  for %s\n",expr);   */
  err=make_toks(dest,my_token); 
  
  i=0;
  /*  while(i<50){
-  printf(" %d %d \n",i,my_token[i]);
+  plintf(" %d %d \n",i,my_token[i]);
   if(my_token[i]==ENDTOK)break;
   i++;
 }  
@@ -668,11 +684,11 @@ int *command, *length;
    *length=i+1;
    /*   for(i=0;i<*length;i++)printf("%d \n",com2[i]);   */
     pass3(com2,command,&ilen2);
-    /*   printf(" ilen2=%d \n",ilen2); */
+    /*   plintf(" ilen2=%d \n",ilen2); */
     /*   for(i=0;i<ilen2;i++)
-	 printf(" %d %d  \n",i,command[i]);  */
+	 plintf(" %d %d  \n",i,command[i]);  */
    *length=ilen2;
-   /*   printf(" command[%d]=%d\n",ilen2,command[ilen2-1]);  */
+   /*   plintf(" command[%d]=%d\n",ilen2,command[ilen2-1]);  */
    return(0);
 }
 /* this does not perform pass3  */
@@ -685,12 +701,12 @@ int *command, *length;
  int my_token[1024];
  int err,i;
  convert(expr,dest);
-/* printf(" Making token ...\n");  */
+/* plintf(" Making token ...\n");  */
  err=make_toks(dest,my_token); 
 
 /* i=0;
   while(1){
-  printf(" %d %d \n",i,my_token[i]);
+  plintf(" %d %d \n",i,my_token[i]);
   if(my_token[i]==ENDTOK)break;
   i++;
 } */ 
@@ -710,10 +726,10 @@ add_vect_name(index,name)
 {
   char string[50];
   int len=strlen(name);
-  printf(" Adding vector %s %d \n",name,index);
+  plintf(" Adding vector %s %d \n",name,index);
   if(duplicate_name(name)==1)return(1);  
   convert(name,string);
-  if(len>MXLEN){ len=MXLEN; printf("Error: name %s too long \n",string); };
+  if(len>MXLEN){ len=MXLEN; plintf("Error: name %s too long \n",string); };
   strncpy(my_symb[NSYM].name,string,len);
   my_symb[NSYM].name[len]='\0';
   my_symb[NSYM].len=len;
@@ -731,10 +747,10 @@ add_net_name(index,name)
 {
   char string[50];
   int len=strlen(name);
-  printf(" Adding net %s %d \n",name,index);
+  plintf(" Adding net %s %d \n",name,index);
   if(duplicate_name(name)==1)return(1);  
   convert(name,string);
-  if(len>MXLEN){ len=MXLEN; printf("Error: name %s too long \n",string); };
+  if(len>MXLEN){ len=MXLEN; plintf("Error: name %s too long \n",string); };
   strncpy(my_symb[NSYM].name,string,len);
   my_symb[NSYM].name[len]='\0';
   my_symb[NSYM].len=len;
@@ -751,7 +767,7 @@ add_net_name(index,name)
 add_2d_table(name,file)
      char *name,*file;
 {
- printf(" TWO D NOT HERE YET \n");
+ plintf(" TWO D NOT HERE YET \n");
  return(1);
 }
 
@@ -777,7 +793,7 @@ add_table_name(index,name)
      int len=strlen(name);
      if(duplicate_name(name)==1)return(1);  
      convert(name,string);
-     if(len>MXLEN){ len=MXLEN; printf("Error: name %s too long \n",string); };
+     if(len>MXLEN){ len=MXLEN; plintf("Error: name %s too long \n",string); };
      strncpy(my_symb[NSYM].name,string,len);
      my_symb[NSYM].name[len]='\0';
      my_symb[NSYM].len=len;
@@ -799,7 +815,7 @@ add_form_table(index,nn,xlo,xhi,formula)
 {
  
  
-  /* printf(" add-form index= %d \n",index); */
+  /* plintf(" add-form index= %d \n",index); */
   if(create_fun_table(nn,xlo,xhi,formula,index)==0)
     {
       if(ERROUT)printf("Problem with creating table !!\n");
@@ -853,9 +869,9 @@ add_ufun_name(name,index,narg)
   if(ERROUT)printf("too many functions !!\n");
   return(1);
  }
-  printf(" Added user fun %s \n",name);
+  plintf(" Added user fun %s \n",name);
   convert(name,string);
-  if(len>MXLEN){ len=MXLEN; printf("Error: name %s too long \n",string); };
+  if(len>MXLEN){ len=MXLEN; plintf("Error: name %s too long \n",string); };
   strncpy(my_symb[NSYM].name,string,len);
   my_symb[NSYM].name[len]='\0';
   my_symb[NSYM].len=len;
@@ -874,9 +890,9 @@ add_ufun_new(index,narg,rhs,args)
   
   int i,l;
   int end;
-  /*  printf(" compiling function %s \n",rhs); */
+  /*  plintf(" compiling function %s \n",rhs); */
   if(narg>MAXARG){
-    printf("Maximal arguments exceeded \n");
+    plintf("Maximal arguments exceeded \n");
     return(1);
   }
   if((ufun[index]=(int *)malloc(1024))==NULL)
@@ -904,7 +920,7 @@ add_ufun_new(index,narg,rhs,args)
       ufun[index][end-1]=IENDFUN;
       ufun[index][end]=narg;
       ufun[index][end+1]=IENDEXPR;
-      /* printf("end =%d fun def \n",end);
+      /* plintf("end =%d fun def \n",end);
       fpr_command(ufun[index]); */
       strcpy(ufun_def[index],rhs);
       l=strlen(ufun_def[index]);
@@ -950,7 +966,7 @@ int narg;
  convert(junk,string);
  if(add_expr(expr,ufun[NFUN],&end)==0)
  {
-  if(len>MXLEN){ len=MXLEN; printf("Error: name %s too long \n",string); };
+  if(len>MXLEN){ len=MXLEN; plintf("Error: name %s too long \n",string); };
   strncpy(my_symb[NSYM].name,string,len);
   my_symb[NSYM].name[len]='\0';
   my_symb[NSYM].len=len;
@@ -1221,7 +1237,7 @@ int *toklist,*command;
  getnew:
           newtok=toklist[lstptr++];
    /*    for(zip=0;zip<tokptr;zip++)
-	    printf("%d %d\n",zip,tokstak[zip]);  */
+	    plintf("%d %d\n",zip,tokstak[zip]);  */
 
 	 	    
 /*        check for delay symbol             */
@@ -1299,7 +1315,7 @@ int *toklist,*command;
        /* check for SET */
 	  if(newtok==SETSYM)
 	  {
-	    printf("Token = %d \n",newtok);
+	    plintf("Token = %d \n",newtok);
            temp=my_symb[toklist[lstptr+1]].com;
 /* !! */	   if(is_uvar(temp) || is_ucon(temp))
 	   {
@@ -1358,7 +1374,7 @@ int *toklist,*command;
            if(my_symb[oldtok%THOUS].pri>=my_symb[newtok%THOUS].pri)
            {
             command[comptr]=my_symb[oldtok%THOUS].com;
-/*             printf("com(%d)=%d\n",comptr,command[comptr]); */
+/*             plintf("com(%d)=%d\n",comptr,command[comptr]); */
 	    if((my_symb[oldtok%THOUS].arg==2)&&
 	       (my_symb[oldtok%THOUS].com/100==1))
 	      ncomma--;
@@ -1366,15 +1382,15 @@ int *toklist,*command;
 	                comptr++;
  /*   New code   3/95      */
 	   if(my_com==NUMSYM){
-/*             printf("tp=%d ",tokptr);  */
+/*             plintf("tp=%d ",tokptr);  */
 	     tokptr--;
-/*     printf(" ts[%d]=%d ",tokptr,tokstak[tokptr]); */
+/*     plintf(" ts[%d]=%d ",tokptr,tokstak[tokptr]); */
 	     command[comptr]=tokstak[tokptr-1];
-/*	     printf("xcom(%d)=%d\n",comptr,command[comptr]);  */
+/*	     plintf("xcom(%d)=%d\n",comptr,command[comptr]);  */
 	     comptr++;
 	     tokptr--;
 	     command[comptr]=tokstak[tokptr-1];
-/*	     printf("xcom(%d)=%d\n",comptr,command[comptr]);  */
+/*	     plintf("xcom(%d)=%d\n",comptr,command[comptr]);  */
 	     comptr++;
 	   }
  /*   end new code    3/95    */
@@ -1453,11 +1469,11 @@ int *toklist,*command;
           goto getnew;
        }
         if(ncomma!=0){
-        printf("Illegal number of arguments\n");
+        plintf("Illegal number of arguments\n");
 	return(1);
         }
 	if((nif!=nelse)||(nif!=nthen)){
-	  printf("If statement missing ELSE or THEN \n");
+	  plintf("If statement missing ELSE or THEN \n");
 	  return(1);
 	    }
         command[comptr]=my_symb[ENDTOK].com;
@@ -1474,7 +1490,7 @@ pr_command(command)
  int token;
  while(1){
   token=command[i];
-  printf("%d %d \n",i,token);
+  plintf("%d %d \n",i,token);
   if(token==ENDEXP)return;
    i++;
   }
@@ -1487,7 +1503,7 @@ fpr_command(command)
  int token;
  while(1){
   token=command[i];
-  printf("%d %d \n",i,token);
+  plintf("%d %d \n",i,token);
   if(token==IENDEXPR)return;
    i++;
   }
@@ -1505,7 +1521,7 @@ show_where(string,index)
   for(i=0;i<index;i++)junk[i]=' ';
   junk[index]='^';
   junk[index+1]=0;
-  printf("%s\n%s\n",string,junk);
+  plintf("%s\n%s\n",string,junk);
 }
 
 function_sym(token) /* functions should have ( after them  */
@@ -1614,7 +1630,7 @@ check_syntax(oldtoken,newtoken) /* 1 is BAD!   */
  }
 
 
-  printf("Bad token %d \n",oldtoken);
+  plintf("Bad token %d \n",oldtoken);
   return(1);
     
 }
@@ -1668,7 +1684,7 @@ check_syntax(oldtoken,newtoken) /* 1 is BAD!   */
       my_token[tok_in++]=encoder.pieces.int1;
       my_token[tok_in++]=encoder.pieces.int2;
       if(check_syntax(old_tok,NUMTOK)==1){
-	 printf("Illegal syntax \n");
+	 plintf("Illegal syntax \n");
 	 show_where(dest,lastindex);
 	 return(1);
        }
@@ -1680,7 +1696,7 @@ check_syntax(oldtoken,newtoken) /* 1 is BAD!   */
      {
        my_token[tok_in++]=token;
        if(check_syntax(old_tok,token)==1){
-	 printf("Illegal syntax (Ref:%d %d) \n",old_tok,token);
+	 plintf("Illegal syntax (Ref:%d %d) \n",old_tok,token);
 	 show_where(dest,lastindex);
          tokeninfo(old_tok);
          tokeninfo(token);
@@ -1693,7 +1709,7 @@ check_syntax(oldtoken,newtoken) /* 1 is BAD!   */
 
 my_token[tok_in++]=ENDTOK;
 if(check_syntax(old_tok,ENDTOK)==1){
-  printf("Premature end of expression \n");
+  plintf("Premature end of expression \n");
   show_where(dest,lastindex);
   return(1);
 }
@@ -1709,7 +1725,7 @@ return(0);
 tokeninfo(tok)
 int tok;
 {
- printf(" %s %d %d %d %d \n",
+ plintf(" %s %d %d %d %d \n",
 	my_symb[tok].name,my_symb[tok].len,my_symb[tok].com,
         my_symb[tok].arg,my_symb[tok].pri);
 }
@@ -1845,7 +1861,7 @@ two_args()
  fun2[17]=zz_normal;
  fun2[18]=zz_bessel_j;
  fun2[19]=zz_bessel_y;
- 
+  fun2[20]=zz_bessel_i;
  
 
 
@@ -1870,6 +1886,90 @@ double bessel_y(x,y)
  int n=(int)x;
  return(yn(n,y));
 }
+
+#define ACC 40.0
+#define BIGNO 1.0e10
+#define BIGNI 1.0e-10
+
+
+double bessi(n,x)
+double  x;
+int n;
+{
+       	int j;
+	double  bi,bim,bip,tox,ans;
+
+	if(n==0)return bessi0(x);
+	if(n==1)return bessi1(x);
+	if (x == 0.0)
+		return 0.0;
+	else {
+		tox=2.0/fabs(x);
+		bip=ans=0.0;
+		bi=1.0;
+		for (j=2*(n+(int) sqrt(ACC*n));j>0;j--) {
+			bim=bip+j*tox*bi;
+			bip=bi;
+			bi=bim;
+			if (fabs(bi) > BIGNO) {
+				ans *= BIGNI;
+				bi *= BIGNI;
+				bip *= BIGNI;
+			}
+			if (j == n) ans=bip;
+		}
+		ans *= bessi0(x)/bi;
+		return x < 0.0 && (n & 1) ? -ans : ans;
+	}
+}
+
+double bessi0(x)
+double  x;
+{
+	double  ax,ans;
+	double y;
+
+	if ((ax=fabs(x)) < 3.75) {
+		y=x/3.75;
+		y*=y;
+		ans=1.0+y*(3.5156229+y*(3.0899424+y*(1.2067492
+			+y*(0.2659732+y*(0.360768e-1+y*0.45813e-2)))));
+	} else {
+		y=3.75/ax;
+		ans=(exp(ax)/sqrt(ax))*(0.39894228+y*(0.1328592e-1
+			+y*(0.225319e-2+y*(-0.157565e-2+y*(0.916281e-2
+			+y*(-0.2057706e-1+y*(0.2635537e-1+y*(-0.1647633e-1
+			+y*0.392377e-2))))))));
+	}
+	return ans;
+}
+
+double bessi1(x)
+double  x;
+{
+	double ax,ans;
+	double y;
+
+	if ((ax=fabs(x)) < 3.75) {
+		y=x/3.75;
+		y*=y;
+		ans=ax*(0.5+y*(0.87890594+y*(0.51498869+y*(0.15084934
+			+y*(0.2658733e-1+y*(0.301532e-2+y*0.32411e-3))))));
+	} else {
+		y=3.75/ax;
+		ans=0.2282967e-1+y*(-0.2895312e-1+y*(0.1787654e-1
+			-y*0.420059e-2));
+		ans=0.39894228+y*(-0.3988024e-1+y*(-0.362018e-2
+			+y*(0.163801e-2+y*(-0.1031555e-1+y*ans))));
+		ans *= (exp(ax)/sqrt(ax));
+	}
+	return x < 0.0 ? -ans : ans;
+}
+
+#undef ACC
+#undef BIGNO
+#undef BIGNI
+
 
 /*
 double pow2(z,w)
@@ -1934,7 +2034,7 @@ double do_set_shift(double value,double shift,double variable)
 	  return value;
 	}
   }
-    printf("This can't happen: Invalid symbol index for SHIFT\n");
+    plintf("This can't happen: Invalid symbol index for SHIFT\n");
     return 0.0;
 
 
@@ -1951,12 +2051,12 @@ double shift,variable;
   int it, in;
   int i=(int)(variable),ish=(int)shift;
 
-  /* printf( "shifting %d (%s) by %d to %d (%s)\n", 
+  /* plintf( "shifting %d (%s) by %d to %d (%s)\n", 
 	(int)variable, com_name((int)variable), (int)shift, i, com_name(i) );
 
   */
   if(i<0) return(0.0);
-  /* printf("shift=%g variable=%g \n",shift,variable); */
+  /* plintf("shift=%g variable=%g \n",shift,variable); */
   it=i/100;
   if((it>1)&&(it<6)){
      in=i-200;
@@ -1975,7 +2075,7 @@ double shift,variable;
 	else 
 	  return variables[in];  
   }
-    printf("This can't happen: Invalid symbol index for SHIFT\n");
+    plintf("This can't happen: Invalid symbol index for SHIFT\n");
     return 0.0;
 
 }
@@ -2071,6 +2171,7 @@ one_arg()
  fun1[22]=zz_erfc;
  fun1[23]=zz_hom_bcs;
  fun1[24]=zz_pois;
+ fun1[25]=zz_lgamma;
 }
 
 
@@ -2467,7 +2568,7 @@ case 103:
              i1+=2;
              break;
           default:
-            printf(" i=%d in=%d it=%d \n",i,in,it);
+            plintf(" i=%d in=%d it=%d \n",i,in,it);
           }
      }
    }
@@ -2498,7 +2599,7 @@ double feval_rpn(comz)
  com=comz;
  /* fpr_command(com); */
  while(iend){
-   /*   printf("%d \n",*com); */
+   /*   plintf("%d \n",*com); */
    switch(*com){
    case IFUN1:
      (*(pf*)(&com[1]))();
@@ -2616,13 +2717,35 @@ double feval_rpn(comz)
      com++;
      return(POP);
    default:
-     printf("What the...?\n");
+     plintf("What the...?\n");
    }
  }
  return(0.0);
 }
 
 
+/* code for log-gamma if you dont have it */
+
+#ifdef NOLGAMMA
+double lgamma(xx)
+double xx;
+{
+	double x,y,tmp,ser;
+	static double cof[6]={76.18009172947146,-86.50532032941677,
+		24.01409824083091,-1.231739572450155,
+		0.1208650973866179e-2,-0.5395239384953e-5};
+	int j;
+
+	y=x=xx;
+	tmp=x+5.5;
+	tmp -= (x+0.5)*log(tmp);
+	ser=1.000000000190015;
+	for (j=0;j<=5;j++) ser += cof[j]/++y;
+	return -tmp+log(2.5066282746310005*ser/x);
+}
+
+
+#endif
 
 
 

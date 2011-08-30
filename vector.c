@@ -1,578 +1,538 @@
-#include <stdlib.h> 
-/* vector.c  
-   support routines for defining vector arrays
-   it is a little funky due to the fact that I want
-   to be able to interdigitate things as well
+/****************************************************************
+ *                                                              *
+ * File          : vector.c                                     *
+ * Programmers   : Scott D. Cohen and Alan C. Hindmarsh @ LLNL  *
+ * Last Modified : 1 September 1994                             *
+ *--------------------------------------------------------------*
+ *                                                              *
+ * This is the implementation file for a generic VECTOR         *
+ * package. It contains the implementation of the N_Vector      *
+ * kernels listed in vector.h.                                  *
+ *                                                              *
+ ****************************************************************/
 
-
- EXAMPLE SYNTAX:
-
-vector {u,v} 100 x
-1:
-     u'=f(u(1),v(1))+du*(u(2)-u(1))
-     v'=g(u(1),v(1))+dv*(v(2)-v(1))
-   ;
-2--nvec-1: 
-    u'=f(u(x),v(x))+du*(u(x+1)-2*u(x)+u(x-1))
-    v'=g(u(x),v(x))+dv*(v(x+1)-2*v(x)+v(x-1)) 
-   ;
-nvec:
-     u'=f(u(nvec),v(nvec))+du*(u(nvec-1)-u(nvec))
-     v'=g(u(nvec),v(nvec))+dv*(v(nvec-1)-v(nvec))
-    ;
-init u=exp(-(x-nvec/2)^2)
-init v=1
-endvector
-
-this is stuck in a structure for this particular vector group
-
-This is the structure for a component of the vector over
-a particular range of subscripts. If index<=0 then it refers to 
-nvec+index 
- 
-typedef struct {
-  int ncomp; // number of components 
-  int inlo,inhi; // indices 1 is first 0 mean to the end, -1 end-1 etc 
-  char **rhs; // strings for each component right-hand side 
-  int **comprhs; // compiled right-hand sides 
-} VECRHS;
-
-
-Each of these lies in the bigger structure
-
-typedef struct {
-  int length,ncomp,nrhs; // length of vectors , number of components,
-                        //  number of subsets - dimension of VECRHS 
-  double *v,*vold;      //actual values of the vector 
-                       // ordered as u0,v0,u1,v1,....,un,vn uv componenst 
-  char **names,x[10]; // names of components and index name 
-  VECRHS *r;  // holds the component wide rhs's
-} XPPVEC;
-
-so for the present example
-here is the structure
-XPPVEC xppvec[0]:
-  100 2 3
-  v[200],vold[200]
-  u v
-  r[0] :
-     2 
-     1 1
-     rhs[0]=f(u(1),...
-     rhs[1]=g(u(1),...
-     comprhs[0]= ...
-     comprhs[1]= ...
- r[1] :
-    2
-    2 -1
-    rhs[0]=
-    rhs[1]=...
-   ...
-r[2]  :
-   2
-   0 0
-   rhs[0]=...
-   rhs[1]=...
-
-*/
 
 #include <stdio.h>
-#include <string.h>
-#ifndef WCTYPE
-#include <ctype.h>
-#else
-#include <wctype.h>
-#endif
+#include <stdlib.h>
+#include "vector.h"
+#include "llnltyps.h"
+#include "llnlmath.h" 
+#include "ggets.h" 
 
 
-typedef struct {
-  int ncomp; // number of components 
-  int inlo,inhi,flag; // indices 1 is first 0 mean to the end, -1 end-1 etc 
-  /* flag determines which indices are there */  
-  char **rhs; // strings for each component right-hand side 
-  int **comprhs; // compiled right-hand sides
-  int type;  /* fixed or ode */ 
-} VECRHS;
-
-typedef struct {
-  int length,ncomp,nrhs; // length of vectors , number of components,
-                        //  number of subsets - dimension of VECRHS 
-  double *v,*vold;      //actual values of the vector 
-                       // ordered as u0,v0,u1,v1,....,un,vn uv componenst 
-  char **names,x[10]; // names of components and index name
-  char **ics; // holds the initial data strings 
-  VECRHS r[50];  // holds the component wide rhs's
-} XPPVEC;
+#define ZERO RCONST(0.0)
+#define ONE  RCONST(1.0)
 
 
+/* Private Helper Prototypes */
 
+static void VCopy(N_Vector x, N_Vector z); /* z=x */
+static void VSum(N_Vector x, N_Vector y, N_Vector z); /* z=x+y */
+static void VDiff(N_Vector x, N_Vector y, N_Vector z); /* z=x-y */
+static void VNeg(N_Vector x, N_Vector z); /* z=-x */
+/* z=c(x+y) */
+static void VScaleSum(real c, N_Vector x, N_Vector y, N_Vector z);
+/* z=c(x-y) */
+static void VScaleDiff(real c, N_Vector x, N_Vector y, N_Vector z); 
+static void VLin1(real a, N_Vector x, N_Vector y, N_Vector z); /* z=ax+y */
+static void VLin2(real a, N_Vector x, N_Vector y, N_Vector z); /* z=ax-y */
+static void Vaxpy(real a, N_Vector x, N_Vector y); /* y <- ax+y */
+static void VScaleBy(real a, N_Vector x); /* x <- ax */
 
-#define VEC_ERROR -1
-#define VEC_OK 1
-#define END_VECTOR 2
-#define END_VRHS  3
-#define VEC_RHS 4
-#define VEC_DOMAIN 5
-#define VEC_INIT 6
-#define VEC_NOOP 50
-#define MAXVEC 100
+/********************* Exported Functions ************************/
 
-#define VRHS xppvec[n].r[ir] 
-XPPVEC xppvec[MAXVEC];
-int nxppvec=0;
-
-main()
-{
-  FILE *fp;
-  char bob[256];
-  int err,i;
-  fp=fopen("vectst.ode","r");
-  if(fp==NULL){
-    printf(" Not found \n");
-    exit(0);
-  }
-  while(!feof(fp)){
-    fgets(bob,255,fp);
-    if(bob[0]=='v'&&bob[1]=='e'&&bob[2]=='c'&&bob[3]=='t'){
-       err=read_vec(fp,bob);
-       if(err==VEC_ERROR){
-	 printf("VECTOR ERROR \n");
-	 fclose(fp);
-	 exit(0);
-       }
-    }
-    else {
-      printf("%s",bob);
-    }
-  }
  
-    fclose(fp);
-    printf("----------------------- FILE CLOSED ------------\n\n");
-  for(i=0;i<nxppvec;i++)
-    show_vec_parts(i);
+N_Vector N_VNew(integer N, void *machEnv)
+{
+  N_Vector v;
+
+  if (N <= 0) return(NULL);
+
+  v = (N_Vector) malloc(sizeof *v);
+  if (v == NULL) return(NULL);
   
+  v->data = (real *) malloc(N * sizeof(real));
+  if (v->data == NULL) {
+    free(v);
+    return(NULL);
+  }
 
+  v->length = N;
   
-}
-
-/* this shows the structure defining the vector */
-show_vec_parts(int n)
-{
-  int i,j,nc=xppvec[n].ncomp;
-  printf("\n \n VECTOR: with %d components \n",xppvec[n].ncomp);
-  printf("length: %d index %s \n",xppvec[n].length,xppvec[n].x);
-  for(i=0;i<nc;i++)
-    printf("%s(0)=%s \n",xppvec[n].names[i],xppvec[n].ics[i]);
-    
-  for(i=0;i<xppvec[n].nrhs;i++){
-    printf("part %d defined from %d to %d flag %d \n",
-	   i,xppvec[n].r[i].inlo,xppvec[n].r[i].inhi,xppvec[n].r[i].flag);
-    for(j=0;j<nc;j++)
-      printf("%s -> %s \n",xppvec[n].names[j],xppvec[n].r[i].rhs[j]);
-  }
-}
-
-read_vec(FILE *fp,char *line1)
-{
-     char names[MAXVEC][10];
-     char index[10];
-     char rhs[256],lhs[50];
-     int type,lo,hi;
-     int error=0;
-     int n=nxppvec;
-     char bob[256];
-     int nlen,ncomp;
-     int command;
-     int i,cnt,ir;
-     vec_first_line(line1,names,&nlen,index,&ncomp);
-     xppvec[n].ncomp=ncomp;
-     strcpy(xppvec[n].x,index);
-     xppvec[n].length=nlen;
-     xppvec[n].names=(char **)malloc(ncomp*sizeof(char *));
-     xppvec[n].ics=(char **)malloc(ncomp*sizeof(char *));
-     for(i=0;i<ncomp;i++){
-       xppvec[n].ics[i]=(char *)malloc(80);
-       strcpy(xppvec[n].ics[i],"0");
-       xppvec[n].names[i]=(char *)malloc(12);
-       strcpy(xppvec[n].names[i],names[i]);
-     }
-     cnt=0;
-     ir=0;
-     VRHS.flag=-1;
-     VRHS.rhs=(char **)malloc(ncomp*sizeof(char *));
-     while(!feof(fp)){
-       fgets(bob,255,fp);
-       command=parse_vec_line(bob,lhs,rhs,&type,&lo,&hi);
-       switch(command)
-	 {
-	 case VEC_NOOP:
-	   printf("%s\n",bob);
-	   break;
-	   
-	 case VEC_INIT:
-           for(i=0;i<ncomp;i++)
-	     if(strcmp(lhs,xppvec[n].names[i])==0)
-	       break;
-	   if(i==ncomp){
-	     printf("initial data? %s is not a defined vector \n",lhs);
-	     return VEC_ERROR;
-	   }
-	   strcpy(xppvec[n].ics[i],rhs);
-	   
-	   break;  /* we will figure something out */
-	 case END_VRHS:
-           if(cnt!=ncomp){
-	     printf("For each range - need %d components; you have %d\n",
-		    ncomp,cnt);
-	     return VEC_ERROR;
-	    
-	   }
-	   ir++;
-	   cnt=0;
-	   VRHS.flag=-1;
-	   VRHS.rhs=(char **)malloc(ncomp*sizeof(char *));
-	   break;
-	 case VEC_DOMAIN:
-           if(VRHS.flag>=0){
-	     printf("vector domain defined more than once \n");
-	     return VEC_ERROR;
-	     
-	   }
-	   VRHS.inlo=lo;
-           VRHS.inhi=hi;
-           VRHS.flag=type;
-	   break;
-	 case VEC_RHS:
-	   /* figure out which one */
-           for(i=0;i<ncomp;i++)
-	     if(strcmp(lhs,xppvec[n].names[i])==0)
-	       break;
-	   if(i==ncomp){
-	     printf("%s is not a defined vector for this rhs\n",lhs);
-	     return VEC_ERROR;
-
-	   }
-	   VRHS.rhs[i]=(char *)malloc(strlen(rhs)+2);
-	   strcpy(VRHS.rhs[i],rhs);
-	   cnt++;
-	   break;
-	 }
-       if(command==END_VECTOR)
-	 break;
-     }
-     printf(" This vector has %d parts \n",ir);
-     xppvec[n].nrhs=ir;
-     nxppvec++;
-     
-     return 0;
+  return(v);
 }
 
 
-
-parse_vec_line(char *s,char *lhs,char *rhs,int *type,
-	       int *lo,int *hi)
+void N_VFree(N_Vector x)
 {
-  int n=strlen(s);
-  int err;
-  strupr(s);
-  if(msc("INIT ",s)){
-    grab_vec_ics(&s[5],lhs,rhs);
-    /* printf("vector ic: %s %s \n",lhs,rhs); */
-    return VEC_INIT;
+  free(x->data);
+  free(x);
+}
+
+
+void N_VLinearSum(real a, N_Vector x, real b, N_Vector y, N_Vector z)
+{
+  integer i, N;
+  real c, *xd, *yd, *zd;
+  /*N_Vector v, v1, v2;*/
+  N_Vector v1, v2;
+  bool test;
+
+  if ((b == ONE) && (z == y)) {    /* BLAS usage: axpy y <- ax+y */
+    Vaxpy(a,x,y);
+    return;
   }
-  if(msc("ENDVECTOR",s)){
-    /*  printf("End vector \n"); */
-    return END_VECTOR;
+
+  if ((a == ONE) && (z == x)) {    /* BLAS usage: axpy x <- by+x */
+    Vaxpy(b,y,x);
+    return;
   }
-  if(index(s,';')!=NULL){
-    /* printf("End vecrhs \n"); */
-    return END_VRHS;
+
+  /* Case: a == b == 1.0 */
+
+  if ((a == ONE) && (b == ONE)) {
+    VSum(x, y, z);
+    return;
   }
-  if(msc("NVEC",s)||isdigit(s[0])){
-    *type=get_vect_domain(s,lo,hi);
-    /* if(*type==1||*type==3)
-     printf("lower limit: %d ",*lo);
-   if(*type==2||*type==3)
-     printf("upper limit: %d ",*hi);
-   printf("\n");
-    */
-    return VEC_DOMAIN;
+
+  /* Cases: (1) a == 1.0, b = -1.0, (2) a == -1.0, b == 1.0 */
+
+  if ((test = ((a == ONE) && (b == -ONE))) || ((a == -ONE) && (b == ONE))) {
+    v1 = test ? y : x;
+    v2 = test ? x : y;
+    VDiff(v2, v1, z);
+    return;
   }
-  err=get_rhs_lhs(s,lhs,rhs,type);
-  /* printf(" type %d %s  %s\n",*type,lhs,rhs);   */
-  if(err==0)return VEC_RHS;
-  return VEC_NOOP;
+
+  /* Cases: (1) a == 1.0, b == other or 0.0, (2) a == other or 0.0, b == 1.0 */
+  /* if a or b is 0.0, then user should have called N_VScale */
+
+  if ((test = (a == ONE)) || (b == ONE)) {
+    c = test ? b : a;
+    v1 = test ? y : x;
+    v2 = test ? x : y;
+    VLin1(c, v1, v2, z);
+    return;
+  }
+
+  /* Cases: (1) a == -1.0, b != 1.0, (2) a != 1.0, b == -1.0 */
+
+  if ((test = (a == -ONE)) || (b == -ONE)) {
+    c = test ? b : a;
+    v1 = test ? y : x;
+    v2 = test ? x : y;
+    VLin2(c, v1, v2, z);
+    return;
+  }
+
+  /* Case: a == b */
+  /* catches case both a and b are 0.0 - user should have called N_VConst */
+
+  if (a == b) {
+    VScaleSum(a, x, y, z);
+    return;
+  }
+
+  /* Case: a == -b */
+
+  if (a == -b) {
+    VScaleDiff(a, x, y, z);
+    return;
+  }
+
+  /* Do all cases not handled above:
+     (1) a == other, b == 0.0 - user should have called N_VScale
+     (2) a == 0.0, b == other - user should have called N_VScale
+     (3) a,b == other, a !=b, a != -b */
   
+  N = x->length;
+  xd = x->data;
+  yd = y->data;
+  zd = z->data;
+
+  for (i=0; i < N; i++) 
+    *zd++ = a * (*xd++) + b * (*yd++);
 }
 
-/*  this just parses the first line getting the names, dimensions
-    and the index name 
-*/
-vec_first_line(line1,names,nlen,index,nc)
-     int *nc,*nlen;
-     char *line1,*index;
-     char names[MAXVEC][10];
-{
 
-  int ncomp=0,nl;
-  int j=0,i=0;
-  char c;
-  char num[10];
+void N_VConst(real c, N_Vector z)
+{
+  integer i, N;
+  real *zd;
+
+  N = z->length;
+  zd = z->data;
+
+  for (i=0; i < N; i++) 
+    *zd++ = c;
+}
+
+
+void N_VProd(N_Vector x, N_Vector y, N_Vector z)
+{
+  integer i, N;
+  real *xd, *yd, *zd;
+
+  N = x->length;
+  xd = x->data;
+  yd = y->data;
+  zd = z->data;
+
+  for (i=0; i < N; i++)
+    *zd++ = (*xd++) * (*yd++);
+}
+
+
+void N_VDiv(N_Vector x, N_Vector y, N_Vector z)
+{
+  integer i, N;
+  real *xd, *yd, *zd;
+
+  N = x->length;
+  xd = x->data;
+  yd = y->data;
+  zd = z->data;
+
+  for (i=0; i < N; i++)
+    *zd++ = (*xd++) / (*yd++);
+}
+
+
+void N_VScale(real c, N_Vector x, N_Vector z)
+{
+  integer i, N;
+  real *xd, *zd;
+
+  if (z == x) {       /* BLAS usage: scale x <- cx */
+    VScaleBy(c, x);
+    return;
+  }
+
+  if (c == ONE) {
+    VCopy(x, z);
+  } else if (c == -ONE) {
+    VNeg(x, z);
+  } else {
+    N = x->length;
+    xd = x->data;
+    zd = z->data;
+    for (i=0; i < N; i++) *zd++ = c * (*xd++);
+  }
+}
+
+
+void N_VAbs(N_Vector x, N_Vector z)
+{
+  integer i, N;
+  real *xd, *zd;
+
+  N = x->length;
+  xd = x->data;
+  zd = z->data;
+
+  for (i=0; i < N; i++, xd++, zd++)
+    *zd = ABS(*xd);
+}
+
+
+void N_VInv(N_Vector x, N_Vector z)
+{
+  integer i, N;
+  real *xd, *zd;
+
+  N = x->length;
+  xd = x->data;
+  zd = z->data;
+
+  for (i=0; i < N; i++)
+    *zd++ = ONE / (*xd++);
+}
+
+
+void N_VAddConst(N_Vector x, real b, N_Vector z)
+{
+  integer i, N;
+  real *xd, *zd;
+  
+  N = x->length;
+  xd = x->data;
+  zd = z->data;
+  
+  for (i=0; i < N; i++) *zd++ = (*xd++) + b; 
+}
+
+
+real N_VDotProd(N_Vector x, N_Vector y)
+{
+  integer i, N;
+  real sum = ZERO, *xd, *yd;
+
+  N = x->length;
+  xd = x->data;
+  yd = y->data;
+  
+  for (i=0; i < N; i++)
+    sum += (*xd++) * (*yd++);
+  
+  return(sum);
+}
+
+
+real N_VMaxNorm(N_Vector x)
+{
+  integer i, N;
+  real max = ZERO, *xd;
+
+  N = x->length;
+  xd = x->data;
+
+  for (i=0; i < N; i++, xd++) {
+    if (ABS(*xd) > max) max = ABS(*xd);
+  }
    
-  nl=strlen(line1);
-  strupr(line1);
-  
-  for(j=6;j<nl;j++){
-    c=line1[j];
-    if(c=='{')break;
-  }
-  if(j==nl){
-    printf("Illegal syntax in vector declaration - {names,...} etc\n");
-    return(0);
-  }
-  j++;
-  while(1){
-    c=line1[j];
-    if(!isspace(c)){
-      if(c==','){
-	names[ncomp][i]=0;
-	printf("vector-name: %s \n",names[ncomp]);
-	ncomp++;
-	i=0;
-      }
-      else {
-	if(c=='}'){
-	  names[ncomp][i]=0;
-	  printf("vector-name: %s \n",names[ncomp]);
-	  ncomp++;
-	  break;
-	}
-	else {
-	  names[ncomp][i]=c;
-	  i++;
-	}
-      }
-    }
-    j++;
-    if(j==nl){
-      printf("Illegal syntax in vector declaration \n %s \n",line1);
-      return(0);
-  
-    }
-  }
-  i=0;
-  while(1){
-    c=line1[j];
-    if(isdigit(c)){
-      num[i]=c;
-      i++;
-    }
-    if(isspace(c)){
-      if(i>0)break;
-    }
-    if(isalpha(c)){
-      printf("Illegal dimension of vector \n %s \n",line1);
-      return(0);
-    }
-    j++;
-    if(j==nl){
-      printf("Illegal syntax in vector declaration \n %s \n",line1);
-      return(0);
-    }
-  }
-  num[i]=0;
-  printf("Dimension=%d \n",atoi(num));
-  
-  i=0;
-  while(1){
-    c=line1[j];
-    if(isspace(c)){
-      if(i>0)break;
-    }
-    index[i]=c;
-    i++;
-    j++;
-    if(j==nl)break;
-  }
-  if(i==0){
-    printf("Need to define an index in vector \n %s \n",line1);
-    return(0);
-  }
-  index[i]=0;
-  printf("index=%s \n",index);
-  *nlen=atoi(num);
-  *nc=ncomp;
+  return(max);
 }
 
 
-      
+real N_VWrmsNorm(N_Vector x, N_Vector w)
+{
+  integer i, N;
+  real sum = ZERO, prodi, *xd, *wd;
 
-grab_vec_ics(char *s,char *lhs,char *rhs)
-{
-  int i=0,n=strlen(s);
-  int j=0;
-  char c;
-  while(1){
-    c=s[i];
-    if(c=='='){
-      lhs[j]=0;
-      i++;
-      for(j=i;j<n;j++)
-	rhs[j-i]=s[j];
-      rhs[j-i]=0;
-      return 1;
-    }
-    lhs[j]=c;
-    j++;
-    i++;
-    if(i>=n)break;
+  N = x->length;
+  xd = x->data;
+  wd = w->data;
+
+  for (i=0; i < N; i++) {
+    prodi = (*xd++) * (*wd++);
+    sum += prodi * prodi;
   }
-  return 0;
+
+  return(RSqrt(sum / N));
 }
-   
-get_vect_domain(char *s,int *i1,int *i2)
+
+
+real N_VMin(N_Vector x)
 {
-  int i=0,j=0;
-  int dash=0;
-  int flag=0;
-  char c;
-  char *z;
-  char lo[100],hi[100];
-  int n=strlen(s);
-  int nm1=n-1;
-  lo[0]=0;
-  hi[0]=0;
-  while(1){
-    c=s[i];
-    if((c=='-')&&(i<nm1)&&(s[i+1]=='-')){
-      dash=1;
-      i+=1;
-      lo[j]=0;
-      j=0;
-    }
-    else {
-      if(c==':'){
-	if(dash==0)
-	  lo[j]=0;
-	else
-	  hi[j]=0;
-	break;
-      }
-      else {
-	if(dash==0)
-	  lo[j]=c;
-	else
-	  hi[j]=c;
-	j++;
-      }
-    }
-    i++;
-    if(i>=n){
-    	if(dash==0)
-	  lo[j]=0;
-	else
-	  hi[j]=0;
-	break;
-    }
+  integer i, N;
+  real min, *xd;
+
+  N = x->length;
+  xd = x->data;
+  min = xd[0];
+
+  for (i=0; i < N; i++, xd++) {
+    if ((*xd) < min) min = *xd;
+  }
+
+  return(min);
+}
+
+
+void N_VCompare(real c, N_Vector x, N_Vector z)
+{
+  integer i, N;
+  real *xd, *zd;
+  
+  N = x->length;
+  xd = x->data;
+  zd = z->data;
+  
+  for (i=0; i < N; i++, xd++, zd++) {
+    *zd = (ABS(*xd) >= c) ? ONE : ZERO;
+  }
+}
+
+
+bool N_VInvTest(N_Vector x, N_Vector z)
+{
+  integer i, N;
+  real *xd, *zd;
+
+  N = x->length;
+  xd = x->data;
+  zd = z->data;
+
+  for (i=0; i < N; i++) {
+    if (*xd == ZERO) return(FALSE);
+    *zd++ = ONE / (*xd++);
+  }
+
+  return(TRUE);
+}
+
  
-  }
-  
-  /* check to see if there are any */
-  if(strlen(lo)>0)flag=1;
-  if(strlen(hi)>0)flag+=2;
-  
-  /* okay, now we have split them */
-  if(flag==1||flag==3){ 
-    z=strstr(lo,"NVEC"); /* check for the symbol nvec */
-    if(z==NULL)
-      *i1=atoi(lo);
-    else
-      *i1=atoi(z+4);
-  }
-  if(dash==1){
-    z=strstr(hi,"NVEC");
-    if(z==NULL)
-      *i2=atoi(hi);
-    else
-      *i2=atoi(z+4);
-  }
-       return(flag);  /* 1 for lo 2 for hi 3 for both */
-}
-	
-
-get_rhs_lhs(char *s,char *lhs,char *rhs,int *type)
+void N_VPrint(N_Vector x)
 {
-  int n=strlen(s);
-  int i=0,flag=0,j=0,ic,error=1;
-  char c;
-  rhs[0]=0;
-  lhs[0]=0;
-  de_space(s);
-  if(strlen(s)==0)return 1;
-  if(s[0]=='#')return 1;
-  while(1){
-    c=s[i];
-   ic=c;
+  integer i, N;
+  real *xd;
 
-    if(ic==39){
-      *type=1;
-      lhs[j]=0;
-      strcpy(rhs,&s[i+2]);
-      break;
-    }
-    if(c=='='){
-      *type=2;
-      lhs[j]=0;
-      strcpy(rhs,&s[i+1]);
-      break;
-    }
-    lhs[j]=c;
-    j++;
-    i++;
-    if(i>=n)
-      break;
-  }
-  return 0;
-}
-	  
+  N = x->length;
+  xd = x->data;
 
-/* support routines - in the full xpp */
+  for (i=0; i < N; i++) plintf("%g\n", *xd++);
 
-de_space(s)
-     char *s;
-{
-  int n=strlen(s);
-  int i,j=0;
-  char ch;
-  for(i=0;i<n;i++){
-    ch=s[i];
-    if(!isspace(ch)){
-      s[j]=ch;
-      j++;
-    }
-  }
-  s[j]=0;
+  plintf("\n");
 }
 
-msc(s1,s2)
-     char *s1,*s2;
+
+/***************** Private Helper Functions **********************/
+
+
+static void VCopy(N_Vector x, N_Vector z)
 {
- int r=0;
- int n=strlen(s1),i;
- if(strlen(s2)<n)return(0);
- for(i=0;i<n;i++)
-   if(s1[i]!=s2[i])return(0);
- return(1);
-}  
-  
-strupr(s)
-char *s;
-{
- int i=0;
- while(s[i])
- {
-  if(islower(s[i]))s[i]-=32;
-  i++;
-  }
+  integer i, N;
+  real *xd, *zd;
+
+  N = x->length;
+  xd = x->data;
+  zd = z->data;
+
+  for (i=0; i < N; i++)
+    *zd++ = *xd++; 
 }
+
+
+static void VSum(N_Vector x, N_Vector y, N_Vector z)
+{
+  integer i, N;
+  real *xd, *yd, *zd;
+
+  N = x->length;
+  xd = x->data;
+  yd = y->data;
+  zd = z->data;
+
+  for (i=0; i < N; i++)
+    *zd++ = (*xd++) + (*yd++);
+}
+
+
+static void VDiff(N_Vector x, N_Vector y, N_Vector z)
+{
+  integer i, N;
+  real *xd, *yd, *zd;
+ 
+  N = x->length;
+  xd = x->data;
+  yd = y->data;
+  zd = z->data;
+
+  for (i=0; i < N; i++)
+    *zd++ = (*xd++) - (*yd++);
+}
+
+
+static void VNeg(N_Vector x, N_Vector z)
+{
+  integer i, N;
+  real *xd, *zd;
+
+  N = x->length;
+  xd = x->data;
+  zd = z->data;
+
+  for (i=0; i < N; i++)
+    *zd++ = -(*xd++);
+}
+
+
+static void VScaleSum(real c, N_Vector x, N_Vector y, N_Vector z)
+{
+  integer i, N;
+  real *xd, *yd, *zd;
+
+  N = x->length;
+  xd = x->data;
+  yd = y->data;
+  zd = z->data;
+
+  for (i=0; i < N; i++)
+    *zd++ = c * ((*xd++) + (*yd++));
+}
+
+
+void VScaleDiff(real c, N_Vector x, N_Vector y, N_Vector z)
+{
+  integer i, N;
+  real *xd, *yd, *zd;
+
+  N = x->length;
+  xd = x->data;
+  yd = y->data;
+  zd = z->data;
+
+  for (i=0; i < N; i++)
+    *zd++ = c * ((*xd++) - (*yd++));
+}
+
+
+static void VLin1(real a, N_Vector x, N_Vector y, N_Vector z)
+{
+  integer i, N;
+  real *xd, *yd, *zd;
+
+  N = x->length;
+  xd = x->data;
+  yd = y->data;
+  zd = z->data;
+
+  for (i=0; i < N; i++)
+    *zd++ = a * (*xd++) + (*yd++);
+}
+
+
+static void VLin2(real a, N_Vector x, N_Vector y, N_Vector z)
+{
+  integer i, N;
+  real *xd, *yd, *zd;
+
+  N = x->length;
+  xd = x->data;
+  yd = y->data;
+  zd = z->data;
+
+  for (i=0; i < N; i++)
+    *zd++ = a * (*xd++) - (*yd++);
+}
+
+static void Vaxpy(real a, N_Vector x, N_Vector y)
+{
+  integer i, N;
+  real *xd, *yd;
+
+  N = x->length;
+  xd = x->data;
+  yd = y->data;
+
+  if (a == ONE) {
+    for (i=0; i < N; i++)
+      *yd++ += (*xd++);
+    return;
+  }
+
+  if (a == -ONE) {
+    for (i=0; i < N; i++)
+      *yd++ -= (*xd++);
+    return;
+  }    
+
+  for (i=0; i < N; i++)
+    *yd++ += a * (*xd++);
+}
+
+static void VScaleBy(real a, N_Vector x)
+{
+  integer i, N;
+  real *xd;
+
+  N = x->length;
+  xd = x->data;
+
+  for (i=0; i < N; i++)
+    *xd++ *= a;
+}
+
+
+
 

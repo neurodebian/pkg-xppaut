@@ -1,7 +1,10 @@
 # EXAMPLE 2
 # compile the C program example.c 
 # creating example.so 
+# for LINUX
 # gcc -fpic -shared -o example.so example.c
+# for MAC:
+# gcc -fPIC -dynamiclib example.c -o example.so 
 # In XPP click on File-Edit-Load Library
 # example.so
 # and pick either lv, vdp, duff as the function.

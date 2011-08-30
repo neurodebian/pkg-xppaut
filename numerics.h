@@ -1,3 +1,6 @@
+#ifndef _numerics_h_
+#define _numerics_h_
+
 /*       Numerics.h   */
 
 extern double DELTA_T,TEND,T0,TRANS,NULL_ERR,EVEC_ERR,NEWT_ERR;
@@ -14,4 +17,19 @@ extern int HIST,HVAR,hist_ind;
 
 extern int XSHFT,YSHFT,ZSHFT;
 
+void chk_volterra(void);
+void check_pos(int *j);
+void quick_num(int com);
+void get_num_par(int ch);
+void chk_delay(void);
+void set_delay(void);
+void ruelle(void);
+void init_numerics(void);
+void meth_dialog(void);
+void get_pmap_pars_com(int l);
+void get_method(void);
+void set_col_par_com(int i);
+void do_meth(void);
 
+
+#endif

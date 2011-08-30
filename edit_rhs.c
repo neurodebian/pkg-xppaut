@@ -1,3 +1,14 @@
+
+#include "edit_rhs.h"
+#include "init_conds.h"
+#include "browse.h"
+#include "auto_x11.h"
+#include "extra.h"
+#include "ggets.h"
+#include "many_pops.h"
+#include "pop_list.h"
+#include "parserslow.h"
+
 #include <stdlib.h> 
 #include <string.h>
 #include <X11/Xlib.h>
@@ -15,17 +26,7 @@
 #include "struct.h"
 #include "shoot.h"
 
-#define NEQMAXFOREDIT 20
-#define MAXARG 20
-#define MAX_N_EBOX MAXODE
-#define MAX_LEN_EBOX 86
-#define FORGET_ALL 0
-#define DONE_ALL 2
-#define FORGET_THIS 3
-#define DONE_THIS 1
-#define RESET_ALL 4
 
-#define MAXUFUN 50
 
 
 #define EV_MASK (ButtonPressMask 	|\
@@ -66,10 +67,7 @@ extern char *ufun_def[MAXUFUN];
 extern char ufun_names[MAXUFUN][12];
 extern int narg_fun[MAXUFUN], *ufun[MAXUFUN];
 
-typedef struct {
-  int narg;
-  char args[MAXARG][11];
-} UFUN_ARG;
+
 
 extern UFUN_ARG ufun_arg[MAXUFUN];
 extern BC_STRUCT my_bc[MAXODE];
@@ -77,23 +75,10 @@ extern BC_STRUCT my_bc[MAXODE];
 extern int NFUN;
 Window make_window();
 
-/*  This is a edit box widget which handles a list of 
-	editable strings  
- */
-
-typedef struct {
-		Window base,ok,cancel,reset;
-		Window win[MAX_N_EBOX];
-		char name[MAX_N_EBOX][MAX_LEN_EBOX],
-		     value[MAX_N_EBOX][MAX_LEN_EBOX],
-		     rval[MAX_N_EBOX][MAX_LEN_EBOX];
-		int n,hot;
-		} EDIT_BOX;
 
 
 
-
-reset_ebox(sb,pos,col)
+void reset_ebox(sb,pos,col)
      EDIT_BOX *sb;
      int *pos,*col;
 {
@@ -116,14 +101,15 @@ reset_ebox(sb,pos,col)
   put_cursor_at(sb->win[0],DCURX*strlen(sb->name[0]),*pos);
 }
 
-do_edit_box(n,title,names,values)
+
+int do_edit_box(n,title,names,values)
 int n;
 char **names,**values,*title;
 {
  EDIT_BOX sb;
  int i,status;
  int colm,pos;
- XEvent ev;
+
   for(i=0;i<n;i++){
 	sprintf(sb.name[i],"%s=",names[i]);
 	strcpy(sb.value[i],values[i]);
@@ -157,13 +143,13 @@ char **names,**values,*title;
 	
  }
 
-expose_ebox(sb,w,pos,col)
+void expose_ebox(sb,w,pos,col)
 EDIT_BOX *sb;
 Window w;
 int pos,col;
 {
  int i,flag;
- int l,m;
+
  if(w==sb->ok){XDrawString(display,w,gc,0,CURY_OFF,"Ok",2);return;}
  if(w==sb->cancel){XDrawString(display,w,gc,0,CURY_OFF,"Cancel",6);
 		   return; 
@@ -179,7 +165,7 @@ int pos,col;
 
 
   
-ereset_hot(inew,sb)
+void ereset_hot(inew,sb)
 int inew;
 EDIT_BOX *sb;
 {
@@ -193,13 +179,13 @@ EDIT_BOX *sb;
 		strlen(sb->value[i]),0);
  }
 
- enew_editable(sb,inew,pos,col,done,w)
+void enew_editable(sb,inew,pos,col,done,w)
  int inew;
  EDIT_BOX *sb;
  int *pos,*col,*done;
  Window *w;
  {
-  int i;
+
   ereset_hot(inew,sb);
   *pos=strlen(sb->value[inew]);
   *col=(*pos+strlen(sb->name[inew]))*DCURX;
@@ -208,7 +194,7 @@ EDIT_BOX *sb;
   }
  
 
- e_box_event_loop(sb,pos,col)
+int e_box_event_loop(sb,pos,col)
  EDIT_BOX *sb;
  int *col,*pos;
 {
@@ -276,21 +262,21 @@ EDIT_BOX *sb;
      }           	
         
 	
-make_ebox_windows(sb,title)
+void make_ebox_windows(sb,title)
 char *title;
 EDIT_BOX *sb;
 {
  int width,height;
  int i;
- int xpos,ypos,status,n=sb->n;
+ int xpos,ypos,n=sb->n;
    int xstart,ystart;
 
  XTextProperty winname;
    XSizeHints size_hints;
-   Window base,w;
+   Window base;
    width=(MAX_LEN_EBOX+4)*DCURX;
    height=(n+4)*(DCURY+16);
-   base=make_window(DefaultRootWindow(display),0,0,width,height,4);
+   base=make_plain_window(DefaultRootWindow(display),0,0,width,height,4);
  XStringListToTextProperty(&title,1,&winname);
  size_hints.flags=PPosition|PSize|PMinSize|PMaxSize;
  size_hints.x=0;
@@ -321,7 +307,7 @@ EDIT_BOX *sb;
  }
    
 
-edit_menu()
+void edit_menu()
 {
  Window temp=main_win;
  static char *n[]={"RHS's" ,"Functions","Save as","Load DLL"};
@@ -349,7 +335,7 @@ edit_menu()
  }
 }
 
-edit_rhs()
+void edit_rhs()
 {
  char **names,**values;
  int **command;
@@ -409,7 +395,7 @@ edit_rhs()
  free(command);
 }
 
-user_fun_info(fp)
+void user_fun_info(fp)
      FILE *fp;
 {
   char fundef[256];
@@ -427,11 +413,11 @@ user_fun_info(fp)
   }
 }
     
-edit_functions()
+void edit_functions()
 {
  char **names,**values;
  int **command;
- int i,status,err,len,i0,j;
+ int i,status,err,len,j;
  int n=NFUN;
  char msg[200];
  if(n==0||n>NEQMAXFOREDIT)return;
@@ -472,7 +458,7 @@ edit_functions()
      else {
        strcpy(ufun_def[i],values[i]);
        for(j=0;j<=len;j++){
-         /* printf("f(%d)[%d]=%d %d \n",i,j,command[i][j],ufun[i][j]); */
+         /* plintf("f(%d)[%d]=%d %d \n",i,j,command[i][j],ufun[i][j]); */
          ufun[i][j]=command[i][j];
 	 
        }
@@ -495,7 +481,7 @@ edit_functions()
 
 }
 
-save_as()
+int save_as()
 {
   int i,ok;
   FILE *fp;
@@ -504,9 +490,9 @@ save_as()
   sprintf(filename,"%s",this_file);
   ping();
   /* if(new_string("Filename: ",filename)==0)return; */
-  if(!file_selector("Save As",filename,"*.ode"))return;
+  if(!file_selector("Save As",filename,"*.ode"))return(-1);
   open_write_file(&fp,filename,&ok); 
-   if(!ok)return;
+   if(!ok)return(-1);
   fp=fopen(filename,"w");
   if(fp==NULL)return(0);
   fprintf(fp,"%d",NEQ);
@@ -539,4 +525,6 @@ save_as()
   for(i=0;i<NODE;i++)fprintf(fp,"b %s \n",my_bc[i].string);
   fprintf(fp,"done\n");
   fclose(fp);
+  
+  return(1);
 }

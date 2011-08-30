@@ -12,7 +12,7 @@ int main(int argc, char **argv )
     char buf[256];
     char fname[256];
     if(argc!=5){
-      printf("usage: mkavi nframes fps wid hgt\n");
+     plintf("usage: mkavi nframes fps wid hgt\n");
       return 0;
     }
     nframes=atoi(argv[1]);
@@ -24,7 +24,7 @@ int main(int argc, char **argv )
 
 
     if(mkavi__FiiiiiiPUc(nframes,fps,w,h,0,1,image)==0){
-      printf("sorry - windows must be multiples of 4\n");
+     plintf("sorry - windows must be multiples of 4\n");
       free(image);
       return;
     }

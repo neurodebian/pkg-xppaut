@@ -1,4 +1,17 @@
+#include "flags.h"
+
+#include "cv2.h"
+#include "stiff.h"
+#include "derived.h"
+#include "dormpri.h"
+#include "gear.h"
+#include "ggets.h"
+#include "init_conds.h"
+#include "integrate.h"
+#include "parserslow.h"
+
 #include <stdlib.h> 
+#include <strings.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
@@ -6,6 +19,7 @@
 #include "getvar.h"
 #define MY_DBL_EPS 5e-16
 
+#include "odesol2.h"
 
 /*  this is a new (Summer 1995) addition to XPP that allows one to
     do things like delta functions and other discontinuous
@@ -96,16 +110,16 @@ double STOL=1.e-10;
 extern double variables[];
 extern int NVAR;
 double evaluate(); 
-add_global(cond,sign,rest)
+int add_global(cond,sign,rest)
      char *cond;
      int sign;
      char *rest;
 {
   char temp[256];
-  int nevents,ii,index,k,l,lt,j=NFlags;
+  int nevents,ii,k,l,lt,j=NFlags;
   char ch;
   if(NFlags>=MAXFLAG){
-    printf("Too many global conditions\n");
+    plintf("Too many global conditions\n");
     return(1);
   }
   l=strlen(cond);
@@ -150,7 +164,7 @@ add_global(cond,sign,rest)
     k++;
   }
   if(nevents==0){
-    printf(" No events for condition %s \n",cond);
+    plintf(" No events for condition %s \n",cond);
     return(1);
   }
  /*  we now have the condition, the names, and the formulae */
@@ -160,23 +174,22 @@ add_global(cond,sign,rest)
   return(0);
 }
 
-show_flags()
+void show_flags()
 {
- int i,j,n;
  /* uncomment for debugging */
  /*
  for(i=0;i<NFlags;i++){
    n=flag[i].nevents;
-   printf(" Flag %d has sign %d and %d events and condition %s \n",
+   plintf(" Flag %d has sign %d and %d events and condition %s \n",
 	  i+1,flag[i].sign,n,flag[i].cond);
    for(j=0;j<n;j++)
-     printf("%d:  %s [%d] = %s \n",j+1,flag[i].lhsname[j],flag[i].lhs[j],
+     plintf("%d:  %s [%d] = %s \n",j+1,flag[i].lhsname[j],flag[i].lhs[j],
 	    flag[i].rhs[j]);
  }
  */
 }
    
-compile_flags()
+int compile_flags()
 {
   int j;
   int i,k,index,nc;
@@ -184,7 +197,7 @@ compile_flags()
   if(NFlags==0)return(0);
   for(j=0;j<NFlags;j++){
     if(add_expr(flag[j].cond,command,&nc)){
-      printf("Illegal global condition:  %s\n",flag[j].cond);
+      plintf("Illegal global condition:  %s\n",flag[j].cond);
       return(1);
     }
     flag[j].anypars=0;
@@ -210,7 +223,7 @@ compile_flags()
 	      }
 	  
 	    else {
-	      printf(" <%s> is not a valid variable/parameter name \n",
+	      plintf(" <%s> is not a valid variable/parameter name \n",
 		     flag[j].lhsname[i]);
 	      return(1);
 	    }
@@ -243,11 +256,11 @@ compile_flags()
 
 /*  here is the shell code for a loop around  integration step  */
 
-one_flag_step(yold,ynew,istart,told,tnew,neq,s )
+int one_flag_step(yold,ynew,istart,told,tnew,neq,s )
      double *yold,*ynew,*tnew,*s,told;
      int *istart,neq;
 {
-  double temp,dt=*tnew-told;
+  double dt=*tnew-told;
   double f0,f1,tol,tolmin=1e-10;
   double smin=2;
   int sign,i,j,in,ncycle=0,newhit,nevents;
@@ -264,7 +277,6 @@ one_flag_step(yold,ynew,istart,told,tnew,neq,s )
       SETVAR(i+1,yold[i]);
     SETVAR(0,told);
     for(i=0;i<NFlags;i++)
-      flag[i].f1=evaluate(flag[i].comcond);
     *istart=0;
   
   }
@@ -278,13 +290,13 @@ one_flag_step(yold,ynew,istart,told,tnew,neq,s )
     f1=evaluate(flag[i].comcond);
     flag[i].f1=f1;
     tol=fabs(f1-f0);
-    /* printf(" call1 %g %g %g %g\n",told,f0,f1,smin);  */
+    /* plintf(" call1 %g %g %g %g\n",told,f0,f1,smin);  */
     switch(sign){
     case 1: 
       if((((f0<0.0)&&(f1>0.0))||((f0<0.0)&&(f1>0.0)))&&tol>tolmin){
 	flag[i].hit=ncycle+1;
 	flag[i].tstar=f0/(f0-f1);
-	/* printf(" f0=%g, f1=%g tstar=%g at t=%g\n tol=%g",f0,f1,flag[i].tstar,*tnew,tol);  */ /* COMMENT! */
+	/* plintf(" f0=%g, f1=%g tstar=%g at t=%g\n tol=%g",f0,f1,flag[i].tstar,*tnew,tol);  */ /* COMMENT! */
       }
       break;
     case -1:
@@ -307,7 +319,7 @@ one_flag_step(yold,ynew,istart,told,tnew,neq,s )
     }
     if(smin>flag[i].tstar)smin=flag[i].tstar;
   }
-  /* printf("smin = %g \n",smin); */ /* COMMENT */
+  /* plintf("smin = %g \n",smin); */ /* COMMENT */
  
    if(smin<STOL)smin=STOL;
   else smin=(1+STOL)*smin;  
@@ -324,13 +336,18 @@ one_flag_step(yold,ynew,istart,told,tnew,neq,s )
   while(1){ /* run through all possible events  */
     ncycle++;
     newhit=0;
- /*   printf(" %g %g %g \n",*tnew,ynew[0],ynew[1]); */
+ /*   plintf(" %g %g %g \n",*tnew,ynew[0],ynew[1]); */
     for(i=0;i<NFlags;i++){
       nevents=flag[i].nevents;
-      /* printf(" hit(%d)=%d,ts=%g\n",i,flag[i].hit,flag[i].tstar); */  /* COMMENT */
+      /* plintf(" hit(%d)=%d,ts=%g\n",i,flag[i].hit,flag[i].tstar); */  /* COMMENT */
       if(flag[i].hit==ncycle&&flag[i].tstar<=smin){
-	for(j=0;j<nevents;j++)
-	  flag[i].vrhs[j]=evaluate(flag[i].comrhs[j]); 
+	for(j=0;j<nevents;j++){
+	  flag[i].vrhs[j]=evaluate(flag[i].comrhs[j]);
+	  in=flag[i].lhs[j];
+	  if(flag[i].type[j]==0)
+	        SETVAR(in+1,flag[i].vrhs[j]);
+	 
+	}
       }
     }
     for(i=0;i<NFlags;i++){
@@ -352,7 +369,7 @@ one_flag_step(yold,ynew,istart,told,tnew,neq,s )
 	  }
 	
 	   
-	  /* printf(" increment it ... \n");  */
+	  /* plintf(" increment it ... \n");  */
 	}
 	if(flag[i].anypars){
 	  evaluate_derived();
@@ -360,7 +377,7 @@ one_flag_step(yold,ynew,istart,told,tnew,neq,s )
 	}
       }
     }
-/*    printf(" %g %g %g \n",*tnew,ynew[0],ynew[1]); */
+/*    plintf(" %g %g %g \n",*tnew,ynew[0],ynew[1]); */
     for(i=0;i<neq;i++)
       SETVAR(i+1,ynew[i]);
     for(i=0;i<NFlags;i++){
@@ -370,7 +387,7 @@ one_flag_step(yold,ynew,istart,told,tnew,neq,s )
       sign=flag[i].sign;
       f0=flag[i].f0;
       tol=fabs(f1-f0);
-      /* printf(" call2 flag=%d %g %g -- %g \n",i,f0,f1,smin); */
+      /* plintf(" call2 flag=%d %g %g -- %g \n",i,f0,f1,smin); */
       switch(sign){
       case 1:
 	if(f0<=0.0&&f1>=0.0&&tol>tolmin){
@@ -396,7 +413,7 @@ one_flag_step(yold,ynew,istart,told,tnew,neq,s )
     }
     if(newhit==0)break;
   }
-  /*  printf(" Exit flags \n"); */ /* COMMENT */
+  /*  plintf(" Exit flags \n"); */ /* COMMENT */
  
   *s=smin;
   
@@ -408,7 +425,7 @@ one_flag_step(yold,ynew,istart,told,tnew,neq,s )
     
 /*  here are the ODE drivers */
 
-one_flag_step_symp(y,dt,work,neq,tim,istart)
+int one_flag_step_symp(y,dt,work,neq,tim,istart)
      double dt,*tim;
      double *y,*work;
      int neq,*istart;   
@@ -428,14 +445,16 @@ one_flag_step_symp(y,dt,work,neq,tim,istart)
     nstep++;
     dtt=(1-s)*dt;
     if(nstep>(NFlags+2)){
-      printf(" Working too hard?? ");
-      printf("smin=%g\n",s);
+      plintf(" Working too hard?? ");
+      plintf("smin=%g\n",s);
       break;
     }
   }
+  
+  return(1);
 }
  
-one_flag_step_euler(y,dt,work,neq,tim,istart)
+int one_flag_step_euler(y,dt,work,neq,tim,istart)
      double dt,*tim;
      double *y,*work;
      int neq,*istart;   
@@ -455,14 +474,16 @@ one_flag_step_euler(y,dt,work,neq,tim,istart)
     nstep++;
     dtt=(1-s)*dt;
     if(nstep>(NFlags+2)){
-      printf(" Working too hard?? ");
-      printf("smin=%g\n",s);
+      plintf(" Working too hard?? ");
+      plintf("smin=%g\n",s);
       break;
     }
   }
+  
+  return(1);
 }
     
-one_flag_step_discrete(y,dt,work,neq,tim,istart)
+int one_flag_step_discrete(y,dt,work,neq,tim,istart)
      double dt,*tim;
      double *y,*work;
      int neq,*istart;   
@@ -482,14 +503,15 @@ one_flag_step_discrete(y,dt,work,neq,tim,istart)
     nstep++;
     dtt=(1-s)*dt;
     if(nstep>(NFlags+2)){
-      printf(" Working too hard?? ");
-      printf("smin=%g\n",s);
+      plintf(" Working too hard?? ");
+      plintf("smin=%g\n",s);
       break;
     }
   }
+  return(1);
 }
      
-one_flag_step_heun(y,dt,yval,neq,tim,istart)
+int one_flag_step_heun(y,dt,yval,neq,tim,istart)
      double dt,*tim,*yval[2];
      double *y;
      int neq,*istart;   
@@ -509,14 +531,15 @@ one_flag_step_heun(y,dt,yval,neq,tim,istart)
     nstep++;
     dtt=(1-s)*dt;
     if(nstep>(NFlags+2)){
-      printf(" Working too hard? ");
-      printf(" smin=%g\n",s);
+      plintf(" Working too hard? ");
+      plintf(" smin=%g\n",s);
       break;
     }
   }
+  return(1);
 }
     
-one_flag_step_rk4(y,dt,yval,neq,tim,istart)
+int one_flag_step_rk4(y,dt,yval,neq,tim,istart)
      double dt,*tim;
      double *y,*yval[3];
      int neq,*istart;   
@@ -536,30 +559,31 @@ one_flag_step_rk4(y,dt,yval,neq,tim,istart)
     nstep++;
     dtt=(1-s)*dt;
     if(nstep>(NFlags+2)){
-      printf(" Working too hard?");
-            printf("smin=%g\n",s);
-	    /* printflaginfo(); */
+      plintf(" Working too hard?");
+            plintf("smin=%g\n",s);
+	    /* plintflaginfo(); */
       break;
     }
   }
+  return(1);
 }
 
-printflaginfo()
+void printflaginfo()
 {
   int i;
   for(i=0;i<NFlags;i++){
-    printf(" flag %d: tstart=%g f0=%g f1=%g hit=%d tol=%g\n",
+    plintf(" flag %d: tstart=%g f0=%g f1=%g hit=%d tol=%g\n",
 	   i, flag[i].tstar,flag[i].f0,flag[i].f1,flag[i].hit,fabs(flag[i].f0-flag[i].f1));
   }
 }
     
-one_flag_step_gear(neq,t, tout,y, hmin, 
+int one_flag_step_gear(neq,t, tout,y, hmin, 
 		   hmax,eps,mf,error,kflag,jstart,work,iwork)
      int neq,mf,*kflag,*jstart,*iwork;
      double *t, tout, *y, hmin, hmax, eps,*work,*error;
 {
     double yold[MAXODE],told;
-  int i,hit,jj;
+  int i,hit;
   double s;
   int nstep=0; 
   while(1){
@@ -575,8 +599,8 @@ one_flag_step_gear(neq,t, tout,y, hmin,
     *jstart=0; /* for gear always reset  */
     if(*t==tout)break;
     if(nstep>(NFlags+2)){
-      printf(" Working too hard? ");
-            printf("smin=%g\n",s);
+      plintf(" Working too hard? ");
+            plintf("smin=%g\n",s);
       break;
     }
   }
@@ -584,11 +608,11 @@ one_flag_step_gear(neq,t, tout,y, hmin,
   
 
 }
-one_flag_step_rosen(double *y,double *tstart,double tfinal,
+int one_flag_step_rosen(double *y,double *tstart,double tfinal,
 int *istart,int n,double *work,int *ierr)
 {
    double yold[MAXODE],told;
-  int i,ok,hit,jj;
+  int i,ok,hit;
   double s;
   int nstep=0; 
   while(1){
@@ -604,8 +628,8 @@ int *istart,int n,double *work,int *ierr)
     
     if(*tstart==tfinal)break;
     if(nstep>(NFlags+2)){
-      printf(" Working too hard? ");
-            printf("smin=%g\n",s);
+      plintf(" Working too hard? ");
+            plintf("smin=%g\n",s);
       *ierr=-2;
       return 1;
       break;
@@ -616,12 +640,12 @@ int *istart,int n,double *work,int *ierr)
 
 }
 
-one_flag_step_dp(istart,y,t,n,tout,tol,atol,flag,kflag)
+int one_flag_step_dp(istart,y,t,n,tout,tol,atol,flag,kflag)
    double *y,*t,tout,*tol,*atol;
-     int flag,*istart,*kflag;
+     int flag,*istart,*kflag,n;
 {
    double yold[MAXODE],told;
-  int i,hit,jj;
+  int i,hit;
   double s;
   int nstep=0; 
   while(1){
@@ -637,8 +661,8 @@ one_flag_step_dp(istart,y,t,n,tout,tol,atol,flag,kflag)
     
     if(*t==tout)break;
     if(nstep>(NFlags+2)){
-      printf(" Working too hard? ");
-            printf("smin=%g\n",s);
+      plintf(" Working too hard? ");
+            plintf("smin=%g\n",s);
       return 1;
       break;
     }
@@ -649,7 +673,7 @@ one_flag_step_dp(istart,y,t,n,tout,tol,atol,flag,kflag)
 }
 
 #ifdef CVODE_YES
-one_flag_step_cvode(command,y,t,n,tout,kflag,atol,rtol) 
+int one_flag_step_cvode(command,y,t,n,tout,kflag,atol,rtol) 
 /* command =0 continue, 1 is start 2 finish */
      int *command,*kflag;
      double *y,*atol,*rtol;
@@ -658,7 +682,7 @@ one_flag_step_cvode(command,y,t,n,tout,kflag,atol,rtol)
      int n;
 {
     double yold[MAXODE],told;
-  int i,hit,jj,neq=n;
+  int i,hit,neq=n;
   double s;
   int nstep=0; 
   while(1){
@@ -675,8 +699,8 @@ one_flag_step_cvode(command,y,t,n,tout,kflag,atol,rtol)
     *command=1; /* for cvode always reset  */
     if(*t==tout)break;
     if(nstep>(NFlags+2)){
-      printf(" Working too hard? ");
-            printf("smin=%g\n",s);
+      plintf(" Working too hard? ");
+            plintf("smin=%g\n",s);
       return 1;
     }
   }
@@ -686,12 +710,12 @@ one_flag_step_cvode(command,y,t,n,tout,kflag,atol,rtol)
 }
 
 #endif
-one_flag_step_adap(y,neq,t,tout,eps,hguess,hmin,work,ier,epjac,iflag,jstart)
+int one_flag_step_adap(y,neq,t,tout,eps,hguess,hmin,work,ier,epjac,iflag,jstart)
      double *y,*t,tout,eps,*hguess,hmin,*work,epjac;
      int neq,*ier,iflag,*jstart;
 {
     double yold[MAXODE],told;
-  int i,hit,jj;
+  int i,hit;
   double s;
   int nstep=0; 
   while(1){
@@ -708,8 +732,8 @@ one_flag_step_adap(y,neq,t,tout,eps,hguess,hmin,work,ier,epjac,iflag,jstart)
     
     if(*t==tout)break;
     if(nstep>(NFlags+2)){
-      printf(" Working too hard? ");
-            printf("smin=%g\n",s);
+      plintf(" Working too hard? ");
+            plintf("smin=%g\n",s);
       break;
     }
   }
@@ -718,7 +742,7 @@ one_flag_step_adap(y,neq,t,tout,eps,hguess,hmin,work,ier,epjac,iflag,jstart)
 
 }
 
-one_flag_step_backeul(y,t,dt,neq,yg,yp,yp2,ytemp,errvec,jac,istart)
+int one_flag_step_backeul(y,t,dt,neq,yg,yp,yp2,ytemp,errvec,jac,istart)
      double *y,*t,dt,*yg,*yp,*yp2,*ytemp,*errvec,*jac;
      int neq,*istart;
 {
@@ -738,8 +762,8 @@ one_flag_step_backeul(y,t,dt,neq,yg,yp,yp2,ytemp,errvec,jac,istart)
     nstep++;
     dtt=(1-s)*dt;
     if(nstep>(NFlags+2)){
-      printf(" Working too hard?");
-            printf("smin=%g\n",s);
+      plintf(" Working too hard?");
+            plintf("smin=%g\n",s);
       break;
     }
   }

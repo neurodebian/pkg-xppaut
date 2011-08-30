@@ -1,3 +1,5 @@
+#include "histogram.h"
+
 #include <stdlib.h> 
 #include <stdio.h>
 #include <stdio.h>
@@ -5,25 +7,36 @@
 #include <string.h>
 #include "xpplim.h"
 
+#include "adj2.h"
+#include "browse.h"
+#include "ggets.h"
+
 #include "fftn.h"
+#include "parserslow.h"
 
 double evaluate();
 double ndrand48();
 
-void mycor();
+void mycor(),mycor2();
 float *get_data_col();
 extern int DCURY,MAXSTOR;
 extern char uvar_names[MAXODE][12];
 typedef struct {
-  int nbins,nbins2,type,col,col2;
+  int nbins,nbins2,type,col,col2,fftc;
   double xlo,xhi;
   double ylo,yhi;
   char cond[80];
 } HIST_INFO;
 
-int spec_col=1,spec_wid=256,spec_win=0;
+int spec_col=1,spec_wid=512,spec_win=2,spec_col2=1,spec_type=0;
+/* type =0 for PSD
+   type =1 for crossspectrum
+   type =2 for coherence
+   
 
-HIST_INFO hist_inf = {10,10,0,0,0,0,1,0,1,""};
+*/
+
+HIST_INFO hist_inf = {100,100,0,1,1,0,0,1,0,1,""};
 
 extern int NCON,NSYM,NCON_START,NSYM_START;
 
@@ -34,6 +47,7 @@ float *my_hist[MAXODE+1];
 float *my_four[MAXODE+1];
 int HIST_HERE,FOUR_HERE;
 
+float total_time;
 extern int NEQ,NODE,NMarkov,FIX_VAR;
 
 extern char *no_hint[],*info_message;
@@ -83,7 +97,7 @@ int two_d_hist(int col1,int col2,int ndat,int n1,int n2,double xlo,double xhi,do
   return 0;
 }
 
-four_back()
+void four_back()
 {
  if(FOUR_HERE){
    set_browser_data(my_four,1);
@@ -93,7 +107,7 @@ four_back()
  }
 }
 
-hist_back()
+void hist_back()
 {
  if(HIST_HERE){
    set_browser_data(my_hist,1);
@@ -104,11 +118,12 @@ hist_back()
  }
 }
 
-new_four(nmodes,col)
+void new_four(nmodes,col)
      int nmodes,col;
 {
   int i;
   int length=nmodes+1;
+  float total=storage[0][storind-1]-storage[0][0];
   float *bob;
   if(FOUR_HERE){
    data_back();
@@ -129,7 +144,8 @@ new_four(nmodes,col)
  }
  FOUR_HERE=1;
  for(i=3;i<=NEQ;i++)my_four[i]=storage[i];
- for(i=0;i<length;i++)my_four[0][i]=i;
+for(i=0;i<length;i++)my_four[0][i]=(float)i/total; 
+/* for(i=0;i<length;i++)my_four[0][i]=(float)i; */
  /*  sft(my_browser.data[col],my_four[1],my_four[2],length,storind);
   */
  bob=get_data_col(col);
@@ -138,7 +154,7 @@ new_four(nmodes,col)
   ping();
 }
 
-new_2d_hist()
+int new_2d_hist()
 {
   
   int i,length;
@@ -146,7 +162,7 @@ new_2d_hist()
     err_msg("Need more data and at least 3 columns");
     return 0;
   }
-  if(get_col_info(&hist_inf.col,"Variable 1 ")==0)return;  
+  if(get_col_info(&hist_inf.col,"Variable 1 ")==0)return(-1);  
   new_int("Number of bins ",&hist_inf.nbins);
   new_float("Low ",&hist_inf.xlo);
   new_float("Hi ",&hist_inf.xhi);
@@ -159,7 +175,7 @@ new_2d_hist()
     return(0);
   }
   
-  if(get_col_info(&hist_inf.col2,"Variable 2 ")==0)return;  
+  if(get_col_info(&hist_inf.col2,"Variable 2 ")==0)return(-1);  
   new_int("Number of bins ",&hist_inf.nbins2);
   new_float("Low ",&hist_inf.ylo);
   new_float("Hi ",&hist_inf.yhi);
@@ -194,9 +210,8 @@ if(hist_inf.nbins2<2){
     free(my_hist[0]);
     free(my_hist[1]);
     err_msg("Cannot allocate enough...");
-    return;
+    return(-1);
   }
-
   HIST_HERE=2;
   for(i=3;i<=NEQ;i++)my_hist[i]=storage[i];
   hist_len=length;
@@ -207,17 +222,19 @@ if(hist_inf.nbins2<2){
   hist_back();
 
       ping();
+      
+  return(1);
  
 }
   
-new_hist(nbins,zlo,zhi,col,col2,condition,which)
+void new_hist(nbins,zlo,zhi,col,col2,condition,which)
      int nbins;
      int col,col2,which;
      double zlo,zhi;
      char *condition;
      
 {
-  int i,j,n=2,index;
+  int i,j,index;
   int command[256];
   int cond=0,flag=1;
   double z,y;
@@ -261,7 +278,7 @@ new_hist(nbins,zlo,zhi,col,col2,condition,which)
 	  cond=1;
 	}
       }
-    /* printf(" cond=%d \n condition=%s \n,node=%d\n", 
+    /* plintf(" cond=%d \n condition=%s \n,node=%d\n", 
        cond,condition,NODE);  */
     for(i=0;i<storind;i++)
       {
@@ -302,18 +319,26 @@ new_hist(nbins,zlo,zhi,col,col2,condition,which)
     return;
   }
   if(which==2){
-    mycor(storage[col],storage[col2],storind,zlo,zhi,nbins,my_hist[1],1);
+    /* mycor(storage[col],storage[col2],storind,zlo,zhi,nbins,my_hist[1],1); */
+    mycor2(storage[col],storage[col2],storind,nbins,my_hist[1],1);
     hist_back();
     ping();
     return;
   }
+  if(which==3){
+    fftxcorr(storage[col],storage[col2],storind,(nbins-1)/2,my_hist[1],1);
+    hist_back();
+    ping();
+    return;
+  }
+    
 
 }
 
     
   
 
-column_mean()
+void column_mean()
 {
  int i;
  char bob[100];
@@ -337,7 +362,7 @@ column_mean()
  err_msg(bob);
 }
 
-get_col_info(col,prompt)
+int get_col_info(col,prompt)
  int *col;
  char *prompt;
 {
@@ -355,7 +380,7 @@ get_col_info(col,prompt)
  return(1);
 }
 
-compute_power()
+void compute_power()
 {
   int i;
   double s,c;
@@ -372,12 +397,12 @@ compute_power()
     daty[i]=atan2(s,c);
     ptot+=(datx[i]*datx[i]);
   }
-  printf("a0=%g L2norm= %g \n",datx[0],sqrt(ptot));
+  plintf("a0=%g L2norm= %g  \n",datx[0],sqrt(ptot));
 }
 /* short-term fft 
    first apply a window
    give data, window size, increment size,
-   window type - 0-square, 1-hamming,2-hanning,3-
+   window type - 0-square, 1=par 2=hamming,4-hanning,3- bartlet
    returns a two vectors, real and imaginary
    which have each of the data appended to them
   data is data (not destroyed)
@@ -389,62 +414,186 @@ compute_power()
 */
 
 
-   
-   
-spectrum(float *data,int nr,int win,int w_type,float *pow)
+
+int spectrum(float *data,int nr,int win,int w_type,float *pow)
 {
+  /* assumes 50% overlap */
   int shift=win/2;
- int kwin=(nr-win)/shift;
- int i,j;
- float *ct,*st,*f,*d,x,sum;
+  int kwin=(nr-win+1)/shift;
+ int i,j,kk;
+ float *ct,*st,*f,*d,x,sum,nrmf;
  if(nr<2)return(0);
  if(kwin<1)return(0);
  ct=(float *)malloc(sizeof(float)*win);
  d=(float *)malloc(sizeof(float)*win);
  st=(float *)malloc(sizeof(float)*win);
  f=(float *)malloc(sizeof(float)*win);
- /*  printf("nr=%d,win=%d,type=%d,data[10]=%g,kwin=%d\n",
+ /*  plintf("nr=%d,win=%d,type=%d,data[10]=%g,kwin=%d\n",
      nr,win,w_type,data[10],kwin); */
+ nrmf=0.0;
  for(i=0;i<win;i++){
    x=(float)i/((float)win);
    switch(w_type){
    case 0: f[i]=1; break;
    case 1: f[i]=x*(1-x)*4.0; break;
-   case 2: f[i]=.5*(1-cos(2*M_PI*x));break;
+   case 2: f[i]=.54-.46*cos(2*M_PI*x);break;
+   case 4: f[i]=.5*(1-cos(2*M_PI*x));break;
    case 3: f[i]=1-2*fabs(x-.5);break;
    }
-   /* printf("f[%d]=%g\n",i,f[i]); */
+   nrmf+=(f[i]*f[i]);
+   /* plintf("f[%d]=%g\n",i,f[i]); */
  }
- for(i=0;i<shift;i++)pow[i]=0.0;
+ /* plintf("NRMF = %g\n",log(nrmf)); */
+ for(i=0;i<shift;i++)
+   pow[i]=0.0;
  sum=0;
- for(j=0;j<=kwin;j++){
+
+  
+ for(j=0;j<kwin;j++){
    for(i=0;i<win;i++){
-     d[i]=f[i]*data[i+j*shift];
+     kk=(j*shift+i+nr)%nr;
+     d[i]=f[i]*data[kk];
      /* if(j==kwin)printf("d[%d]=%g\n",i,d[i]); */
    }
    fft(d,ct,st,shift,win);
    for(i=0;i<shift;i++){
-     x=sqrt(ct[i]*ct[i]+st[i]*st[i]);
+     x=ct[i]*ct[i]+st[i]*st[i];
      pow[i]=pow[i]+x;
-     sum+=x;
+     /* sum+=x; */
    }
  }
  for(i=0;i<shift;i++)
-   pow[i]=pow[i]/sum;
+   /*  pow[i]=log(pow[i]/((kwin)*nrmf)); */
+   pow[i]=pow[i]/((kwin)*nrmf);
  free(f);
  free(ct);
  free(st);
  free(d);
  
- 
+ return(1);
 }
 
-compute_sd()
+
+
+/*  here is what we do - I think it is what MatLab does as well 
+
+    psd(x) breaks data into chunks, takes FFT of each chunk, 
+    power of each chunk, and averages this.
+
+   csd(x,y) 
+   break into chunks 
+   compute for each frequency fft(y)*fft(x)^*
+   now average these - note that this will be complex
+   what I call the cross spectrum is |Pxy|
+  the coherence is
+   |Pxy|^2/|Pxx||Pyy|
+
+*/
+
+int cross_spectrum(float *data,float *data2,int nr,int win,int w_type,float *pow,int type)
+{
+  int shift=win/2;
+  int kwin=(nr-win+1)/shift; 
+  /*  int kwin=nr/shift; */
+  int i,j,kk;
+ float *ct,*st,*f,*d,x,sum,nrmwin;
+ float *ct2,*st2,*d2;
+ float *pxx,*pyy;
+ float *pxyr,*pxym;
+ if(nr<2)return(0);
+ if(kwin<1)return(0);
+ ct=(float *)malloc(sizeof(float)*win);
+ d=(float *)malloc(sizeof(float)*win);
+ st=(float *)malloc(sizeof(float)*win);
+ f=(float *)malloc(sizeof(float)*win);
+ ct2=(float *)malloc(sizeof(float)*win);
+ d2=(float *)malloc(sizeof(float)*win);
+ st2=(float *)malloc(sizeof(float)*win);
+  pxx=(float *)malloc(sizeof(float)*win);
+  pyy=(float *)malloc(sizeof(float)*win);
+pxyr=(float *)malloc(sizeof(float)*win);
+pxym=(float *)malloc(sizeof(float)*win);
+ /*  plintf("nr=%d,win=%d,type=%d,data[10]=%g,kwin=%d\n",
+     nr,win,w_type,data[10],kwin); */
+ nrmwin=0.0;
+ for(i=0;i<win;i++){
+   x=(float)i/((float)win);
+   switch(w_type){
+   case 0: f[i]=1; break;
+   case 1: f[i]=x*(1-x)*4.0; break;
+   case 4: f[i]=.5*(1-cos(2*M_PI*x));break;
+   case 2: f[i]=.54-.46*cos(2*M_PI*x);break;
+   case 3: f[i]=1-2*fabs(x-.5);break;
+   }
+   nrmwin+=f[i]*f[i];
+   /* plintf("f[%d]=%g\n",i,f[i]); */
+ }
+ for(i=0;i<shift;i++){
+   pxx[i]=0.0;
+   pyy[i]=0.0;
+   pxyr[i]=0.0;
+   pxym[i]=0.0;
+ }
+   
+ sum=0;
+ for(j=0;j<=kwin;j++){
+   for(i=0;i<win;i++){
+     /* kk=kk=(-shift+j*shift+i+nr)%nr; */
+     kk=(i+j*shift)%nr;
+     d[i]=f[i]*data[kk];
+     d2[i]=f[i]*data2[kk];
+     /* if(j==kwin)printf("d[%d]=%g\n",i,d[i]); */
+   }
+   fft(d,ct,st,shift,win);
+   fft(d2,ct2,st2,shift,win);
+   for(i=0;i<shift;i++){
+     pxyr[i]+=(ct[i]*ct2[i]+st[i]*st2[i]);
+     pxym[i]+=(ct[i]*st2[i]-ct2[i]*st[i]);
+     pxx[i]+=(ct[i]*ct[i]+st[i]*st[i]);
+     pyy[i]+=(ct2[i]*ct2[i]+st2[i]*st2[i]);
+     
+     
+    
+     
+   }
+ }
+ for(i=0;i<shift;i++){
+   pxx[i]=pxx[i]/((kwin)*nrmwin);
+   pyy[i]=pyy[i]/((kwin)*nrmwin);
+   pxyr[i]=pxyr[i]/((kwin)*nrmwin);
+   pxym[i]=pxym[i]/((kwin)*nrmwin);
+   pxyr[i]=pxyr[i]*pxyr[i]+pxym[i]*pxym[i];
+   if(type==1)
+     pow[i]=log(pxyr[i]);
+   else
+     pow[i]=pxyr[i]/(pxx[i]*pyy[i]);
+ }
+ free(f);
+ free(ct);
+ free(st);
+ free(d);
+ free(ct2);
+ free(st2);
+ free(d2);
+ free(pxx);
+ free(pyy);
+ free(pxyr);
+ free(pxym);
+ 
+ return(1);
+}
+
+void compute_sd()
 {
   int length,i,j;
+  float total=storage[0][storind-1]-storage[0][0];
+  new_int("(0) PSDx, (1) PSDxy, (2) COHxy:",&spec_type);
+  
   if(get_col_info(&spec_col,"Variable ")==0)return;
+  if(spec_type>0)
+      if(get_col_info(&spec_col2,"Variable 2 ")==0)return;
   new_int("Window length ",&spec_wid);
-  new_int("0:sqr 1:wel 2:ham 3:par",&spec_win);
+  new_int("0:sqr 1:par 2:ham 3:bart 4:han ",&spec_win);
    if(HIST_HERE){
     data_back();
     free(my_hist[0]);
@@ -464,13 +613,16 @@ compute_sd()
   }
   HIST_HERE=1;
   for(i=2;i<=NEQ;i++)my_hist[i]=storage[i];
-  for(j=0;j<hist_len;j++)my_hist[0][j]=j;
-  spectrum(storage[spec_col],storind,spec_wid,spec_win,my_hist[1]);
+  for(j=0;j<hist_len;j++)my_hist[0][j]=((float)j*storind/spec_wid)/total;
+  if(spec_type==0)
+    spectrum(storage[spec_col],storind,spec_wid,spec_win,my_hist[1]);
+  else
+    cross_spectrum(storage[spec_col],storage[spec_col2],storind,spec_wid,spec_win,my_hist[1],spec_type);
   hist_back();
   ping();
 }
   
-compute_fourier()
+void compute_fourier()
 {
   int nmodes=10,col=0;
   if(NEQ<2){
@@ -487,18 +639,41 @@ compute_fourier()
     new_four(nmodes,col);
 }
  
-compute_correl()
-{
 
+ 
+void compute_correl()
+{
+  int lag;
+  float total=storage[0][storind-1]-storage[0][0],dta;
+  dta=total/(float)(storind-1);
+  /*  new_int("(0) Xcor (1) Xspec (2) Coher ",&flag);
+  if(flag>0){
+    compute_cross(flag-1);
+    return;
+  }
+  */  
+  
   new_int("Number of bins ",&hist_inf.nbins);
-  new_float("Low ",&hist_inf.xlo);
-  new_float("Hi ",&hist_inf.xhi);
+  new_int("(0)Direct or (1) FFT ", &hist_inf.fftc);
+  if(hist_inf.nbins>(storind/2-1))
+    hist_inf.nbins=storind/2-2;
+  
+  hist_inf.nbins=2*(hist_inf.nbins/2)+1;
+  lag=hist_inf.nbins/2;
+  
+ 
+  /* new_float("Low ",&hist_inf.xlo);
+     new_float("Hi ",&hist_inf.xhi); */
+  /* lets try to get the lags correct for plotting */
+  hist_inf.xlo=-lag*dta;
+  hist_inf.xhi=lag*dta;
+  
   if(get_col_info(&hist_inf.col,"Variable 1 ")==0)return;
   if(get_col_info(&hist_inf.col2,"Variable 2 ")==0)return;
   new_hist(hist_inf.nbins,hist_inf.xlo,
-	   hist_inf.xhi,hist_inf.col,hist_inf.col2,hist_inf.cond,2);
+	   hist_inf.xhi,hist_inf.col,hist_inf.col2,hist_inf.cond,2+hist_inf.fftc);
 }
-compute_stacor()
+void compute_stacor()
 {
   new_int("Number of bins ",&hist_inf.nbins);
   new_float("Low ",&hist_inf.xlo);
@@ -539,7 +714,37 @@ void mycor(float *x,float *y, int n,  double zlo, double zhi, int nbins, float *
   }
 }
 
-compute_hist()
+void mycor2(float *x,float *y, int n, int nbins, float *z, int flag)
+{
+  int i,j;
+  int k,count=0,lag=nbins/2;
+  float sum,avx=0.0,avy=0.0;
+  if(flag){
+    for(i=0;i<n;i++){
+      avx+=x[i];
+      avy+=y[i];
+    }
+    avx=avx/(float)n;
+    avy=avy/(float)n;
+  }
+  for(j=0;j<=nbins;j++){
+    sum=0.0;
+    count=0;
+    for(i=0;i<n;i++){
+      k=i+j-lag;
+      k=(k+n)%n;
+      if((k>=0)&&(k<n)){
+	count++;
+	sum+=(x[i]-avx)*(y[k]-avy);
+      }
+    }
+    if(count>0)
+      sum=sum/count; 
+    z[j]=sum;
+  }
+}
+
+void compute_hist()
 {
   
   new_int("Number of bins ",&hist_inf.nbins);
@@ -553,7 +758,7 @@ compute_hist()
   
   
 
-sft(data,ct,st,nmodes,grid)
+void sft(data,ct,st,nmodes,grid)
 int grid,nmodes;
 float *data,*ct,*st;
 {
@@ -581,9 +786,64 @@ float *data,*ct,*st;
    }
  }
 }
+/* experimental -- does it work */
+/* nlag should be less than length/2 */
+void fftxcorr(float *data1,float *data2,int length,int nlag,float *cr,int flag)
+{
+  double *re1,*re2,*im1,*im2,x,y,sum;
+  float av1=0.0,av2=0.0;
+  int dim[2],i,n2;
+  if(flag){
+    for(i=0;i<length;i++){
+      av1+=data1[i];
+      av2+=data2[i];
+    }
+    av1=av1/(float)length;
+    av2=av2/(float)length;
+  }
+  n2=length/2;
+  dim[0]=length;
+    re1=(double *)malloc(length*sizeof(double));
+  im1=(double *)malloc(length*sizeof(double));
+      re2=(double *)malloc(length*sizeof(double));
+  im2=(double *)malloc(length*sizeof(double));
 
+  for(i=0;i<length;i++){
+    im1[i]=0.0;
+    re1[i]=(data1[i]-av1);
+    im2[i]=0.0;
+    re2[i]=(data2[i]-av2);
 
-fft(data,ct,st,nmodes,length)
+  }
+
+   fftn(1,dim,re1,im1,1,-1);
+   fftn(1,dim,re2,im2,1,-1);
+   for(i=0;i<length;i++){
+     x=re1[i]*re2[i]+im1[i]*im2[i];
+     y=im1[i]*re2[i]-im2[i]*re1[i];
+     re1[i]=x;
+     im1[i]=-y;
+   }
+   fftn(1,dim,re1,im1,-1,-1);
+   /* now lets order these
+      I think!  */
+   sum=0.0;
+   for(i=0;i<nlag;i++){
+     sum+=fabs(im1[i]);
+     cr[nlag+i]=(float) re1[i]*length; /* positive part of the correlation */
+   }
+   for(i=0;i<nlag;i++){
+     sum+=fabs(im1[length-nlag+i]);
+     cr[i]=(float) re1[length-nlag+i]*length;}
+   free(re1);
+   free(re2);
+   free(im1);
+   free(im2);
+   plintf("residual = %g\n",sum);  
+   
+}
+
+void fft(data,ct,st,nmodes,length)
      float *data,*ct,*st;
      int nmodes,length;
 {

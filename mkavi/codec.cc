@@ -16,9 +16,13 @@
  */
 
 
-#include <iostream.h>
+/*#include <iostream.h> <- This is now deprecated. Use the following instead*/
+#include <iostream>
 #include <assert.h>
 #include "codec.h"
+
+using namespace std;
+
 extern "C" {
 #include "string.h"
 }
@@ -54,14 +58,14 @@ void codec::done()
 }
 
 rgb24_strf::rgb24_strf(chunkstream *cs, int w, int h)
-  : chunk(cs, "rgb24 strf", 1)
+  : chunk(cs, (char *)"rgb24 strf", 1)
 {
 	this->w = w;
 	this->h = h;
 }
 
 cram16_strf::cram16_strf(chunkstream *cs, int w, int h)
-  : chunk(cs, "cram16 strf", 1)
+  : chunk(cs, (char *)"cram16 strf", 1)
 {
 	this->w = w;
 	this->h = h;
@@ -71,14 +75,14 @@ void rgb24_strf::WRITE()
 {
 	chunkstream *cs = this->cs;
 
-	cs->wr_str("strf");
+	cs->wr_str((char *)"strf");
 	cs->wr32(0);
 	cs->wr32(4+4+4+4+2+2+4+4+4*4);
 	cs->wr32(this->w);
 	cs->wr32(this->h);
 	cs->wr16(1);  // planes
 	cs->wr16(24);  // bitcount
-	cs->wr_str("RGB ");
+	cs->wr_str((char *)"RGB ");
 	cs->wr32(3 * (this->w + (this->w & 1)) * this->h);
 	// x&y pels per metere, hopefully "0" is "I donno"
 	cs->wr32(0);
@@ -91,14 +95,14 @@ void cram16_strf::WRITE()
 {
 	chunkstream *cs = this->cs;
 
-	cs->wr_str("strf");
+	cs->wr_str((char *)"strf");
 	cs->wr32(0);
 	cs->wr32(4+4+4+4+2+2+4+4+4*4);
 	cs->wr32(this->w);
 	cs->wr32(this->h);
 	cs->wr16(1);  // planes
 	cs->wr16(16);  // bitcount
-	cs->wr_str("CRAM");
+	cs->wr_str((char *)"CRAM");
 	// This is the wrong size, but as there isn't a constant size does it
 	// matter??
 	cs->wr32(3 * (this->w + (this->w & 1)) * this->h);
@@ -128,7 +132,7 @@ void rgb24::frame(ppm *p, int framenum)
 	}
 
 	data_chunk *f = new data_chunk(this->cs, 0 != framenum, fname,
-	  "00db", sz, bytes);
+	 (char *) "00db", sz, bytes);
 	f->write();
 	delete []bytes;
 }
@@ -242,7 +246,7 @@ void cram16::frame(ppm *p, int framenum)
 				int c16 = 0x8000 | this->c24toc16(c);
 				int code_msb = c16 >> 8;
 
-				if (code_msb >= 0x88 || code_msb >= 0x80 && code_msb <= 0x83) {
+				if (code_msb >= 0x88 || (code_msb >= 0x80 && code_msb <= 0x83)) {
 					pixel_bits = c16;
 				} else {
 					// 1 color block using 2 color call
@@ -276,7 +280,7 @@ void cram16::frame(ppm *p, int framenum)
 	  << bc0 << endl;
 	//	cerr << "alloc bytes1 address is " <<  (unsigned int)&bytes[0] << endl;
 	data_chunk *f = new data_chunk(this->cs, 0 != framenum, fname,
-	  "00dc", bp - bytes, bytes);
+	  (char *)"00dc", bp - bytes, bytes);
 	f->write();
 	//     cerr << "dealloc = " << dealloc << endl;
 	//      cerr << "alloc bytes2 address is " <<  (unsigned int)&bytes[0] << endl;
@@ -359,7 +363,7 @@ int cram16::csize(unsigned char *c)
 		}
 	} else if (*c >= 0x84 && *c <= 0x87) {
 		// assert(NULL == "Block skip?");
-	} else if (*c >= 0x88 || *c >= 0x80 && *c <= 0x83) {
+	} else if (*c >= 0x88 || (*c >= 0x80 && *c <= 0x83)) {
 		// Single color cell
 		return 2;
 	} else {

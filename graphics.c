@@ -1,3 +1,6 @@
+#include "graphics.h"
+#include "my_ps.h"
+
 #include <stdlib.h> 
 #include <math.h>
 #include <stdio.h>
@@ -5,6 +8,9 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include "struct.h"
+#include "color.h"
+#include "graf_par.h"
+#include "calc.h"
 
 
 
@@ -87,7 +93,7 @@ int DLeft,DRight,DTop,DBottom,VTic,HTic,VChar,HChar,XDMax,YDMax;
 double XMin,YMin,XMax,YMax;
 int LineType=0,PointType=-1,TextJustify,TextAngle;
 
-get_scale(x1,y1,x2,y2)
+void get_scale(x1,y1,x2,y2)
 double *x1,*y1,*x2,*y2;
 {
   *x1=XMin;
@@ -95,7 +101,8 @@ double *x1,*y1,*x2,*y2;
   *x2=XMax;
   *y2=YMax;
 }
-set_scale(x1,y1,x2,y2)
+
+void set_scale(x1,y1,x2,y2)
      double x1,y1,x2,y2;
 {
   XMin=x1;
@@ -107,13 +114,13 @@ set_scale(x1,y1,x2,y2)
 
 
 
-get_draw_area()
+void get_draw_area()
 {
   int x,y;
   unsigned int w,h,bw,de;
   Window root;
   XGetGeometry(display,draw_win,&root,&x,&y,&w,&h,&bw,&de);
-  /* printf(" geom:+%d+%d:%dx%d\n",x,y,w,h); */
+  /* plintf(" geom:+%d+%d:%dx%d\n",x,y,w,h); */
   XDMax=w;
   YDMax=h;
   VTic=max(h/100,1);
@@ -135,7 +142,9 @@ get_draw_area()
  MyGraph->y0=DTop;
  set_normal_scale();
 }
-change_current_linestyle(new,old)
+
+
+void change_current_linestyle(new,old)
      int new,*old;
 {
  *old=MyGraph->color[0];
@@ -143,43 +152,45 @@ change_current_linestyle(new,old)
 }
      
 
-set_normal_scale()
+void set_normal_scale()
 {
 XMin=MyGraph->xlo;
  YMin=MyGraph->ylo;
  XMax=MyGraph->xhi;
  YMax=MyGraph->yhi;
 }
-point(x,y)
+
+void point(x,y)
      int x,y;
 {
   if(PSFlag)ps_point(x,y);
   else point_x11(x,y);
 }
 
-line(x1,y1,x2,y2)
+void line(x1,y1,x2,y2)
      int x1,y1,x2,y2;
 {
-  /* printf("l %d %d %d %d \n",x1,y1,x2,y2); */
+  /* plintf("l %d %d %d %d \n",x1,y1,x2,y2); */
   if(PSFlag)ps_line(x1,y1,x2,y2);
   else line_x11(x1,y1,x2,y2);
 }
 /* draw a little filled circle */
-bead(x1,y1)
+
+void bead(x1,y1)
      int x1,y1;
 {
  if(PSFlag)ps_bead(x1,y1);
  else bead_x11(x1,y1);
 }
 
-frect(x1,y1,w,h)
+void frect(x1,y1,w,h)
      int  x1,y1,w,h;
 {
   if(PSFlag)ps_frect(x1,y1,w,h);
   else rect_x11(x1,y1,w,h);
 }
 
-put_text(x,y,str)
+void put_text(x,y,str)
      int x,y;
      char *str;
 {
@@ -188,12 +199,12 @@ put_text(x,y,str)
 }
 
 
-init_x11()
+void init_x11()
 {
  get_draw_area();
 }
 
-init_ps()
+void init_ps()
 {
   if(!PS_Port){
  XDMax=7200;
@@ -226,7 +237,7 @@ init_ps()
 }
 
 
-point_x11(xp,yp)
+void point_x11(xp,yp)
      int xp,yp;
 {
   int r=PointRadius;
@@ -235,18 +246,18 @@ point_x11(xp,yp)
   if(PointRadius==0)
     XDrawPoint(display,draw_win,gc_graph,xp,yp);
   else
-    XDrawArc(display,draw_win,gc_graph,xp-r2,yp-r2,wh, wh, 0, 360*64);
+    XFillArc(display,draw_win,gc_graph,xp-r2,yp-r2,wh, wh, 0, 360*64);
     
 }
 
-set_linestyle(ls)
+void set_linestyle(ls)
      int ls;
 {
   if(PSFlag)ps_linetype(ls);
   else set_line_style_x11(ls);
 }
 
-set_line_style_x11(ls)
+void set_line_style_x11(ls)
      int ls;
 {
   int width=0,type;
@@ -280,24 +291,25 @@ set_line_style_x11(ls)
   set_color(colorline[ls]);
 }
     
-bead_x11(x,y)
+void bead_x11(x,y)
      int x,y;
 {
  XFillArc(display,draw_win,gc_graph,x-2,y-2,4,4,0,360*64);
 }
-rect_x11(x,y,w,h)
+
+void rect_x11(x,y,w,h)
      int x,y,w,h;
 {
  XFillRectangle(display,draw_win,gc_graph,x,y,w,h);
 }
 
-line_x11(xp1,yp1,xp2,yp2)
+void line_x11(xp1,yp1,xp2,yp2)
      int xp1,yp1,xp2,yp2;
 {
   XDrawLine(display,draw_win,gc_graph,xp1,yp1,xp2,yp2);
 }
 
-put_text_x11(x,y,str)
+void put_text_x11(x,y,str)
      int x,y;
      char *str;
 {
@@ -313,14 +325,14 @@ put_text_x11(x,y,str)
 }
 
   
-special_put_text_x11(x,y,str,size)
+void special_put_text_x11(x,y,str,size)
      int x,y,size;
      char *str;
 {
   int i=0,j=0;
   int cx=x,cy=y;
   int cf=0,cs;
-  int n=strlen(str),dx;
+  int n=strlen(str),dx=0;
   char tmp[256],c;
   int sub,sup;
   cs=size;
@@ -397,7 +409,7 @@ special_put_text_x11(x,y,str,size)
       
       
     
-fancy_put_text_x11(x,y,str,size,font)
+void fancy_put_text_x11(x,y,str,size,font)
      int x,y,size,font;
      char *str;
 {
@@ -435,7 +447,7 @@ fancy_put_text_x11(x,y,str,size,font)
   }
 }
 
-scale_dxdy(x,y,i,j)
+void scale_dxdy(x,y,i,j)
      float x,y;
      double *i,*j;
 {
@@ -445,7 +457,7 @@ scale_dxdy(x,y,i,j)
   *j=y*dy;
 }  
      
-scale_to_screen(x,y,i,j)  /* not really the screen!  */
+void scale_to_screen(x,y,i,j)  /* not really the screen!  */
      float x,y;
      int *i,*j;
 {
@@ -455,7 +467,7 @@ scale_to_screen(x,y,i,j)  /* not really the screen!  */
   *j=(int)((y-YMin)*dy)+DBottom;
 }
 
-scale_to_real(i,j,x,y) /* Not needed except for X */
+void scale_to_real(i,j,x,y) /* Not needed except for X */
  float *x,*y;
  int i,j;
  {
@@ -474,9 +486,9 @@ scale_to_real(i,j,x,y) /* Not needed except for X */
 
 
 
-init_all_graph()
+void init_all_graph()
 {
- int i,j,k;
+ int i;
  for(i=0;i<MAXPOP;i++)
  init_graph(i);
  MyGraph=&graph[0];
@@ -486,7 +498,7 @@ init_all_graph()
  
 }
 
-set_extra_graphs()
+void set_extra_graphs()
 {
   int i;
   if(NPltV<2)return;
@@ -501,7 +513,8 @@ set_extra_graphs()
     MyGraph->color[i]=i;
   }
 }
-reset_graph()
+
+void reset_graph()
 {
   if(AXES>=5)
     PLOT_3D=1;
@@ -531,7 +544,9 @@ reset_graph()
     set_normal_scale();
     redraw_the_graph();
 }
-get_graph()
+
+
+void get_graph()
 {
  x_3d[0]=MyGraph->xmin;
  x_3d[1]=MyGraph->xmax;
@@ -554,7 +569,7 @@ else
 AXES=MyGraph->grtype;  
 }
 
-init_graph(i)
+void init_graph(i)
 int i;
 {
  int j,k;
@@ -572,9 +587,14 @@ int i;
 	graph[i].color[j]=0;
         }
      
-    sprintf(graph[i].xlabel,"");
+    /*sprintf(graph[i].xlabel,"");
     sprintf(graph[i].ylabel,"");
     sprintf(graph[i].zlabel,"");
+    */
+    graph[i].xlabel[0]='\0';
+    graph[i].ylabel[0]='\0';
+    graph[i].zlabel[0]='\0';
+    
     graph[i].Use=0;
     graph[i].Restore=1;
     graph[i].Nullrestore=0;
@@ -626,7 +646,7 @@ int i;
 
 
 
-copy_graph(i,l)  /*  Graph[i]=Graph[l]  */
+void copy_graph(i,l)  /*  Graph[i]=Graph[l]  */
 int i,l;
 {
  int j,k;
@@ -686,7 +706,7 @@ int i,l;
 
 
 
-make_rot(theta,phi)
+void make_rot(theta,phi)
 double theta,phi;
 {
  double ct=cos(DEGTORAD*theta),st=sin(DEGTORAD*theta);
@@ -704,7 +724,7 @@ double theta,phi;
  MyGraph->rm[2][2]=cp;
 }
 
-scale3d(x,y,z,xp,yp,zp)
+void scale3d(x,y,z,xp,yp,zp)
 float x,y,z,*xp,*yp,*zp;
 {
  *xp=(x-MyGraph->xbar)*MyGraph->dx;
@@ -741,7 +761,7 @@ double proj3d(double theta,double phi,double x,double y,double z,int in)
  return vnew[in];
 }
 
-threedproj(x2p,y2p,z2p,xp,yp)
+int threedproj(x2p,y2p,z2p,xp,yp)
 float x2p,y2p,z2p,*xp,*yp;
 {
   float x1p,y1p,z1p,s;
@@ -763,7 +783,7 @@ float x2p,y2p,z2p,*xp,*yp;
 }
 
 
-text3d(x,y,z,s)    
+void text3d(x,y,z,s)    
 float x,y,z;
 char *s;
 {
@@ -774,7 +794,7 @@ if(threedproj(x,y,z,&xp,&yp)) text_abs(xp,yp,s);
 
 
 
-text_3d(x,y,z,s)    
+void text_3d(x,y,z,s)    
 float x,y,z;
 char *s;
 {
@@ -783,7 +803,7 @@ if(threed_proj(x,y,z,&xp,&yp)) text_abs(xp,yp,s);
 }
 
 
-threed_proj(x,y,z,xp,yp)
+int threed_proj(x,y,z,xp,yp)
 float x,y,z,*xp,*yp;
 {
   float x1p,y1p,z1p,s;
@@ -806,14 +826,14 @@ float x,y,z,*xp,*yp;
   return(1);
 }
 
-point_3d( x, y, z)
+void point_3d( x, y, z)
 float x,y,z;
 {
  float xp,yp;
  if(threed_proj(x,y,z,&xp,&yp))point_abs(xp,yp);
 }
 
-line3dn(xs1,ys1,zs1,xsp1,ysp1,zsp1)  /* unscaled version  unclipped   */
+void line3dn(xs1,ys1,zs1,xsp1,ysp1,zsp1)  /* unscaled version  unclipped   */
 float xs1,ys1,zs1,xsp1,ysp1,zsp1;
 {
  float xs,ys,zs;
@@ -828,7 +848,7 @@ float xs1,ys1,zs1,xsp1,ysp1,zsp1;
 
 
 
-line3d(x01,y01,z01,x02,y02,z02)  /* unscaled version     */
+void line3d(x01,y01,z01,x02,y02,z02)  /* unscaled version     */
 float x01,x02,y01,y02,z01,z02;
 {
  float xs,ys,zs;
@@ -846,7 +866,7 @@ if(!clip3d(x01,y01,z01,x02,y02,z02,&xs1,&ys1,&zs1,&xsp1,&ysp1,&zsp1))return;
 
 
 
-line_3d(x,y,z,xp,yp,zp)
+void line_3d(x,y,z,xp,yp,zp)
 float x,y,z;
 float xp,yp,zp;
 {
@@ -865,7 +885,7 @@ float xs1,ys1,zs1;
      line_abs(xs,ys,xsp,ysp);
  }
 
- pers_line(x,y,z,xp,yp,zp)
+void pers_line(x,y,z,xp,yp,zp)
  float x,y,z,xp,yp,zp;
 
  {
@@ -915,7 +935,7 @@ float xs1,ys1,zs1;
 
 
 
-rot_3dvec( x,y, z,
+void rot_3dvec( x,y, z,
             xp,yp,zp)
 float x,y,z,*xp,*yp,*zp;
 {
@@ -942,7 +962,7 @@ float x,y,z,*xp,*yp,*zp;
 
 
 
-point_abs(x1, y1)
+void point_abs(x1, y1)
 float x1,y1;
 {
   int xp,yp;
@@ -956,7 +976,7 @@ float x1,y1;
   point(xp,yp);
 }
 
-line_nabs(x1_out, y1_out, x2_out, y2_out)
+void line_nabs(x1_out, y1_out, x2_out, y2_out)
 float x1_out,y1_out,x2_out,y2_out;
 {
   
@@ -970,7 +990,7 @@ float x1_out,y1_out,x2_out,y2_out;
     line(xp1,yp1,xp2,yp2);
   }
 
-bead_abs(x1,y1)
+void bead_abs(x1,y1)
      float x1,y1;
 {
   int i1,j1;
@@ -983,7 +1003,7 @@ bead_abs(x1,y1)
   bead(i1,j1);
 }
 
-frect_abs(x1,y1,w,h)
+void frect_abs(x1,y1,w,h)
      float x1,y1,w,h;
 {
  int i1,i2,j1,j2;
@@ -997,7 +1017,7 @@ frect_abs(x1,y1,w,h)
  frect(i1,j1,iw+1,ih+1);
 }
 
-line_abs(x1, y1, x2, y2)
+void line_abs(x1, y1, x2, y2)
 float x1,x2,y1,y2;
 {
   float x1_out,y1_out,x2_out,y2_out;
@@ -1012,7 +1032,7 @@ float x1,x2,y1,y2;
   }
 }
 
-text_abs(x,y,text)
+void text_abs(x,y,text)
 float x,y;
 char *text;
 {
@@ -1021,7 +1041,7 @@ char *text;
  put_text(xp,yp,text);
 }
 
-fillintext(char *old,char *new)
+void fillintext(char *old,char *new)
 {
  int i,l=strlen(old);
  int j,m,k,ans;
@@ -1085,7 +1105,7 @@ fillintext(char *old,char *new)
  return;
 }
 
-fancy_text_abs(x,y,old,size,font)
+void fancy_text_abs(x,y,old,size,font)
      float x,y;
      int size,font;
      char *old;
@@ -1104,7 +1124,7 @@ fancy_text_abs(x,y,old,size,font)
 
 
 
-clip3d( x1, y1, z1, x2, y2, z2,
+int clip3d( x1, y1, z1, x2, y2, z2,
           x1p, y1p, z1p, x2p, y2p, z2p)
 float x1, y1, z1, x2, y2, z2,
          *x1p, *y1p,*z1p,*x2p, *y2p, *z2p;
@@ -1231,7 +1251,7 @@ C4:
 }
 
 
-clip(x1,x2,y1, y2,
+int clip(x1,x2,y1, y2,
 x1_out,y1_out,x2_out,y2_out)
 float x1,y1,x2,y2,*x1_out,*y1_out,*x2_out,*y2_out;
 
@@ -1317,14 +1337,16 @@ C4:
 
 
 
-eq_symb(x,type)
+void eq_symb(x,type)
 double *x;
  int type;
 {
+
   float dx=6.0*(float)(MyGraph->xhi-MyGraph->xlo)*SYMSIZE;
   float dy=6.0*(float)(MyGraph->yhi-MyGraph->ylo)*SYMSIZE;
  int ix=MyGraph->xv[0]-1,iy=MyGraph->yv[0]-1,iz=MyGraph->zv[0]-1;
   if(MyGraph->TimeFlag)return;
+  set_color(0); 
   if(MyGraph->ThreeDFlag)
   {
    dx=6.0*SYMSIZE/MyGraph->dx;
@@ -1337,9 +1359,10 @@ double *x;
   }
   draw_symbol((float)x[ix],(float)x[iy],SYMSIZE,type);
   point_abs((float)x[ix],(float)x[iy]);
+ 
 }
 
-draw_symbol( x, y, size,my_symb)
+void draw_symbol( x, y, size,my_symb)
 float x,y,size;
 int my_symb;
 {
@@ -1347,28 +1370,28 @@ int my_symb;
  float dy=(float)(MyGraph->yhi-MyGraph->ylo)*size;
  static int sym_dir[4][48] = {
  /*          box              */
-    0, -6, -6,1, 12,  0,1,  0, 12,1,-12,  0,
+    {0, -6, -6,1, 12,  0,1,  0, 12,1,-12,  0,
     1,  0,-12,3,  0,  0,3,  0,  0,3,  0,  0,
     3,  0,  0,3,  0,  0,3,  0,  0,3,  0,  0,
-    3,  0,  0,3,  0,  0,3,  0,  0,3,  0,  0,
+    3,  0,  0,3,  0,  0,3,  0,  0,3,  0,  0},
 
  /*          triangle         */
-    0, -6, -6,1, 12,  0,1, -6, 12,1, -6,-12,
+    {0, -6, -6,1, 12,  0,1, -6, 12,1, -6,-12,
     3,  0,  0,3,  0,  0,3,  0,  0,3,  0,  0,
     3,  0,  0,3,  0,  0,3,  0,  0,3,  0,  0,
-    3,  0,  0,3,  0,  0,3,  0,  0,3,  0,  0,
+    3,  0,  0,3,  0,  0,3,  0,  0,3,  0,  0},
 
  /*          cross            */
-    0, -6,  0,1, 12,  0,0, -6, -6,1,  0, 12,
+    {0, -6,  0,1, 12,  0,0, -6, -6,1,  0, 12,
     3,  0,  0,3,  0,  0,3,  0,  0,3,  0,  0,
     3,  0,  0,3,  0,  0,3,  0,  0,3,  0,  0,
-    3,  0,  0,3,  0,  0,3,  0,  0,3,  0,  0,
+    3,  0,  0,3,  0,  0,3,  0,  0,3,  0,  0},
 
  /*          circle           */
-    0,  6,  0,1, -1,  3,1, -2,  2,1, -3,  1,
+    {0,  6,  0,1, -1,  3,1, -2,  2,1, -3,  1,
     1, -3, -1,1, -2, -2,1, -1, -3,1,  1, -3,
     1,  2, -2,1,  3, -1,1,  3,  1,1,  2,  2,
-    1,  1,  3,3,  0,  0,3,  0,  0,3,  0,  0,
+    1,  1,  3,3,  0,  0,3,  0,  0,3,  0,  0},
     };
   int ind=0,pen=0;
   float x1=x,y1=y,x2,y2;

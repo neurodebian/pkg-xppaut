@@ -1,7 +1,10 @@
+#include "ggets.h"
+
 #include <stdlib.h> 
 #include <stdio.h>
 #include <string.h>
 #include <X11/Xlib.h>
+#include <X11/XKBlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
 #include <X11/keysymdef.h>
@@ -9,6 +12,15 @@
 #include "struct.h"
 #include "newhome.h"
 #include "mykeydef.h"
+#include <stdarg.h>
+#include "graphics.h" 
+#include "axes2.h"
+#include "many_pops.h"
+#include "menudrive.h"
+#include "pop_list.h"
+#include "calc.h"
+
+
 
 #define ESCAPE 27
 char *info_message;
@@ -32,21 +44,34 @@ extern Window win,command_pop,info_pop,draw_win,main_win;
 extern GC gc,gc_graph;
 extern unsigned int MyBackColor,MyForeColor;
 int xor_flag;
-
-ping() 
+extern FILE *logfile;
+extern int XPPVERBOSE;
+ 
+void ping() 
 {
-  
-  if(tfBell&&!XPPBatch)
+  	if(tfBell&&!XPPBatch)
+  	{
+		/*
+		XkbBell allows window managers to react 
+		to bell events using possibly user-specified
+		accessiblity options (e.g. visual bell)
+		*/
+		
+  		XkbBell(display,command_pop,100,(Atom)NULL); 
+ 	}
+ /* Call to XBell seems to be ignored by many window managers where XkbBell is not. 
+ if(tfBell&&!XPPBatch)
   XBell(display,100);
+*/
 }
-reset_graphics()
+void reset_graphics()
 {
    blank_screen(draw_win);
    do_axes();
    hi_lite(draw_win);
 }
 
-blank_screen(w)
+void blank_screen(w)
 Window w;
 
 {
@@ -57,17 +82,17 @@ Window w;
  XClearWindow(display,w);
 }
 
- set_fore()
+void  set_fore()
  {
   XSetForeground(display,gc,MyForeColor);
  }
 
- set_back()
+void  set_back()
  {
   XSetForeground(display,gc,MyBackColor);
  }
 
-showchar(ch,col,row,or)
+void showchar(ch,col,row,or)
 int col,row;
 Window or;
 char ch;
@@ -79,7 +104,7 @@ char ch;
 
 }
 
-chk_xor()
+void chk_xor()
  {
   if(xor_flag==1)
   XSetFunction(display,gc,GXxor);
@@ -98,18 +123,19 @@ chk_xor()
 
 
   
- set_gcurs( y,  x)
+void set_gcurs( y,  x)
 int y,x;
 {
  CURS_X=x;
  CURS_Y=y;
 }
 
-clr_command()
+void clr_command()
 {
  blank_screen(command_pop);
 }
-draw_info_pop(win)
+
+void draw_info_pop(win)
      Window win;
 {
    if(win==info_pop)
@@ -120,7 +146,8 @@ draw_info_pop(win)
 		  strlen(info_message));
     }
 }
-bottom_msg(line,msg)
+
+void bottom_msg(line,msg)
 int line;
 char *msg;
 {
@@ -135,7 +162,7 @@ clr_menbar()
   blank_screen(menu_pop);
  }
 */
-gputs(string,win)
+void gputs(string,win)
 char *string;
 Window win;
 {
@@ -145,15 +172,39 @@ int xloc=CURS_X*DCURX,yloc=CURS_Y*DCURY;
 
 }
 
-
-err_msg(string)
+void err_msg(string)
 char *string;
 {
  if(Xup) respond_box("OK",string);
- else { printf("%s\n",string);}
+ else {plintf("%s\n",string);}
+ 
 }
 
-show_position(ev,com)
+int plintf(char *fmt,...)
+{
+	int nchar=0;
+	va_list arglist;
+	
+	if (!XPPVERBOSE) return(nchar);/*Don't print at all!*/
+	
+	if (logfile == NULL)
+	{
+		printf("The log file is NULL!\n");
+		logfile = stdout;	
+	}
+	
+	va_start(arglist,fmt);
+	nchar=vfprintf(logfile,fmt,arglist);
+	va_end(arglist);
+	/*Makes sense to flush to the output file to 
+	prevent loss of log info if program crashes.
+	Then maybe user can figure out what happened and when.*/
+	fflush(logfile);
+	
+	return(nchar);
+}
+ 
+int show_position(ev,com)
 XEvent ev;
 int *com;
 {
@@ -181,7 +232,7 @@ int *com;
  
 }
 
-gpos_prn(string,row,col)
+void gpos_prn(string,row,col)
 int row,col;
 char *string;
 {
@@ -192,7 +243,7 @@ char *string;
 
 
 
-put_command(string)
+void put_command(string)
 char *string;
 {
   clr_command();
@@ -201,7 +252,7 @@ char *string;
 }
 
 
-get_key_press(ev)
+int get_key_press(ev)
     XEvent *ev;
     {
      int maxlen=64;
@@ -210,9 +261,9 @@ get_key_press(ev)
        KeySym ks;
 
        XLookupString((XKeyEvent *)ev,buf,maxlen,&ks,&comp);
-       /*  printf(" ks=%d buf[0]=%d char=%c \n",ks,(int)buf[0],buf[0]); */
-	
-   /*     printf("h=%d e=%d ks=%d \n",XK_Home,XK_End,ks); */
+       /*printf(" ks=%d buf[0]=%d char=%c \n",ks,(int)buf[0],buf[0]); 
+	*/
+   /*    plintf("h=%d e=%d ks=%d \n",XK_Home,XK_End,ks); */
 	if(ks==XK_Escape)return(ESC);
 	if((ks==XK_Return)||(ks==XK_KP_Enter)||
  		(ks==XK_Linefeed))return(FINE);
@@ -245,7 +296,7 @@ get_key_press(ev)
     
 
 
- cput_text()
+void cput_text()
  {
   char string[256],new[256];
   int x,y,size=2,font=0;
@@ -287,7 +338,7 @@ get_key_press(ev)
  }
 */
 
- get_mouse_xy(x,y,w)
+int get_mouse_xy(x,y,w)
  Window w;
  int *x,*y;
  {
@@ -323,7 +374,7 @@ get_key_press(ev)
                
      
 
-Ftext(x,y,string,o)
+void Ftext(x,y,string,o)
 int x,y;
  Window o;
 char *string;
@@ -335,7 +386,7 @@ char *string;
 
 
 
-bar(x,y,x2,y2,w)
+void bar(x,y,x2,y2,w)
 int x,y,x2,y2;
 Window w;
 {
@@ -343,7 +394,7 @@ Window w;
 }
 
 
-rectangle(x,y,x2,y2,w)
+void rectangle(x,y,x2,y2,w)
 int x,y,x2,y2;
 Window w;
 {
@@ -360,7 +411,7 @@ getuch()
 }
 
 */
-setfillstyle(type,color)
+void setfillstyle(type,color)
 int type,color;
 {
   if(type>-1)XSetFillStyle(display,gc,FillSolid);
@@ -368,7 +419,7 @@ int type,color;
   else XSetForeground(display,gc,MyBackColor);
 }
 
-circle( x,y,radius,w)
+void circle( x,y,radius,w)
 int x,y,radius;
 Window w;
 {
@@ -376,14 +427,14 @@ Window w;
 }
 
 
-xline(x0,y0,x1,y1,w)
+void xline(x0,y0,x1,y1,w)
 int x0,y0,x1,y1;
 Window w;
 {
   XDrawLine(display,w,gc_graph, x0,y0,x1,y1);
 }
 
-new_float(name,value)
+int new_float(name,value)
 char *name;
 double *value;
  {  int done;
@@ -418,7 +469,7 @@ double *v;
  
  */
 
- new_int(name,value)
+ int new_int(name,value)
  char *name;
  int *value;
  {
@@ -432,7 +483,7 @@ double *v;
    
 
 
-display_command(name,value,pos,col)
+void display_command(name,value,pos,col)
 char *name,*value;
 int pos,col;
 {
@@ -451,14 +502,14 @@ int pos,col;
  }
 }
 
-clr_line_at(w,col0,pos,n)
+void clr_line_at(w,col0,pos,n)
      Window w;
      int col0,pos,n;
 {
   XClearArea(display,w,col0+pos*DCURX,0,(n+2)*DCURX,2*DCURY,False);
 }
 
-put_cursor_at(w,col0,pos)
+void put_cursor_at(w,col0,pos)
      Window w;
      int pos,col0;
 {
@@ -470,7 +521,7 @@ put_cursor_at(w,col0,pos)
   XDrawLine(display,w,gc,x2,y1,x2,y2);
  }
 
-put_string_at(w,col,s,off)
+void put_string_at(w,col,s,off)
      Window w;
      char *s;
      int off,col;
@@ -480,7 +531,7 @@ put_string_at(w,col,s,off)
  XDrawString(display,w,gc,col,CURY_OFF,s+off,l);
 }
               
-movmem(s1,s2,len)
+void movmem(s1,s2,len)
      char *s1,*s2;
      int len;
 {
@@ -489,7 +540,7 @@ movmem(s1,s2,len)
     s1[i]=s2[i];
 }
 
-memmov(s1,s2,len)
+void memmov(s1,s2,len)
      char *s1,*s2;
      int len;
 {
@@ -498,7 +549,7 @@ memmov(s1,s2,len)
     s1[i]=s2[i];
 }
 
-edit_window(w,pos,value,col,done,ch)
+void edit_window(w,pos,value,col,done,ch)
  Window w;
  int *pos,*col,*done;
  char *value;
@@ -507,7 +558,7 @@ edit_window(w,pos,value,col,done,ch)
    int col0=*col-*pos*DCURX;
         
    *done=0;
-  /*  printf(" po=%d cl=%d ch=%d ||%s|| c0=%d\n",*pos,*col,ch,value,col0); */
+  /* plintf(" po=%d cl=%d ch=%d ||%s|| c0=%d\n",*pos,*col,ch,value,col0); */
    switch(ch){
    case LEFT: 
      if(*pos>0){ *pos=*pos-1; *col-=DCURX;}
@@ -569,7 +620,7 @@ edit_window(w,pos,value,col,done,ch)
    clr_line_at(w,col0,0,strlen(value));
    put_string_at(w,col0,value,0);
    put_cursor_at(w,col0,*pos);
-/*   printf(" on ret %d %d %d %s %d\n",*pos,*col,ch,value,col0);*/
+/*  plintf(" on ret %d %d %d %s %d\n",*pos,*col,ch,value,col0);*/
    
    XFlush(display);
    
@@ -578,7 +629,7 @@ edit_window(w,pos,value,col,done,ch)
 
  
 
- do_backspace(pos,value,col,w)
+void do_backspace(pos,value,col,w)
  int *pos,*col;
  char *value;
  Window w;
@@ -596,7 +647,7 @@ edit_window(w,pos,value,col,done,ch)
 				showchar('_',*col,0,w);
 }
 
- edit_command_string(ev,name,value,done,pos,col)
+void edit_command_string(ev,name,value,done,pos,col)
  XEvent ev;
  char *name,*value;
  int *done,*pos,*col;
@@ -625,7 +676,7 @@ edit_window(w,pos,value,col,done,ch)
   }
 
 
-new_string(name,value)
+int new_string(name,value)
 char *name;
 char *value;
 {

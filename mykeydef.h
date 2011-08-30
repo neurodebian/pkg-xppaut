@@ -1,3 +1,6 @@
+#ifndef _mykeydef_h_
+#define _mykeydef_h_
+
 #define RIGHT 6
 #define LEFT 2
 #define UP 16
@@ -15,4 +18,4 @@
 
 
 
-
+#endif

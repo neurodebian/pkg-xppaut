@@ -1,3 +1,8 @@
+#include "delay_handle.h"
+#include "parserslow.h"
+#include "ggets.h"
+#include "integrate.h"
+
 #include <stdlib.h> 
 /*   This handles the delay stuff    */
 
@@ -55,11 +60,11 @@ double delay_stab_eval(delay,var)
 
 
 
-alloc_delay(big)
+int alloc_delay(big)
 double big;
 {
  int n,i;
- double zip;
+
  
  n=(int)(big/fabs(DELTA_T))+1;
 
@@ -79,13 +84,13 @@ double big;
  return(1);
 }
 
-free_delay()
+void free_delay()
 {
  if(DelayFlag)free(DelayWork);
  DelayFlag=0;
 }
 
-stor_delay(y)
+void stor_delay(y)
 double *y;
 {
  int i,in;
@@ -120,7 +125,7 @@ double tau;
   return(x1+(x-n1)*(x2-x1));
  }
 
-polint(xa,ya,n,x,y,dy)
+void polint(xa,ya,n,x,y,dy)
      double *ya,*xa,*y,*dy,x;
      int n;
 {
@@ -165,7 +170,7 @@ double tau;
  int n0=n1;
  int n3=n2+1;
  int i0,i1,i2,i3;
- double x1,x2;
+
  if(tau<0.0||tau>DELAY){
 			 err_msg("Delay negative or too large");
 			stop_integration();
@@ -195,7 +200,7 @@ double tau;
  }
 
 /*  Handling of the initial data  */
-do_init_delay(big)
+int do_init_delay(big)
 double big;
 {
  double t=T0,old_t,y[MAXODE];

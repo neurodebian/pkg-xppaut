@@ -1,8 +1,12 @@
+#include "abort.h"
+
 #include <stdlib.h> 
 
 #include <stdio.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include "many_pops.h"
+#include "ggets.h"
 
 
 extern Window command_pop;
@@ -15,18 +19,18 @@ extern int DCURY,DCURX,CURY_OFF;
 
 
 
-get_command_width()
+int get_command_width()
 {
   int x,y;
   unsigned int w,h,bw,de;
- int xs,ys=2;
+ 
  Window root;
  XGetGeometry(display,command_pop,&root,&x,&y,&w,&h,&bw,&de);
  XClearWindow(display,command_pop);
  return(w);
 }
 
- plot_command(nit,icount,cwidth)
+void plot_command(nit,icount,cwidth)
  int nit,icount,cwidth;
 {
  int i;
@@ -40,7 +44,7 @@ get_command_width()
 }
 
 
-my_abort()
+int my_abort()
 {
   int ch;
   XEvent event;

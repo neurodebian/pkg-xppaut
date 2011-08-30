@@ -1,7 +1,30 @@
+#include "pp_shoot.h"
+
+#include "my_rhs.h"
+#include "main.h"
+#include "adj2.h"
+#include "load_eqn.h"
+#include "abort.h"
+#include "gear.h"
+
+#include "parserslow.h"
+#include "browse.h"
+#include "graf_par.h"
+#include "integrate.h"
+#include "init_conds.h"
+#include "pop_list.h"
+#include "ggets.h"
+#include "lunch-new.h"
+
+
+
+
+#include "homsup.h"
 #include <stdlib.h> 
 #include <stdio.h>
 #include <string.h>
 #include "shoot.h"
+#include "kinescope.h"
 /*#include <X11/Xlib.h>
   #include <X11/Xutil.h> */
 #include <math.h>
@@ -86,7 +109,7 @@ extern HOMOCLIN my_hom;
 
 /*   more general mixed boundary types   */
 
- do_bc(y__0,t0,y__1,t1,f,n)
+void do_bc(y__0,t0,y__1,t1,f,n)
  double *y__0,*y__1,*f;
  double t0,t1;
  int n;
@@ -109,7 +132,7 @@ extern HOMOCLIN my_hom;
 
 
 
-compile_bvp()
+void compile_bvp()
 {
  int i;
  int len;
@@ -132,7 +155,7 @@ compile_bvp()
 }
  
   
-reset_bvp()
+void reset_bvp()
 {
  BVP_FLAG=1;
 } 
@@ -161,7 +184,7 @@ reset_bvp()
  
 */
 
-init_shoot_range(s)
+void init_shoot_range(s)
 char *s;
 {
  strcpy(shoot_range.item,s);
@@ -173,7 +196,7 @@ char *s;
  shoot_range.movie=0;
 }
   
-dump_shoot_range(fp,f)
+void dump_shoot_range(fp,f)
      FILE *fp;
      int f;
 {
@@ -186,7 +209,7 @@ dump_shoot_range(fp,f)
 
 }
 
-bad_shoot(iret)
+void bad_shoot(iret)
 int iret;
 {
  switch(iret){
@@ -208,7 +231,7 @@ int iret;
  }
 }
 
-do_sh_range(ystart,yend)
+void do_sh_range(ystart,yend)
 double *ystart,*yend;
 {
  double parlo,parhi,dpar,temp;
@@ -216,7 +239,7 @@ double *ystart,*yend;
  int side,cycle,icol,color;
  char bob[50];
  
- double oldtrans;
+
  
  if(set_up_sh_range()==0)return;
  swap_color(&color,0);
@@ -267,7 +290,7 @@ double *ystart,*yend;
 
 }
 
-set_up_homoclinic()
+int set_up_homoclinic()
 {
   static char *n[]={"*1Left Eq.","*1Right Eq.","NUnstable","NStable"};
    char values[4][MAX_LEN_SBOX];
@@ -303,7 +326,9 @@ set_up_homoclinic()
   }
   return 1;
 }
-set_up_periodic(ipar,ivar,sect,ishow)
+
+
+int set_up_periodic(ipar,ivar,sect,ishow)
 int *ipar,*ivar,*ishow;
 double *sect;
 {
@@ -346,9 +371,9 @@ double *sect;
 	       
    
 
-find_bvp_com(int com)
+void find_bvp_com(int com)
 {
- int i,ierr,ishow=0,iret;
+ int ishow=0,iret;
  int iper=0,ivar=0,ipar=0,pflag;
  double sect=0.0;
  double oldpar;
@@ -417,9 +442,7 @@ else
 bye:  TRANS=oldtrans;
 }
 
-last_shot(flag)
-int flag;
-
+void last_shot(int flag)
 {
  int i;
  double *x;
@@ -445,7 +468,7 @@ int flag;
 
 
 
-set_up_sh_range()
+int set_up_sh_range()
 {
 static char *n[]={"*2Range over","Steps","Start","End",
 		     "Cycle color(Y/N)",
@@ -490,7 +513,7 @@ static char *n[]={"*2Range over","Steps","Start","End",
 
 
 
- bvshoot(y,yend,err,eps,maxit,iret,n,ishow,iper,ipar,ivar,sect)
+void bvshoot(y,yend,err,eps,maxit,iret,n,ishow,iper,ipar,ivar,sect)
  double *y,*yend,err,eps,sect;
  int *iret,maxit,n,ishow,iper,ipar,ivar;
 {
@@ -543,7 +566,7 @@ static char *n[]={"*2Range over","Steps","Start","End",
  }
  for(i=0;i<n;i++){
    y1[i]=y[i];
-  /*  printf("%f \n",y[i]); */
+  /*  plintf("%f \n",y[i]); */
  }
 
 
@@ -564,7 +587,7 @@ static char *n[]={"*2Range over","Steps","Start","End",
    goto bye;
   
  }
-  /* printf("err1 = %f tol= %f \n",error,err); */ 
+  /* plintf("err1 = %f tol= %f \n",error,err); */ 
  niter++;
  if(niter>maxit){
    *iret=-2;
@@ -619,7 +642,7 @@ static char *n[]={"*2Range over","Steps","Start","End",
   }
  
  for(i=0;i<n;i++)y[i]=y0[i];
-  /* printf("error2 = %f \n",error);  */
+  /* plintf("error2 = %f \n",error);  */
   if(error<1.e-10){
    for(i=0;i<n;i++)yend[i]=y1[i];
     *iret=2;

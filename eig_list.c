@@ -1,3 +1,9 @@
+#include "eig_list.h"
+#include "many_pops.h"
+#include "pop_list.h"
+#include "ggets.h"
+#include "init_conds.h"
+
 #include <stdlib.h> 
 #include <stdio.h>
 #include <string.h>
@@ -13,7 +19,7 @@
 #include "newhome.h"
 
 #include "mykeydef.h"
-#define xds(a) { XDrawString(display,w,small_gc,0,CURY_OFFs,a,strlen(a));\
+#define xds(a) { XDrawString(display,w,small_gc,5,CURY_OFFs,a,strlen(a));\
 		return;}
 
 
@@ -21,7 +27,7 @@
 
 
 
-
+extern double last_ic[MAXODE];
 extern int noicon;
 extern Display *display;
 extern int screen;
@@ -49,7 +55,7 @@ extern int EqType[MAXODE];
 
 
 struct {
-  Window base,stab,rest,top,close;
+  Window base,stab,rest,top,close,import;
   double y[MAXODE],ev[MAXODE+MAXODE];
   int n,flag;
   int info[5];
@@ -65,7 +71,7 @@ struct{
 
  
 
-draw_eq_list(w)
+void draw_eq_list(w)
 Window w;
 {
  int i;
@@ -99,7 +105,7 @@ Window w;
  
 
 
-create_eq_list()
+void create_eq_list()
 {
  
  int width,height,hlist,hmain;
@@ -124,7 +130,7 @@ create_eq_list()
   eq_list.nlines=(height-hmain)/(DCURYs+2);
  
   width=300;
-  base=make_window(RootWindow(display,screen),0,0,width,height,4);
+  base=make_plain_window(RootWindow(display,screen),0,0,width,height,4);
   eq_list.base=base;
   
   XStringListToTextProperty(wname,1,&winname);
@@ -138,12 +144,12 @@ create_eq_list()
  size_hints.min_width=width;
  size_hints.min_height=height;
   XSetWMProperties(display,base,&winname,&iconame,NULL,0,&size_hints,NULL,NULL);
- make_icon(eqns_bits,eqns_width,eqns_height,base);
- eq_list.main=make_window(base,0,0,width,hmain,1);
- eq_list.list=make_window(base,0,hmain,width,hlist,1);
- eq_list.close=make_window(eq_list.main,10,5,5*DCURXs,DCURYs+2,1);
-  eq_list.up=make_window(eq_list.main,10+7*DCURXs,5,2*DCURXs,DCURYs+2,1);
- eq_list.down=make_window(eq_list.main,10+10*DCURXs,5,4*DCURXs,DCURYs+2,1);
+ make_icon((char*)eqns_bits,eqns_width,eqns_height,base);
+ eq_list.main=make_plain_window(base,0,0,width,hmain,1);
+ eq_list.list=make_plain_window(base,0,hmain,width,hlist,1);
+ eq_list.close=make_window(eq_list.main,10,5,7*DCURXs,DCURYs+2,1);
+  eq_list.up=make_window(eq_list.main,10+7*DCURXs+14,5,7*DCURXs,DCURYs+2,1);
+ eq_list.down=make_window(eq_list.main,10+14*DCURXs+28,5,7*DCURXs,DCURYs+2,1);
 
  XSelectInput(display,eq_list.up,MYMASK);
  XSelectInput(display,eq_list.down,MYMASK);
@@ -154,7 +160,7 @@ create_eq_list()
 
 
 
-eq_list_keypress(ev,used)
+void eq_list_keypress(ev,used)
  int *used;
  XEvent ev;
 {
@@ -180,17 +186,17 @@ eq_list_keypress(ev,used)
 }
 
 
-enter_eq_stuff(Window w, int b)
+void enter_eq_stuff(Window w, int b)
 {
   if(eq_list.flag==1){
     if(w==eq_list.close||w==eq_list.up||w==eq_list.down)
       XSetWindowBorderWidth(display,w,b);
   }
-  if(eq_box.flag==1&&w==eq_box.close)
+  if(eq_box.flag==1&&(w==eq_box.close||w==eq_box.import))
     XSetWindowBorderWidth(display,w,b);
 }
-eq_list_button(ev)
-XEvent ev;
+
+void eq_list_button(XEvent ev)
 {
  Window w=ev.xbutton.window;
  /* pure laziness here - use this to go to eq_box */
@@ -199,7 +205,7 @@ XEvent ev;
 
  if(w==eq_list.up){eq_list_up(); return;}
  if(w==eq_list.down){eq_list_down(); return;}
- if(w==eq_list.close) {
+  if(w==eq_list.close) {
    eq_list.flag=0;
    XDestroySubwindows(display,eq_list.base);
    XDestroyWindow(display,eq_list.base);
@@ -207,7 +213,7 @@ XEvent ev;
 }
 
   
-eq_list_up(){
+void eq_list_up(){
  if(eq_list.istart>0){
    eq_list.istart--;
    XClearWindow(display,eq_list.list);
@@ -215,7 +221,7 @@ eq_list_up(){
  }
 }
 
-eq_list_down(){
+void eq_list_down(){
  if(eq_list.istart<(NEQ-1)){
    eq_list.istart++;
     XClearWindow(display,eq_list.list);
@@ -224,8 +230,16 @@ eq_list_down(){
 
  }
 
+void eq_box_import()
+{
+  int n=eq_box.n,i;
+  for(i=0;i<n;i++)
+    last_ic[i]=eq_box.y[i];
+  
+   redraw_ics();
+}
 
-get_new_size(win,wid,hgt)
+void get_new_size(win,wid,hgt)
 Window win;
 unsigned int *wid,*hgt;
 {
@@ -235,7 +249,7 @@ unsigned int *wid,*hgt;
  XGetGeometry(display,win,&root,&x,&y,wid,hgt,&bw,&de);
 }
 
-resize_eq_list(win)
+void resize_eq_list(win)
 Window win;
 { 
 
@@ -257,9 +271,10 @@ Window win;
 
 
 
-eq_box_button(Window w)
+void eq_box_button(Window w)
 {
   if(eq_box.flag==0)return;
+  if(w==eq_box.import){eq_box_import(); return;}
   if(eq_box.close==w){
     eq_box.flag=0;
     XDestroySubwindows(display,eq_box.base);
@@ -267,14 +282,14 @@ eq_box_button(Window w)
  }
 }
 
-create_eq_box(cp,cm,rp,rm,im,y,ev,n)
+void create_eq_box(cp,cm,rp,rm,im,y,ev,n)
 int n,cp,rp,cm,rm,im;
 double *y,*ev;
 {
  int width,hstab,hequil,height,i;
  static char *name[]={"Equilibria"};
  static char *iname[]={"Equil"};
- int tpos;
+ int tpos,tpos2;
  Window base;
   XTextProperty winname,iconame;
   XSizeHints size_hints;
@@ -299,7 +314,8 @@ double *y,*ev;
  hstab=2*DCURY+4*DCURYs;
  height=hequil+hstab;
  tpos=(width-8*DCURX)/2;
- base=make_window(RootWindow(display,screen),0,0,width,height,4);
+ tpos2=tpos+9*DCURX;
+ base=make_plain_window(RootWindow(display,screen),0,0,width,height,4);
 
  eq_box.base=base;
 
@@ -317,13 +333,14 @@ double *y,*ev;
 
  XSetWMProperties(display,eq_box.base,&winname,&iconame,
 		   NULL,0,&size_hints,NULL,NULL);
- make_icon(equilib_bits,equilib_width,equilib_height,base);
- eq_box.stab=make_window(eq_box.base,0,0,width,hstab,1);
- eq_box.rest=make_window(eq_box.base,0,hstab,width,hequil,1);
+ make_icon((char*)equilib_bits,equilib_width,equilib_height,base);
+ eq_box.stab=make_plain_window(eq_box.base,0,0,width,hstab,1);
+ eq_box.rest=make_plain_window(eq_box.base,0,hstab,width,hequil,1);
  eq_box.top=make_window(eq_box.stab,tpos,2,8*DCURX,
 			DCURY+5,1);
- eq_box.close=make_window(eq_box.base,2,2,5*DCURXs,DCURYs+4,1);
- eq_box.flag=1;
+ eq_box.close=make_window(eq_box.base,2,2,8*DCURXs,DCURYs+4,1);
+ eq_box.import=make_window(eq_box.base,tpos2,2,8*DCURXs,DCURYs+4,1);
+  eq_box.flag=1;
 }
 else {   /*   Already it has been created so we are updating it */
   XClearWindow(display,eq_box.top);
@@ -337,7 +354,7 @@ else {   /*   Already it has been created so we are updating it */
     
 }
 
- draw_eq_box(w)
+void  draw_eq_box(w)
  Window w;
 {
  int i,j,ncol,n=eq_box.n,nrow;
@@ -346,9 +363,10 @@ else {   /*   Already it has been created so we are updating it */
  if(eq_box.flag==0)return;
  if(w==eq_box.close)
    xds("Close");
-
+ if(w==eq_box.import)
+   xds("Import");
  if(w==eq_box.top){
-   XDrawString(display,eq_box.top,gc,0,CURY_OFF,eq_box.type,
+   XDrawString(display,eq_box.top,gc,5,CURY_OFF,eq_box.type,
 	       strlen(eq_box.type));
   return;
  }

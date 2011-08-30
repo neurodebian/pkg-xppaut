@@ -1,3 +1,6 @@
+#include "arrayplot.h"
+#include "array_print.h"
+
 #include <stdlib.h> 
 #include <string.h>
 /*   routines for plotting arrays as functions of time  
@@ -10,7 +13,7 @@
 
                                 TITLE
 
-                   [Kill]  [Edit]  [Print]  [Style]
+                   [Kill]  [Edit]  [Print]  [Style] [Fit] [Range]
    ________________________________________________________
            1 |  |      tic marks              |  | N
             ---------------------------------------
@@ -31,6 +34,15 @@
     and it creates a color plot 
 
 */
+#include "ggets.h"
+#include "main.h"
+#include "many_pops.h"
+#include "pop_list.h"
+#include "kinescope.h"
+#include "scrngif.h"
+#include "lunch-new.h"
+#include "color.h"
+#include "init_conds.h"
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -49,26 +61,26 @@
 #define MAX_LEN_SBOX 25
 #define FIRSTCOLOR 30
 #define FIX_MIN_SIZE 2
+extern int COLOR;
+extern unsigned int GrFore,GrBack;
 extern char this_file[100];
 extern Display *display;
 extern int DCURX,DCURXs,DCURY,DCURYs,CURY_OFFs,CURY_OFF,color_total,screen;
 extern GC gc, small_gc,gc_graph;
 double atof();
 extern char uvar_names[MAXODE][12];
-typedef struct {
-  Window base,wclose,wedit,wprint,wstyle,wscale,wmax,wmin,wplot,wredraw,wtime,wgif;
-  int index0,indexn,alive,nacross,ndown,plotdef;
-  int height,width,ploth,plotw;
-  int nstart,nskip,ncskip;
-  char name[20];
-  double tstart,tend,zmin,zmax,dt;
-  char xtitle[256],ytitle[256],filename[256],bottom[256];
-  int type;
-} APLOT;
-
+extern BROWSER my_browser;
+int aplot_range;
+int aplot_range_count=0;
+char aplot_range_stem[256]="rangearray";
+int aplot_still=1,aplot_tag=0;
 APLOT aplot;
 extern Window draw_win;
 int plot3d_auto_redraw=0;
+FILE *ap_fp;
+GC aplot_gc;
+int do_range(double *, int);
+extern double MyData[MAXODE];
 
 #define MYMASK  (ButtonPressMask 	|\
                 ButtonReleaseMask |\
@@ -79,7 +91,50 @@ int plot3d_auto_redraw=0;
 		EnterWindowMask)
 
 
-optimize_aplot(int *plist)
+
+void draw_one_array_plot(char *bob)
+{
+  char filename[300];
+ 
+  redraw_aplot(aplot);
+  if(aplot_tag)tag_aplot(bob);
+  XFlush(display);
+  sprintf(filename,"%s.%d.gif",aplot_range_stem,aplot_range_count);
+  gif_aplot_all(filename,aplot_still);
+  aplot_range_count++;
+
+}
+
+void set_up_aplot_range()
+{ 
+  static char *n[]={"Basename","Still(1/0)","Tag(0/1)"};
+  char values[3][MAX_LEN_SBOX];
+  int status;
+  double *x;
+ sprintf(values[0],"%s",aplot_range_stem);
+ sprintf(values[1],"%d",aplot_still);
+ sprintf(values[2],"%d",aplot_tag);
+ status=do_string_box(3,3,1,"Array range saving",n,values,28); 
+ if(status!=0){
+   sprintf(aplot_range_stem,"%s",values[0]);
+   aplot_still=atoi(values[1]);
+   aplot_tag=atoi(values[2]);
+ aplot_range=1;
+ aplot_range_count=0;
+ x=&MyData[0];
+ do_range(x,0);
+ }
+}
+void fit_aplot()
+{
+double zmax,zmin;
+ scale_aplot(&aplot,&zmax,&zmin);
+  aplot.zmin=zmin;
+  aplot.zmax=zmax;
+  redraw_aplot(aplot);
+
+}
+void optimize_aplot(int *plist)
 {
   int i0=plist[0]-1;
   int i1=plist[1]-1;
@@ -110,14 +165,14 @@ optimize_aplot(int *plist)
   
   
   
-make_my_aplot(name)
+void make_my_aplot(name)
      char *name;
 {
   if(aplot.alive==1)return;
   create_arrayplot(&aplot,name,name);
 }
 
-scale_aplot(ap,zmax,zmin)
+void scale_aplot(ap,zmax,zmin)
 APLOT *ap;
 double *zmax,*zmin;
 {
@@ -146,11 +201,11 @@ double *zmax,*zmin;
  
 }
 
-init_arrayplot(ap)
+void init_arrayplot(ap)
 APLOT *ap;
 {
- ap->height=300;
- ap->width=200;
+ ap->height=400;
+ ap->width=400;
  ap->zmin=0.0;
  ap->zmax=1.0;
  ap->alive=0;
@@ -171,17 +226,19 @@ APLOT *ap;
  ap->type=-1;
 }
 
-expose_aplot(w)
+void expose_aplot(w)
      Window w;
 {
   if(aplot.alive)
     display_aplot(w,aplot);
 }
-do_array_plot_events(ev)
+
+
+void do_array_plot_events(ev)
      XEvent ev;
 {
   int x,y;
-  Window w;
+
   if(aplot.alive==0)return;
   switch(ev.type){
  /* case Expose:
@@ -207,46 +264,50 @@ do_array_plot_events(ev)
     wborder(ev.xexpose.window,1,aplot);
     break;
   case ButtonPress:
-    apbutton(ev.xbutton.window,aplot);
+    /*apbutton(ev.xbutton.window,aplot);*/
+    apbutton(ev.xbutton.window);
     break;
   }
 }
 
-wborder(w,i,ap)
+void wborder(w,i,ap)
      Window w;
      int i;
      APLOT ap;
 {
  /* if(w==ap.wedit||w==ap.wprint||w==ap.wkill||w==ap.wstyle||w==ap.wredraw) */
-  if(w==ap.wedit||w==ap.wprint||w==ap.wclose||w==ap.wredraw||w==ap.wgif)
+  if(w==ap.wedit||w==ap.wprint||w==ap.wclose||w==ap.wredraw||w==ap.wgif||w==ap.wrange||w==ap.wfit)
     XSetWindowBorderWidth(display,w,i);
 }
 
-destroy_aplot()
+void destroy_aplot()
 {
   aplot.alive=0;
   XDestroySubwindows(display,aplot.base);
     XDestroyWindow(display,aplot.base);
 }
 
-init_my_aplot()
+void init_my_aplot()
 {
  init_arrayplot(&aplot);
 }
-create_arrayplot(ap,wname,iname)
+
+
+void create_arrayplot(ap,wname,iname)
      APLOT *ap;
      char *wname,*iname;
 
 {
   Window base;
   int width,height;
-  XWMHints wm_hints;
+  unsigned int valuemask=0;
+  XGCValues values;
   XTextProperty winname,iconname;
   XSizeHints size_hints;
   /* init_arrayplot(ap); */ 
   width=ap->width;
   height=ap->height;
-  base=make_window(RootWindow(display,screen),0,0,ap->width,ap->height,1);
+  base=make_plain_window(RootWindow(display,screen),0,0,ap->width,ap->height,1);
   ap->base=base;
   XSelectInput(display,base,ExposureMask|KeyPressMask|ButtonPressMask|
 	       StructureNotifyMask);
@@ -260,35 +321,38 @@ create_arrayplot(ap,wname,iname)
   size_hints.min_height=height;
    XSetWMProperties(display,base,&winname,&iconname,NULL,0,&size_hints,NULL,NULL);
   FixWindowSize(base,width,height,FIX_MIN_SIZE);
-  make_icon(array_bits,array_width,array_height,base);
+  make_icon((char *)array_bits,array_width,array_height,base);
 
   ap->wredraw=br_button(base,0,0,"Redraw",0);
   ap->wedit=br_button(base,0,1,"Edit",0);
   ap->wprint=br_button(base,0,2,"Print",0);
   ap->wclose=br_button(base,0,3,"Close",0);
+  ap->wfit=br_button(base,0,4,"Fit",0);
+  ap->wrange=br_button(base,0,5,"Range",0);
   ap->wgif=br_button(base,1,0,"GIF",0);
   ap->wmax=make_window(base,10,45,10*DCURXs,DCURYs,1);
   ap->wmin=make_window(base,10,51+DCURYs+color_total,10*DCURXs,DCURYs,1);
   ap->wscale=make_window(base,10+4*DCURXs,48+DCURYs,2*DCURXs,color_total,0);
   ap->wtime=make_window(base,20+10*DCURXs,30,20*DCURXs,DCURYs,0);
-  ap->wplot=make_window(base, 20+10*DCURXs,45,width-30-10*DCURXs,height-55,2);
+  ap->wplot=make_plain_window(base, 20+10*DCURXs,45,width-30-10*DCURXs,height-55,2);
   ap->plotw=width-30-10*DCURXs;
   ap->ploth=height-55;
   ap->alive=1;
+  aplot_gc=XCreateGC(display,ap->wplot,valuemask,&values);
 }
  
-print_aplot(ap)
+void print_aplot(ap)
      APLOT *ap;
 {
   double tlo,thi;
-  int i,status,errflag;
+  int status,errflag;
   static char *n[]={"Filename","Top label","Side label","Bottom label", 
 	       "Render(-1,0,1,2)"};
    char values[5][MAX_LEN_SBOX];
   int nrows=my_browser.maxrow;
   int row0=ap->nstart;
   int col0=ap->index0;
-  int ib,jb,ix,iy;
+  int jb;
   if(nrows<=2)return;
   if(ap->plotdef==0||ap->nacross<2||ap->ndown<2)return;
   jb=row0;
@@ -319,11 +383,19 @@ print_aplot(ap)
    if(errflag==-1)err_msg("Couldn't open file");
  }
 }
-apbutton(w)
+
+void apbutton(w)
      Window w;
 {
   if(w==aplot.wedit){
     editaplot(&aplot);
+  }
+  if(w==aplot.wfit){
+    fit_aplot();
+  }
+  if(w==aplot.wrange){
+    set_up_aplot_range();
+
   }
   if(w==aplot.wredraw){
     redraw_aplot(aplot);
@@ -338,10 +410,11 @@ apbutton(w)
     gif_aplot();
   }
 }
-draw_scale(ap)
+
+void draw_scale(ap)
      APLOT ap;
 {
-  int i,x,y;
+  int i,y;
   Window w=ap.wscale;
   for(i=0;i<color_total;i++){
   y=color_total-i-1;
@@ -350,19 +423,19 @@ draw_scale(ap)
   }
 }
 
-draw_aplot(ap)
+void draw_aplot(ap)
      APLOT ap;
 {
   if(plot3d_auto_redraw!=1)return;
   redraw_aplot(ap);
 }
 
-edit_aplot()
+void edit_aplot()
 {
   editaplot(&aplot);
 }
 
-get_root(s,sroot,num)
+void get_root(s,sroot,num)
      char *s,*sroot;
      int *num;
 {
@@ -390,17 +463,17 @@ get_root(s,sroot,num)
     for(j=i+1;j<n;j++)
       me[j-i-1]=s[j];
     me[n-i]=0;
-   /* printf(" i=%d me=%s sroot=%s \n",i,me,sroot); */  
+   /* plintf(" i=%d me=%s sroot=%s \n",i,me,sroot); */  
     *num=atoi(me);
   }
 }
   
-reset_aplot_axes(ap)
+void reset_aplot_axes(ap)
      APLOT ap;
 {
   char bob[200];
   char sroot[100];
-  int i,num;
+  int num;
   if(ap.alive==0)return;
   get_root(ap.name,sroot,&num);
   sprintf(bob,"%s%d..%d",sroot,num,num+ap.nacross-1);
@@ -411,12 +484,11 @@ reset_aplot_axes(ap)
   gtitle_text(bob,ap.base);
 }
 
-dump_aplot(fp,f)
+void dump_aplot(fp,f)
      FILE *fp;
      int f;
 {
   char bob[256];
-  int i;
   if(f==READEM)
     fgets(bob,255,fp);
   else
@@ -430,7 +502,8 @@ dump_aplot(fp,f)
     io_double(&aplot.zmax,fp,f,"Zmax");
 
 }
-editaplot(ap)
+
+int editaplot(ap)
      APLOT *ap;
 {
  int i,status;
@@ -477,27 +550,73 @@ sprintf(values[8],"%d",ap->ncskip);
       ap->ncskip=1;
     reset_aplot_axes(*ap);
  }
-   
+   return 1;
 }
-
-gif_aplot()
+void close_aplot_files()
 {
-  FILE *fp;
+  if(aplot_still==0)
+    fclose(ap_fp);
+}
+void gif_aplot_all(char *filename,int still)
+{
+  Pixmap xi;
+ int x,y;
+ unsigned int h,w,bw,d;
+ Window root;
+ /* FILE *fp; */
+ if(still==0) 
+   {
+
+     if(aplot_range_count==0){
+     
+       if((ap_fp=fopen(filename,"w"))==NULL){
+	 err_msg("Cannot open file ");
+	 return;
+       }
+     }
+     XGetGeometry(display,aplot.wplot,&root,&x,&y,&w,&h,&bw,&d);
+     xi=XCreatePixmap(display,RootWindow(display,screen),w,h,
+		      DefaultDepth(display,screen));
+     XCopyArea(display,aplot.wplot,xi,aplot_gc,0,0,w,h,0,0); 
+     
+     add_ani_gif(xi,ap_fp,aplot_range_count);
+     XFreePixmap(display,xi);
+     return;
+   } 
+
+ if(still==1){
+   if((ap_fp=fopen(filename,"w"))==NULL){
+     err_msg("Cannot open file ");
+     return;
+   }
+
+   /* redraw_aplot(aplot); */
+   XGetGeometry(display,aplot.wplot,&root,&x,&y,&w,&h,&bw,&d);
+  xi=XCreatePixmap(display,RootWindow(display,screen),w,h,
+		  DefaultDepth(display,screen));
+ XCopyArea(display,aplot.wplot,xi,aplot_gc,0,0,w,h,0,0); 
+ /*  XFlush(display); */
+  
+  /* screen_to_gif(aplot.wplot,fp); */  
+  screen_to_gif(xi,ap_fp);  
+  fclose(ap_fp);
+  XFreePixmap(display,xi);
+ }
+}
+ 
+void gif_aplot()
+{
+ 
   char filename[256];
   sprintf(filename,"%s.gif",this_file);
-  if(!file_selector("GIF palot",filename,"*.gif"))return;
-  if((fp=fopen(filename,"w"))==NULL){
-    err_msg("Cannot open file!");
-    return;
-  }
-  redraw_aplot(aplot);
-  screen_to_gif(aplot.wplot,fp);
-  fclose(fp);
-
- 
+  if(!file_selector("GIF plot",filename,"*.gif"))return;
+  gif_aplot_all(filename,1);
+  
 
 }
-grab_aplot_screen(ap)
+
+
+void grab_aplot_screen(ap)
      APLOT ap;
 {
  
@@ -508,7 +627,7 @@ grab_aplot_screen(ap)
  draw_win=temp;
 }
 
-redraw_aplot(ap)
+void redraw_aplot(ap)
      APLOT ap;
 {
   int i,j,w=ap.wplot;
@@ -548,23 +667,44 @@ redraw_aplot(ap)
 	  y=j*dy;
 	  iy=(int)y;
 /*	  if(j==0)
-	  printf(" ib=%d ix=%d iy=%d \n",ib,ix,iy); */
+	  plintf(" ib=%d ix=%d iy=%d \n",ib,ix,iy); */
 	  z=(double)color_total*(my_browser.data[ib][jb]-ap.zmin)/(ap.zmax-ap.zmin);
 	  colr=(int)z+FIRSTCOLOR;
 	  if(colr<FIRSTCOLOR)colr=FIRSTCOLOR;
 	  if(colr>cmax)colr=cmax;
-	  set_color(colr);
-	  XFillRectangle(display,w,gc_graph,ix,iy,delx,dely);
+	  set_acolor(colr);
+	  XFillRectangle(display,w,aplot_gc,ix,iy,delx,dely);
 	}
       }
     }
+    XFlush(display);
 }
-display_aplot(w,ap)
+void tag_aplot(char *bob)
+{
+  set_color(0);
+  XDrawString(display,aplot.wplot,small_gc,0,CURY_OFFs,bob,strlen(bob));
+}
+
+void set_acolor(col)
+int col;
+{
+ if(col<0)XSetForeground(display,aplot_gc,GrBack);
+ if(col==0)XSetForeground(display,aplot_gc,GrFore);
+ else{
+
+   if(COLOR)XSetForeground(display,aplot_gc,ColorMap(col));
+   else XSetForeground(display,aplot_gc,GrFore);
+}
+
+}
+
+
+void display_aplot(w,ap)
      APLOT ap;
      Window w;
 {
   char bob[200];
-  int i;
+  
   if(w==ap.wplot){
     draw_aplot(ap);
     return;
@@ -593,6 +733,14 @@ display_aplot(w,ap)
  }
 if(w==ap.wredraw){
    XDrawString(display,w,small_gc,0,CURY_OFFs,"Redraw",6);
+   return;
+ }
+if(w==ap.wfit){
+   XDrawString(display,w,small_gc,0,CURY_OFFs,"Fit",3);
+   return;
+ }
+if(w==ap.wrange){
+   XDrawString(display,w,small_gc,0,CURY_OFFs,"Range",5);
    return;
  }
   if(w==ap.wprint){

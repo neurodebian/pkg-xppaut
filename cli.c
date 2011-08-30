@@ -19,12 +19,12 @@ main()
   }
   set_up_eq_range();
   new_float("Total",&t);
-  printf("Total=%g\n",t);
+  plintf("Total=%g\n",t);
 }
 cli_yesno(char *query)
 {
   char ans[25];
-  printf("%s (y/n)?",query);
+  plintf("%s (y/n)?",query);
   fgets(ans,20,fpcli);
   if(ans[0]=='y'||ans[0]=='Y')
     return 1;
@@ -40,7 +40,7 @@ int n,row,col,maxchar;
   char item[256];
   char dum[256];
   char sname[50];
-  printf("%s\n\n",title);
+  plintf("%s\n\n",title);
   for(i=0;i<row;i++){
     for(j=0;j<col;j++){
       if(names[k][0]=='*')
@@ -62,7 +62,7 @@ int n,row,col,maxchar;
       k++;
       if(k>=n)break;
     }
-    printf("\n\n");
+    plintf("\n\n");
   }
 }
 
@@ -76,7 +76,7 @@ do_string_box(n,row,col,title,names,values,maxchar)
   int i,k,ilist;
   render_string_box(n,row,col,title,names,values,maxchar);
   while(1){
-    printf("(#:value), (r)eview (c)ancel,(d)one?  ");
+    plintf("(#:value), (r)eview (c)ancel,(d)one?  ");
     fgets(bob,255,fpcli);
     k=strlen(bob);
     if(bob[k-1]=='\n')bob[k-1]=' ';
@@ -119,7 +119,7 @@ do_string_box(n,row,col,title,names,values,maxchar)
 
 list_possibility(int il)
 {
-  printf("Choice %d \n",il);
+  plintf("Choice %d \n",il);
 }
 get_newval_entry(char *s,int *i,char *v)
 {
@@ -175,7 +175,7 @@ char *value;
 {
  char bob[256];
  int n;
- printf("%s <%s>:",name,value);
+ plintf("%s <%s>:",name,value);
  fgets(bob,255,fpcli);
  n=strlen(bob);
  if(bob[n-1]=='\n')

@@ -1,3 +1,6 @@
+#ifndef _parser_h_
+#define _parser_h_
+
 #include "volterra.h"
 #include "xpplim.h"
 #define MAX_SYMBS 10000
@@ -50,9 +53,9 @@
 
 /* number of standard symbols */
 
-#define STDSYM 92
+#define STDSYM 95
 
-#define NEXT1VAR  25
+#define NEXT1VAR  26
 #define NEXT2VAR  120 
 
 
@@ -160,7 +163,9 @@ SYMBOL my_symb[MAX_SYMBS]=
    "ARG17",5,816,0,10,0,
    "ARG18",5,817,0,10,0,
    "ARG19",5,818,0,10,0,
-   "ARG20",5,819,0,10,0,/* 92 */
+   "ARG20",5,819,0,10,0,
+   "BESSELI",7,120,2,10, 0,/* Bessel I  # 93 */
+   "LGAMMA",6,25,1,10,0, /* log-gamma #94  */
       };
 
 
@@ -199,34 +204,15 @@ int NSYM=STDSYM,NCON=0,NVAR=0,NFUN=0;
 
 /*     pointers to functions    */
 
-void (*fun1[25])( );
-void (*fun2[25])();
-
-
-/*              double functions of two values             */
+void (*fun1[50])( );
+void (*fun2[50])();
 
 
 
-double dand(),dor(),dge(),dle(),deq(),dne(),dlt(),dgt(),dnot();
 
 
-double d_if();
-
-double normal();
-double max(/* double,double */ );
-double min(/* double,double */ );
-double neg(/* double */ );
-double recip(/* double */ );
-double signum(/* double */ );
-double heaviside(/* double */ );
-double rndom(/* double */ );
-double bessel_j();
-double bessel_y();
 /*****************************************************/
 
-double evaluate(/* int* */ );
-
-double get_ivar(/* int i */ );
 
 double eval_rpn(/* int* */ );
 double ker_val();
@@ -255,10 +241,147 @@ typedef struct {
 UFUN_ARG ufun_arg[MAXUFUN];
 
 
+void zz_pmod(void);
+void zz_atan2(void);
+void zz_pow(void);
+void zz_max(void);
+void zz_min(void);
+void zz_dand(void);
+void zz_dor(void);
+void zz_dnot(void);
+void zz_dge(void);
+void zz_dle(void);
+void zz_dlt(void);
+void zz_dgt(void);
+void zz_deq(void);
+void zz_dne(void);
+void zz_normal(void);
+void zz_bessel_j(void);
+void zz_bessel_i(void);
+void zz_bessel_y(void);
+void zz_add(void);
+void zz_subt(void);
+void zz_div(void);
+void zz_mult(void);
+void zz_sin(void);
+void zz_cos(void);
+void zz_tan(void);
+void zz_pois(void);
+void zz_asin(void);
+void zz_acos(void);
+void zz_atan(void);
+void zz_sinh(void);
+void zz_cosh(void);
+void zz_tanh(void);
+void zz_fabs(void);
+void zz_exp(void);
+void zz_log(void);
+void zz_log10(void);
+void zz_sqrt(void);
+void zz_neg(void);
+void zz_recip(void);
+void zz_heaviside(void);
+void zz_signum(void);
+void zz_floor(void);
+void zz_erf(void);
+void zz_erfc(void);
+void zz_hom_bcs(void);
+void zz_rndom(void);
+void zz_lgamma(void);
+int init_rpn(void);
+int free_ufuns(void);
+int duplicate_name(char *junk);
+int add_constant(char *junk);
+int get_type(int index);
+int add_con(char *name, double value);
+int add_kernel(char *name, double mu, char *expr);
+int add_var(char *junk, double value);
+int add_expr(char *expr, int *command, int *length);
+int add_expr_no3(char *expr, int *command, int *length);
+int add_vect_name(int index, char *name);
+int add_net_name(int index, char *name);
+int add_2d_table(char *name, char *file);
+int add_file_table(int index, char *file);
+int add_table_name(int index, char *name);
+int add_form_table(int index, int nn, double xlo, double xhi, char *formula);
+int set_old_arg_names(int narg);
+int set_new_arg_names(int narg, char args[10][11]);
+int fixup_endfun(int *u, int l, int narg);
+int add_ufun_name(char *name, int index, int narg);
+int add_ufun_new(int index, int narg, char *rhs, char args[20][11]);
+int add_ufun(char *junk, char *expr, int narg);
+int check_num(int *tok, double value);
+int is_ufun(int x);
+int is_ucon(int x);
+int is_uvar(int x);
+int isvar(int y);
+int iscnst(int y);
+int isker(int y);
+int is_kernel(int x);
+int is_lookup(int x);
+int find_lookup(char *name);
+int find_name(char *string, int *index);
+int get_param_index(char *name);
+int get_val(char *name, double *value);
+int get_var_index(char *name);
+int set_val(char *name, double value);
+int set_ivar(int i, double value);
+double get_ivar(int i);
+int alg_to_rpn(int *toklist, int *command);
+int pr_command(int *command);
+int fpr_command(int *command);
+int show_where(char *string, int index);
+int function_sym(int token);
+int unary_sym(int token);
+int binary_sym(int token);
+int pure_number(int token);
+int gives_number(int token);
+int check_syntax(int oldtoken, int newtoken);
+int make_toks(char *dest, int *my_token);
+int tokeninfo(int tok);
+int do_num(char *source, char *num, double *value, int *ind);
+int convert(char *source, char *dest);
+int find_tok(char *source, int *index, int *tok);
+double pmod(double x, double y);
+int two_args(void);
+double bessel_j(double x, double y);
+double bessel_y(double x, double y);
+double bessi(int n, double x);
+double bessi0(double x);
+double bessi1(double x);
+char *com_name(int com);
+double do_set_shift(double value, double shift, double variable);
+double do_ishift(double shift, double variable);
+double do_shift(double shift, double variable);
+double do_delay_shift(double delay, double shift, double variable);
+double do_delay(double delay, double i);
+int one_arg(void);
+double normal(double mean, double std);
+double max(double x, double y);
+double min(double x, double y);
+double neg(double z);
+double recip(double z);
+double heaviside(double z);
+double rndom(double z);
+double signum(double z);
+double dnot(double x);
+double dand(double x, double y);
+double dor(double x, double y);
+double dge(double x, double y);
+double dle(double x, double y);
+double deq(double x, double y);
+double dne(double x, double y);
+double dgt(double x, double y);
+double dlt(double x, double y);
+double evaluate(int *equat);
+int pass3(int *com1, int *com2, int *len);
+double feval_rpn(int *comz);
+int strupr(char *s);
+int strlwr(char *s);
 
 
 
-
+#endif
 
 
 

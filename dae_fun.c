@@ -1,3 +1,9 @@
+
+#include "dae_fun.h"
+#include "gear.h"
+#include "parserslow.h"
+
+#include "ggets.h"
 #include <stdlib.h> 
 #include <stdio.h>
 #include <string.h>
@@ -49,18 +55,18 @@ int nsvar=0,naeqn=0;
 /* this adds an algebraically defined variable  and a formula
    for the first guess */
 
-add_svar(name,rhs)
+int add_svar(name,rhs)
      char *name,*rhs;
 {
   if(nsvar>=MAXDAE){
-    printf(" Too many variables\n");
+    plintf(" Too many variables\n");
     return 1;
   }
   
   strcpy(svar[nsvar].name,name);
   svar[nsvar].rhs=(char *) malloc(80);
   strcpy(svar[nsvar].rhs,rhs);
-  printf(" Added sol-var[%d] %s = %s \n",
+  plintf(" Added sol-var[%d] %s = %s \n",
 	 nsvar,svar[nsvar].name,svar[nsvar].rhs);
   nsvar++;
 return 0;
@@ -68,7 +74,7 @@ return 0;
 
 /* adds algebraically define name to name list */
 
-add_svar_names()
+int add_svar_names()
 {
   int i;
   for(i=0;i<nsvar;i++){
@@ -81,11 +87,11 @@ add_svar_names()
 
 /* adds a right-hand side to slove for zero */
 
-add_aeqn(rhs)
+int add_aeqn(rhs)
      char *rhs;
 {
   if(naeqn>=MAXDAE){
-    printf(" Too many equations\n");
+    plintf(" Too many equations\n");
     return 1;
   }
   aeqn[naeqn].rhs=(char *) malloc(strlen(rhs)+5);
@@ -96,17 +102,17 @@ add_aeqn(rhs)
 
 
 /* this compiles formulas to set to zero */
-compile_svars()
+int compile_svars()
 {
   int i,f[256],n,k;
   if(nsvar!=naeqn){
-    printf(" #SOL_VAR(%d) must equal #ALG_EQN(%d) ! \n",nsvar,naeqn);
+    plintf(" #SOL_VAR(%d) must equal #ALG_EQN(%d) ! \n",nsvar,naeqn);
     return 1;
   }
   
   for(i=0;i<naeqn;i++){
     if(add_expr(aeqn[i].rhs,f,&n)==1){
-    printf(" Bad right-hand side for alg-eqn \n");
+    plintf(" Bad right-hand side for alg-eqn \n");
     return(1);
     }
     aeqn[i].form=(int *)malloc(sizeof(int)*(n+2));
@@ -116,7 +122,7 @@ compile_svars()
 
    for(i=0;i<nsvar;i++){
     if(add_expr(svar[i].rhs,f,&n)==1){
-    printf(" Bad initial guess for sol-var \n");
+    plintf(" Bad initial guess for sol-var \n");
     return(1);
     }
     svar[i].form=(int *)malloc(100*sizeof(int));
@@ -128,11 +134,11 @@ compile_svars()
  
 }
 
-reset_dae()
+void reset_dae()
 {
   dae_work.status=1;
 }
-set_init_guess()
+void set_init_guess()
 {
   int i;
   double z;
@@ -145,7 +151,7 @@ set_init_guess()
     svar[i].last=z;
   }
 }
-err_dae()
+void err_dae()
 {
   
   switch(dae_work.status){
@@ -166,7 +172,8 @@ err_dae()
   }
   dae_work.status=1;
 }
-init_dae_work()
+
+void init_dae_work()
 {
 
   dae_work.work=(double *)malloc(sizeof(double)*(nsvar*nsvar+10*nsvar));
@@ -174,7 +181,7 @@ init_dae_work()
   dae_work.status=1;
 }
 
-get_dae_fun(y,f)
+void get_dae_fun(y,f)
      double *f,*y;
 {
   int i;
@@ -187,7 +194,7 @@ get_dae_fun(y,f)
     f[i]=evaluate(aeqn[i].form);
 }
 
-do_daes()
+void do_daes()
 {
   int ans;
   ans=solve_dae();
@@ -199,11 +206,11 @@ do_daes()
 }
 
 /* Newton solver for algebraic stuff */
-solve_dae()
+int solve_dae()
 {
   int i,j,n;
   int info;
-  double ynorm,err,del,z,yold;
+  double err,del,z,yold;
   double tol=EVEC_ERR,eps=NEWT_ERR;
   int maxit=EVEC_ITER,iter=0;
   double *y,*ynew,*f,*fnew,*jac,*errvec;
@@ -265,7 +272,7 @@ solve_dae()
     }
     if(err<tol) /* not much change */
       {
-	/* printf(" no change .... \n"); */
+	/* plintf(" no change .... \n"); */
 	for(i=0;i<n;i++){
 	  SETVAR(svar[i].index,y[i]);
 	  svar[i].last=y[i];
@@ -274,7 +281,7 @@ solve_dae()
       }
     iter++;
     if(iter>maxit){
-      /* printf(" Too many iterates ... \n"); */
+      /* plintf(" Too many iterates ... \n"); */
       for(i=0;i<n;i++)
 	SETVAR(svar[i].index,svar[i].last);
       return(-2); /* too many iterates */
@@ -285,7 +292,7 @@ solve_dae()
 
 /* interface shit -- different for Win95 */
  
-get_new_guesses()
+void get_new_guesses()
 {
   int i,n;
   char name[30];

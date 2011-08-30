@@ -24,7 +24,9 @@
 
 class codec {
   public:
-	codec::codec();
+	/*codec::codec();
+	*/
+	codec();
 	virtual int need_prescan();
 	virtual void start(chunkstream *, int w, int h, int nframes);
 	virtual void prescan(ppm *, int framenum);
@@ -72,7 +74,7 @@ class cram16_strf : public chunk {
 
 class rgb24 : public codec {
   public:
-	char *type_str() { return "rgb "; };
+	char *type_str() { return (char *)"rgb "; };
 	chunk *strf() { return new rgb24_strf(this->cs, this->w, this->h); };
 
 	void frame(ppm *, int framenum);
@@ -80,9 +82,9 @@ class rgb24 : public codec {
 
 class cram16 : public codec {
   public:
-	cram16::cram16();
+	cram16();
 
-	char *type_str() { return "msvc"; }
+	char *type_str() { return (char *)"msvc"; }
 	chunk *strf() { return new cram16_strf(this->cs, this->w, this->h); }
 
 	void frame(ppm *, int framenum);

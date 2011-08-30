@@ -2370,7 +2370,7 @@ ftnlen cb_len;
 
 } /* lsame_ */
 
-/* Subroutine */ int xerbla_(srname, info, srname_len)
+/* Subroutine */ void xerbla_(srname, info, srname_len)
 char *srname;
 integer *info;
 ftnlen srname_len;
@@ -3212,7 +3212,7 @@ L70:
 	    e[lp1] += 1.;
 L80:
 	    e[l] = -e[l];
-	    if (lp1 > *n || e[l] == 0. && *skip == 0) {
+	    if ((lp1 > *n) || ((e[l] == 0.) && (*skip == 0))) {
 		goto L120;
 	    }
 
@@ -3610,8 +3610,7 @@ L1003:
 /*     if (ll.ne.oldll .or. m.ne.oldm) then */
 /*     choose shift direction if working on entirely new submatrix */
     if (ll > oldm || m < oldll) {
-	if ((d_1 = s[ll], abs(d_1)) >= (d_2 = s[m], abs(d_2)) && *iidir == 0 
-		|| *iidir == 1) {
+	if ((((d_1 = s[ll], abs(d_1)) >= (d_2 = s[m], abs(d_2))) && (*iidir == 0)) || (*iidir == 1)) {
 /*         chase bulge from top (big end) to bottom (small end) */
 
 /*         if m=n+1, chase from top to bottom even if s(ll)=0 */
@@ -3761,7 +3760,7 @@ L1003:
 
 /*     test for zero shift */
     test = nct * *tol * (sminl / smax) + 1.;
-    if (test == 1. && *ifull != 1 && *tol > 0. || *ifull == 2) {
+    if (((test == 1.) && (*ifull != 1) && (*tol > 0.)) || (*ifull == 2)) {
 /*       do a zero shift so that roundoff does not contaminate */
 /*       smallest singular value */
 	shift = 0.;

@@ -2,8 +2,10 @@
    You must link the resulting object file with the libraries:
 	-lF77 -lI77 -lm -lc   (in that order)
 */
+#include "autlib1.h"
 
-#include "f2c.h"
+#include "autevd.h"
+
 
 typedef struct {
   int irot;
@@ -329,7 +331,7 @@ integer *iw, *itp, *ncpp;
     extern /* Subroutine */ int wsbv_();
     static integer lups, lubc0, lubc1, ndim2, i, ldicd, lficd, ldfdp, ldfdu, 
 	    luicd, lrhsa, lrhsd, liwbr, lsmat, lpoin, luneq, ldups, lwkev, 
-	    ltint, luint, lf, lu, lw, lwbrbd;
+	    ltint, luintt, lf, lu, lw, lwbrbd;
     extern /* Subroutine */ int cnrlbv_();
     static integer lupldp, luldps, lrnllv, ludtps, lp0, lp1, m1u, laa, lbb, 
 	    lcc, ldd, lic, ibr, lir, lev, ltm, liw, m1aa, m2aa, m1bb, m2bb, 
@@ -353,7 +355,7 @@ integer *iw, *itp, *ncpp;
     blicn_1.nfpar = *ncpp;
     wsbv_(itp, &blicn_1.nfpar, &lf, &ldfdu, &ldfdp, &laa, &lbb, &lcc, &ldd, &
 	    lups, &luldps, &lupldp, &ludtps, &lwbrbd, &lrhsa, &lrhsd, &ltint, 
-	    &luint, &ldups, &leqf, &luneq, &ltm, &ldtm, &ltm2, &lu, &lubc0, &
+	    &luintt, &ldups, &leqf, &luneq, &ltm, &ldtm, &ltm2, &lu, &lubc0, &
 	    lubc1, &ldbc, &luicd, &lficd, &ldicd, &lw, &litm, &lial, &lir, &
 	    lic, &liwbr, &liw, &m1aa, &m2aa, &m1bb, &m2bb, &m1cc, &m1dd, &m1u,
 	     &m1bc, &m1ic, &lp0, &lp1, &lpoin, &lev, &lwkev, &lsmat, &lrnllv,&c__1);
@@ -379,7 +381,7 @@ integer *iw, *itp, *ncpp;
     cnrlbv_(funi, bcni, icni, stpnt, fnbpbv, &ibr, &m1aa, &m2aa, &w[laa], &
 	    m1bb, &m2bb, &w[lbb], &m1cc, &w[lcc], &m1dd, &w[ldd], &w[lwbrbd], 
 	    &m1u, &w[lups], &w[luldps], &w[lupldp], &w[ludtps], &w[lrhsa], &w[
-	    lrhsd], &w[ltint], &w[luint], &w[ldups], &w[leqf], &w[luneq], &w[
+	    lrhsd], &w[ltint], &w[luintt], &w[ldups], &w[leqf], &w[luneq], &w[
 	    ltm], &w[ldtm], &w[ltm2], &w[lu], &w[lf], &blbcn_1.ndim, &w[ldfdu]
 	    , &w[ldfdp], &iw[litm], &iw[lial], &w[lubc0], &w[lubc1], &m1bc, &
 	    w[ldbc], &w[luicd], &w[lficd], &m1ic, &w[ldicd], &iw[lir], &iw[
@@ -420,7 +422,7 @@ integer *itp, *lw, *liw;
     extern /* Subroutine */ int wsbv_();
     static integer lups, lubc0, lubc1, ldicd, lficd, ldfdp, ldfdu, luicd, 
 	    lrhsa, lrhsd, liwbr, lsmat, lpoin, luneq, ldups, lwkev, ltint, 
-	    luint, lf, lu, lwbrbd, lupldp, luldps, lrnllv, ludtps, lp0, lp1, 
+	    luintt, lf, lu, lwbrbd, lupldp, luldps, lrnllv, ludtps, lp0, lp1, 
 	    m1u, laa, lbb, lcc, ldd, lic, lir, lev, ltm, m1aa, m2aa, m1bb, 
 	    m2bb, m1cc, m1dd, m1bc, m1ic, ltm2;
 
@@ -432,7 +434,7 @@ integer *itp, *lw, *liw;
 
     wsbv_(itp, &blicn_1.nfpar, &lf, &ldfdu, &ldfdp, &laa, &lbb, &lcc, &ldd, &
 	    lups, &luldps, &lupldp, &ludtps, &lwbrbd, &lrhsa, &lrhsd, &ltint, 
-	    &luint, &ldups, &leqf, &luneq, &ltm, &ldtm, &ltm2, &lu, &lubc0, &
+	    &luintt, &ldups, &leqf, &luneq, &ltm, &ldtm, &ltm2, &lu, &lubc0, &
 	    lubc1, &ldbc, &luicd, &lficd, &ldicd, lw, &litm, &lial, &lir, &
 	    lic, &liwbr, liw, &m1aa, &m2aa, &m1bb, &m2bb, &m1cc, &m1dd, &m1u, 
 	    &m1bc, &m1ic, &lp0, &lp1, &lpoin, &lev, &lwkev, &lsmat, &lrnllv, &
@@ -698,7 +700,7 @@ integer *itp,*igenwts;
 		    || *itp ==6 || abs(*itp) /10 ==6
            ) && blbcn_1.ips == 2) {
 /*          ** Limit point continuation (Periodic solutions) */
-	  /* printf("Limit point continuatio of per %d %d \n",*itp,blbcn_1.ips);*/
+	  /* plintf("Limit point continuatio of per %d %d \n",*itp,blbcn_1.ips);*/
 	    blbcn_1.ndim <<= 1;
 	    blcde_1.nbc = blbcn_1.ndim;
 	    blcde_1.nint = 3;
@@ -766,13 +768,13 @@ ms) */
 
 /*     ---------- ---- */
 /* Subroutine */ int wsbv_(itp, ncpp, lf, ldfdu, ldfdp, laa, lbb, lcc, ldd, 
-	lups, luldps, lupldp, ludtps, lwbrbd, lrhsa, lrhsd, ltint, luint, 
+	lups, luldps, lupldp, ludtps, lwbrbd, lrhsa, lrhsd, ltint, luintt, 
 	ldups, leqf, luneq, ltm, ldtm, ltm2, lu, lubc0, lubc1, ldbc, luicd, 
 	lficd, ldicd, lw, litm, lial, lir, lic, liwbr, liw, m1aa, m2aa, m1bb, 
 	m2bb, m1cc, m1dd, m1u, m1bc, m1ic, lp0, lp1, lpoin, lev, lwkev, lsmat,
 	 lrnllv,igenwts)
 integer *itp, *ncpp, *lf, *ldfdu, *ldfdp, *laa, *lbb, *lcc, *ldd, *lups, *
-	luldps, *lupldp, *ludtps, *lwbrbd, *lrhsa, *lrhsd, *ltint, *luint, *
+	luldps, *lupldp, *ludtps, *lwbrbd, *lrhsa, *lrhsd, *ltint, *luintt, *
 	ldups, *leqf, *luneq, *ltm, *ldtm, *ltm2, *lu, *lubc0, *lubc1, *ldbc, 
 	*luicd, *lficd, *ldicd, *lw, *litm, *lial, *lir, *lic, *liwbr, *liw, *
 	m1aa, *m2aa, *m1bb, *m2bb, *m1cc, *m1dd, *m1u, *m1bc, *m1ic, *lp0, *
@@ -811,13 +813,13 @@ integer *itp, *ncpp, *lf, *ldfdu, *ldfdp, *laa, *lbb, *lcc, *ldd, *lups, *
 /* Computing 2nd power */
     i__1 = (blbcn_1.ndim << 1) + blicn_1.nfpar;
     *lrhsa = *lwbrbd + (blbcn_1.ndim * 7 + (blicn_1.nfpar << 1) + 1) * 
-	    blbcn_1.ndim * blcde_1.ntst + i__1 * i__1 + ((blbcn_1.ndim << 1) 
-	    + blicn_1.nfpar << 1) + (blicn_1.nfpar + blbcn_1.ndim + 2) * 
+	    blbcn_1.ndim * blcde_1.ntst + i__1 * i__1 + (((blbcn_1.ndim << 1) 
+	    + blicn_1.nfpar) << 1) + (blicn_1.nfpar + blbcn_1.ndim + 2) * 
 	    blbcn_1.ndim;
     *lrhsd = *lrhsa + (blcde_1.ntst + 1) * blicn_1.nrow;
     *ltint = *lrhsd + blcde_1.nbc + blcde_1.nint + 1;
-    *luint = *ltint + blcde_1.ntst + 1;
-    *ldups = *luint + (blcde_1.ntst + 1) * blicn_1.nrow;
+    *luintt = *ltint + blcde_1.ntst + 1;
+    *ldups = *luintt + (blcde_1.ntst + 1) * blicn_1.nrow;
     *leqf = *ldups + (blcde_1.ntst + 1) * blicn_1.nrow;
     *luneq = *leqf + blcde_1.ntst + 1;
     *ltm = *luneq + blcde_1.ntst + 1;
@@ -881,8 +883,8 @@ integer *itp, *ncpp, *lf, *ldfdu, *ldfdp, *laa, *lbb, *lcc, *ldd, *lups, *
 /* Computing 2nd power */
     i__1 = (blbcn_1.ndim << 1) + blicn_1.nfpar;
     bldim_1.nwbr = (blbcn_1.ndim * 7 + (blicn_1.nfpar << 1) + 1) * 
-	    blbcn_1.ndim * blcde_1.ntst + i__1 * i__1 + ((blbcn_1.ndim << 1) 
-	    + blicn_1.nfpar << 1) + (blicn_1.nfpar + blbcn_1.ndim + 2) * 
+	    blbcn_1.ndim * blcde_1.ntst + i__1 * i__1 + (((blbcn_1.ndim << 1) 
+	    + blicn_1.nfpar) << 1) + (blicn_1.nfpar + blbcn_1.ndim + 2) * 
 	    blbcn_1.ndim;
     bldim_1.niwbr = blbcn_1.ndim * 3 * (blcde_1.ntst - 1) + blcde_1.ntst;
 
@@ -2252,7 +2254,7 @@ e12.5),50(/,23x,2(2x,2e12.5)))";
 /* L1: */
 	  }
       }
-  send_eigen(*ibr,*ntot+1,blbcn_1.ndim,&ev[1]);
+  send_eigen(*ibr,*ntot+1,blbcn_1.ndim,(dcomplex*)&ev[1]);
 /* Compute the smallest real part. */
 
     rimhb = blrcn_1.zero;
@@ -2264,13 +2266,13 @@ e12.5),50(/,23x,2(2x,2e12.5)))";
 	    goto L2;
 	}
 /* SGLE    IF(AIMAG(EV(I)).EQ.ZERO)GOTO 2 */
-	ar = (d__1 = dreal_(&ev[i]), abs(d__1));
+	ar = (d__1 = dreal_((dcomplex*)&ev[i]), abs(d__1));
 /* SGLE    AR= ABS( REAL(EV(I))) */
 	if (ar > arev) {
 	    goto L2;
 	}
 	arev = ar;
-	rev = dreal_(&ev[i]);
+	rev = dreal_((dcomplex*)&ev[i]);
 /* SGLE      REV= REAL(EV(I)) */
 	rimhb = (d__1 = d_imag(&ev[i]), abs(d__1));
 /* SGLE      RIMHB= ABS(AIMAG(EV(I))) */
@@ -2286,7 +2288,7 @@ L2:
     nins1 = 0;
     i__1 = blbcn_1.ndim;
     for (i = 1; i <= i__1; ++i) {
-	if (dreal_(&ev[i]) <= blrcn_1.zero) {
+	if (dreal_((dcomplex*)&ev[i]) <= blrcn_1.zero) {
 	    ++nins1;
 	}
 /* SGLE    IF( REAL(EV(I)).LE.ZERO)NINS1=NINS1+1 */
@@ -3082,7 +3084,7 @@ integer *iunit, *n1, *n2;
 
     /* Local variables */
     static integer itmp, i, j;
-    extern /* Character */ int cnvrt_();
+    extern /* Character */ void cnvrt_();
     static char col[14*9], tmp[14];
 
     /* Fortran I/O blocks */
@@ -3243,7 +3245,7 @@ integer *iunit, *n1, *n2;
 
 
 /*     ----------- -------- ----- */
-/* Character */ int cnvrt_(ret_val, ret_val_len, i)
+/* Character */ void cnvrt_(ret_val, ret_val_len, i)
 char *ret_val;
 ftnlen ret_val_len;
 integer *i;
@@ -4190,16 +4192,16 @@ T STEPSIZE =  \002,e11.3)";
 
 /*     ---------- ----- */
 /* Subroutine */ int adapt_(nold, ncold, nnew, ncnew, tm, dtm, m1u, ups, vps, 
-	tint, uint, eqf, uneq, wrksp, tm2, itm, ial)
+	tint, uintt, eqf, uneq, wrksp, tm2, itm, ial)
 integer *nold, *ncold, *nnew, *ncnew;
 doublereal *tm, *dtm;
 integer *m1u;
-doublereal *ups, *vps, *tint, *uint, *eqf, *uneq, *wrksp, *tm2;
+doublereal *ups, *vps, *tint, *uintt, *eqf, *uneq, *wrksp, *tm2;
 integer *itm, *ial;
 {
     /* System generated locals */
-    integer ups_dim1, ups_offset, vps_dim1, vps_offset, uint_dim1, 
-	    uint_offset, wrksp_dim1, wrksp_offset, i__1, i__2;
+    integer ups_dim1, ups_offset, vps_dim1, vps_offset, uintt_dim1, 
+	    uintt_offset, wrksp_dim1, wrksp_offset, i__1, i__2;
 
     /* Local variables */
     static integer iper, i, j, noldp1, nnewp1;
@@ -4226,9 +4228,9 @@ integer *itm, *ial;
     wrksp -= wrksp_offset;
     --uneq;
     --eqf;
-    uint_dim1 = *m1u;
-    uint_offset = uint_dim1 + 1;
-    uint -= uint_offset;
+    uintt_dim1 = *m1u;
+    uintt_offset = uintt_dim1 + 1;
+    uintt -= uintt_offset;
     --tint;
     vps_dim1 = *m1u;
     vps_offset = vps_dim1 + 1;
@@ -4261,12 +4263,12 @@ integer *itm, *ial;
 /* Replace UPS by its interpolant on the new mesh : */
 
     interp_(&blbcn_1.ndim, &noldp1, ncold, &tm[1], m1u, &ups[ups_offset], &
-	    nnewp1, ncnew, &tint[1], &uint[uint_offset], &tm2[1], &itm[1]);
+	    nnewp1, ncnew, &tint[1], &uintt[uintt_offset], &tm2[1], &itm[1]);
     i__1 = nnewp1;
     for (j = 1; j <= i__1; ++j) {
 	i__2 = nrwnew;
 	for (i = 1; i <= i__2; ++i) {
-	    ups[j + i * ups_dim1] = uint[j + i * uint_dim1];
+	    ups[j + i * ups_dim1] = uintt[j + i * uintt_dim1];
 /* L1: */
 	}
 /* L2: */
@@ -4275,12 +4277,12 @@ integer *itm, *ial;
 /* Replace VPS by its interpolant on the new mesh : */
 
     interp_(&blbcn_1.ndim, &noldp1, ncold, &tm[1], m1u, &vps[vps_offset], &
-	    nnewp1, ncnew, &tint[1], &uint[uint_offset], &tm2[1], &itm[1]);
+	    nnewp1, ncnew, &tint[1], &uintt[uintt_offset], &tm2[1], &itm[1]);
     i__1 = nnewp1;
     for (j = 1; j <= i__1; ++j) {
 	i__2 = nrwnew;
 	for (i = 1; i <= i__2; ++i) {
-	    vps[j + i * vps_dim1] = uint[j + i * uint_dim1];
+	    vps[j + i * vps_dim1] = uintt[j + i * uintt_dim1];
 /* L4: */
 	}
 /* L5: */
@@ -4730,7 +4732,7 @@ static char fmt_101[] = "(\002 *** ERROR RETURN FROM IMSL ROUTINE -EIG\
 RF-\002)";
 static cilist io___312 = { 0, 9, 0, fmt_101, 0 };
  
-eigrf_(a,ndim,m1a,ev,wkev,ier);
+eigrf_(a,ndim,m1a,(dcomplex*)ev,wkev,ier);
 if(*ier!=0){
 s_wsfe(&io___312);
 	e_wsfe();
@@ -4755,9 +4757,8 @@ RF-\002)";
     integer s_wsfe(), e_wsfe();
 
     /* Local variables */
-    static doublereal z;
     extern /* Subroutine */ int eigrf_();
-    static integer ier1, ier2;
+    
 
     /* Fortran I/O blocks */
     static cilist io___312 = { 0, 9, 0, fmt_101, 0 };
@@ -4785,7 +4786,7 @@ RF-\002)";
     /* Function Body */
     *ier = 0;
 
-    eigrf_(&a[a_offset], ndim, m1a, &ev[1], &wkev[1], ier);
+    eigrf_(&a[a_offset], ndim, m1a, (dcomplex*)&ev[1], &wkev[1], ier);
 
   /*  ier1 = 129;
     ier2 = *ndim + 128;
@@ -5290,12 +5291,12 @@ L2:
     *lab = mlab;
     if (*isw < 0) {
 	*ibr = mbr + 1;
-    } else if (abs(blitp_1.itpsp) < 10 && abs(*isw) == 2 || (blbcn_1.ips == 2 
-	    || blbcn_1.ips == 12) && blitp_1.itpsp == 3 || (blbcn_1.ips == 3 
-	    || blbcn_1.ips == 13) && abs(blitp_1.itpsp) < 10 || blbcn_1.ips ==
-	     4 && *isw == 2 && abs(blitp_1.itpsp) < 10 || blbcn_1.ips == 6 && 
-	    *isw == 2 && abs(blitp_1.itpsp) < 10 || blbcn_1.ips == 5 && 
-	    blitp_1.itpsp % 10 == 2) {
+    } else if (((abs(blitp_1.itpsp) < 10) && (abs(*isw) == 2)) || (((blbcn_1.ips == 2) 
+	    || (blbcn_1.ips == 12)) && (blitp_1.itpsp == 3)) || (((blbcn_1.ips == 3) 
+	    || (blbcn_1.ips == 13)) && (abs(blitp_1.itpsp) < 10)) || ((blbcn_1.ips ==
+	     4) && (*isw == 2) && (abs(blitp_1.itpsp) < 10)) || ((blbcn_1.ips == 6) && 
+	    (*isw == 2) && (abs(blitp_1.itpsp) < 10)) || ((blbcn_1.ips == 5) && 
+	    (blitp_1.itpsp % 10 == 2))) {
 	*ibr = blbcn_1.irs;
     } else {
 	*ibr = blitp_1.ibrsp;

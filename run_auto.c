@@ -1,7 +1,12 @@
-#include <stdlib.h> 
+#include "run_auto.h"
+#include "close.h"
+#include "open.h"
+#include "auto_nox.h"
+
 #include <stdio.h>
 #include "f2c.h"
-
+#include <string.h>
+#include "tabular.h"
 #define IRS blbcn_1.irs
 #define IPS blbcn_1.ips
 #define ISW blcde_1.isw
@@ -12,6 +17,14 @@
 #define WAE wae_(&itp,&lw,&liw)
 #define WBV wbv_(&itp,&lw,&liw)
 #define BYE  goto L10
+
+extern void *malloc(size_t size);
+extern void free(void *ptr);
+extern char fort3[200];
+extern char fort7[200];
+extern char fort8[200];
+extern char fort9[200];
+
 struct {
     integer ndim, ips, irs, ilp, icp[20];
     doublereal par[20];
@@ -28,7 +41,8 @@ struct {
 
 
 
-static integer c__1 = 1;
+/*static integer c__1 = 1;
+*/
 
 struct {
     integer ntst, ncol, iad, isp, isw, iplt, nbc, nint;
@@ -44,7 +58,7 @@ struct {
 
 
 
-run_aut(nfpar,itp)
+void run_aut(nfpar,itp)
      int nfpar,itp;
 
 {
@@ -66,15 +80,15 @@ run_aut(nfpar,itp)
         olist o_1;
 
      cllist cl_1;    
-    double *w;
+    double *w=NULL;
 
-    int  *iw;
+    int  *iw=NULL;
     int lw,liw;
     int aisw,aitp;
        o_1.oerr = 0;
     o_1.ounit = 8;
-    o_1.ofnmlen = 6;
-    o_1.ofnm = "fort.8";
+    o_1.ofnmlen = strlen(fort8);
+    o_1.ofnm = fort8;
     o_1.orl = 0;
     o_1.osta = 0;
     o_1.oacc = 0;
@@ -84,8 +98,8 @@ run_aut(nfpar,itp)
  
    o_1.oerr = 0;
     o_1.ounit = 9;
-    o_1.ofnmlen = 6;
-    o_1.ofnm = "fort.9";
+    o_1.ofnmlen = strlen(fort9);
+    o_1.ofnm = fort9;
     o_1.orl = 0;
     o_1.osta = 0;
     o_1.oacc = 0;
@@ -96,8 +110,8 @@ run_aut(nfpar,itp)
 
    o_1.oerr = 0;
     o_1.ounit = 3;
-    o_1.ofnmlen = 6;
-    o_1.ofnm = "fort.3";
+    o_1.ofnmlen = strlen(fort3);
+    o_1.ofnm = fort3;
     o_1.orl = 0;
     o_1.osta = 0;
     o_1.oacc = 0;
@@ -108,8 +122,8 @@ run_aut(nfpar,itp)
 
    o_1.oerr = 0;
     o_1.ounit = 7;
-    o_1.ofnmlen = 6;
-    o_1.ofnm = "fort.7";
+    o_1.ofnmlen = strlen(fort7);
+    o_1.ofnm = fort7;
     o_1.orl = 0;
     o_1.osta = 0;
     o_1.oacc = 0;
@@ -130,7 +144,7 @@ run_aut(nfpar,itp)
 
   
       
-    /*   printf("ITP=%d ISW=%d IRS=%d IPS=%d NFPAR=%d \n",ITP,ISW,IRS,IPS,NFPAR); */
+    /*   plintf("ITP=%d ISW=%d IRS=%d IPS=%d NFPAR=%d \n",ITP,ISW,IRS,IPS,NFPAR); */
 
     aisw=abs(ISW);
 /*          One parameter stuff       ISW != +/- 2             */
@@ -179,20 +193,20 @@ run_aut(nfpar,itp)
 	set_auto();
 	
         if(ITP==3||(ITP/10)==3){
-	  /*  printf("Case 3\n");
-	      printf(" liw=%d lw=%d\n",liw,lw); */
+	  /*  plintf("Case 3\n");
+	      plintf(" liw=%d lw=%d\n",liw,lw); */
 	  autobv_(w, iw, &itp, &nfpar, fnps_, bcps_, icps_, stpnps_, fnspbv_);
 	}
 	else
 	  if(IRS==0){
-	    /*  printf("case 4\n");
+	    /*  plintf("case 4\n");
 		printf(" liw=%d lw=%d\n",liw,lw); */
 	    autobv_(w,iw,&itp,&nfpar,fnps_,bcps_,icps_,stpnub_,fnspbv_);
 	  }
 	  else
 	    {
-	      /*     printf("Case 5\n");
-		     printf(" liw=%d lw=%d\n",liw,lw); */
+	      /*     plintf("Case 5\n");
+		     plintf(" liw=%d lw=%d\n",liw,lw); */
 	      autobv_(w, iw, &itp, &nfpar, fnps_, bcps_, icps_, stpnbv_, fnspbv_);
 	    }
       }
@@ -219,7 +233,7 @@ run_aut(nfpar,itp)
 
     aitp=abs(itp)/10;
     if(IPS<=1&&aisw==2&&((ITP==2)||(ITP==1))){ /* limit points  */
-      /*  printf("I am here - ITP=%d\n,nfpar=%d",ITP,nfpar); */
+      /*  plintf("I am here - ITP=%d\n,nfpar=%d",ITP,nfpar); */
       WAE;
       ALLOCW;
       ALLOCIW;
@@ -236,7 +250,7 @@ run_aut(nfpar,itp)
       ALLOCW;
       ALLOCIW;
       cnstnt_();
-      printf("I am here - aitp=%d\n",aitp);
+      /* plintf("I am here - aitp=%d\n",aitp); */
     dfinit_();
     set_auto();
     

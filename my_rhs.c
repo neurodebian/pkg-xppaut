@@ -1,7 +1,12 @@
+#include "my_rhs.h"
+#include "dae_fun.h"
+#include "main.h"
+#include "extra.h"
 #include <stdlib.h> 
 #include "xpplim.h"
 #include "shoot.h"
 #include "getvar.h"
+#include "simplenet.h"
 
 /* #define Set_ivar(a,b) variables[(a)]=(b) */
 
@@ -16,17 +21,20 @@ extern int NVAR,NODE;
 
 double evaluate(/* int *ar */);
 
-MAIN__()
+int MAIN__()
 {
+	return(0);
 }
-main(argc,argv)
+int main(argc,argv)
      char **argv;
      int argc;
 {
   do_main(argc,argv);
+  
+  exit(0);
 }
 
- extra(y__y, t,nod,neq)
+void extra(y__y, t,nod,neq)
  double *y__y,t;
  int nod,neq;
  {
@@ -43,7 +51,7 @@ main(argc,argv)
   y__y[i]=evaluate(my_ode[i+FIX_VAR-NMarkov]);
 }
 
-set_fix_rhs(t,y,neq)
+/* set_fix_rhs(t,y,neq)
      int neq;
      double t,*y;
 {
@@ -55,13 +63,30 @@ set_fix_rhs(t,y,neq)
     SETVAR(i+1,evaluate(my_ode[i]));
   eval_all_nets();
   do_in_out(); 
+  } */
+void set_fix_rhs(t,y)
+     double t,*y;
+{
+  int i;
+  SETVAR(0,t);
+  for(i=0;i<NODE;i++)
+    SETVAR(i+1,y[i]);
+  for(i=0;i<NMarkov;i++)
+    SETVAR(i+1+NODE+FIX_VAR,y[i+NODE]);
+  for(i=NODE;i<NODE+FIX_VAR;i++)
+    SETVAR(i+1,evaluate(my_ode[i]));
+  eval_all_nets();
+  #ifdef PHTOOLS
+  	eval_all_buffersols();
+  #endif
+  do_in_out(); 
 }
 
 
-my_rhs( t,y,ydot,neq)
+int my_rhs( t,y,ydot,neq)
 double t,*y,*ydot;
 int neq;
- {
+{
   int i;
   SETVAR(0,t);
   for(i=0;i<NODE;i++)
@@ -69,32 +94,47 @@ int neq;
 
   for(i=NODE;i<NODE+FIX_VAR;i++){
   SETVAR(i+1,evaluate(my_ode[i]));
-  /* printf("%d %g \n",i+1,GETVAR(i+1)); */
+  /* plintf("%d %g \n",i+1,GETVAR(i+1)); */
   }
+    /*printf("WTF %g\n",evaluate(my_ode[1]));
+    */
     eval_all_nets();
+    #ifdef PHTOOLS
+    	eval_all_buffersols();
+    #endif
+    
     do_daes();
     do_in_out(); 
  for(i=0;i<NODE;i++)
-
   {
     ydot[i]=evaluate(my_ode[i]);
-    
   }
  if(neq>NODE)vec_rhs(t,y,ydot,neq);
+	
+ return(1);
+}
 
- }
+void update_based_on_current()
+{
+  int i;
+   for(i=NODE;i<NODE+FIX_VAR;i++)
+    SETVAR(i+1,evaluate(my_ode[i]));
+    #ifdef PHTOOLS
+  	eval_all_buffersols();
+    #endif
+  eval_all_nets();
+  do_in_out(); 
+}
 
-fix_only(double t,double *y)
+void fix_only()
 {
    int i;
-  SETVAR(0,t);
-  for(i=0;i<NODE;i++)
-    SETVAR(i+1,y[i]);
   for(i=NODE;i<NODE+FIX_VAR;i++)
     SETVAR(i+1,evaluate(my_ode[i]));
 
 }
-rhs_only(double *y,double *ydot)
+
+void rhs_only(double *y,double *ydot)
 {
   int i;
   for(i=0;i<NODE;i++){
@@ -102,7 +142,7 @@ rhs_only(double *y,double *ydot)
   }
 }
  
-vec_rhs( t,y,ydot,neq)
+void vec_rhs( t,y,ydot,neq)
 double t,*y,*ydot;
 int neq;
 {

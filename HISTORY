@@ -1,3 +1,22 @@
+VERSION 5.99 Sept 2009
+- havent kept up with history much
+- lots of new stuff added
+  - spectral analysis - CSD, PSD, Coherence (seems to do the same thing 
+    up to a scale factor as MATLAB
+  -FFT correlations - much faster
+  - command line options
+    -bigfont <name>
+    -smallfont <name>
+    -runnow (runs immediately)
+    -white makes background white/foreground black
+    -allwin all windows come up
+    -ee uses MS convention in dialogs
+  - when you compute equilibria in XPP you can import them and then use
+    as starting point for AUTO.
+  - strong sets kept for 2D systems 
+
+-miscellaneous PS bugs fixed, I think 
+
 VERSION 5.6  Sept 2002
 - not much new, poisson processes added, and the "delete/backspace" keys
   behave the same universally now,

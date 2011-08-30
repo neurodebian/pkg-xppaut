@@ -52,10 +52,10 @@ typedef short int shortlogical;
     go_locbif()  
 {
 
- printf(" LOCBIF starts ... \n");
+ plintf(" LOCBIF starts ... \n");
  initdata_();
  locbif_();
- printf(" LOCBIF ends ... \n");
+ plintf(" LOCBIF ends ... \n");
  system("rm storef.dat");
  system("rm init.dat");
  system("rm storef1.dat");
@@ -81,18 +81,18 @@ lbf_output(text,n,m,l,x,p,g,t,rr,ri,bifval,line,actpar,pointtype,
 {
   char rtext[256];
   int i;
-  /*  printf(" tl=%d \n",textlen); */
+  /*  plintf(" tl=%d \n",textlen); */
 
   for(i=0;i<textlen;i++)rtext[i]=text[i];
   rtext[textlen]=0;
-  printf(" >>>>>>>>>>> \n %s \n",rtext);
+  plintf(" >>>>>>>>>>> \n %s \n",rtext);
 
-  printf(" n=%d m=%d pt=%d x=%g p=%g bv=%g %g\n",n,m,
+  plintf(" n=%d m=%d pt=%d x=%g p=%g bv=%g %g\n",n,m,
 	 pointtype,x[0],p[0],bifval[0],LastLyapunov);
   /*  for(i=0;i<5;i++)printf(" %g ",linbfw_1.funh[i]); */
   LastLyapunov=0.0;
-  printf("\n");
- printf("<<<<<<<<<<<<<<<<<<<<<< \n\n\n");
+  plintf("\n");
+ plintf("<<<<<<<<<<<<<<<<<<<<<< \n\n\n");
 }
 
 
@@ -104,17 +104,17 @@ lbf_diag(text,n,m,l,x,p,g,t,rr,ri,bifval,iend,textlen)
 {
   char rtext[256];
   int i;
-  /*  printf(" tl=%d \n",textlen); */
+  /*  plintf(" tl=%d \n",textlen); */
 
   for(i=0;i<textlen;i++)rtext[i]=text[i];
   rtext[textlen]=0;
-  printf(" >>>>>>>>>>> \n %s \n",rtext);
+  plintf(" >>>>>>>>>>> \n %s \n",rtext);
 
-  printf(" n=%d m=%d x=%g p=%g bv=%g \n",n,m,
+  plintf(" n=%d m=%d x=%g p=%g bv=%g \n",n,m,
 	 x[0],p[0],bifval[0]);
   /*  for(i=0;i<5;i++)printf(" %g ",linbfw_1.funh[i]); */
-  printf("\n");
- printf("<<<<<<<<<<<<<<<<<<<<<< \n\n\n");
+  plintf("\n");
+ plintf("<<<<<<<<<<<<<<<<<<<<<< \n\n\n");
 }
 
 
@@ -183,7 +183,7 @@ getinitval_(vnames,pnames,fnames,
      double *rpc,*rvc;
 {
  int i;
- printf(" Initializing ...\n");
+ plintf(" Initializing ...\n");
  /* usual parameters for numerics */
  setlbfusual(rpc);
  /* mode   1- ep 2 -fp 3 lc 4 ps */

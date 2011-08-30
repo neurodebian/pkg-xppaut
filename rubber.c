@@ -6,13 +6,19 @@
 #include <stdio.h>
 #define RUBBOX 0
 #define RUBLINE 1
+#include "rubber.h"
+#include "ggets.h"
+#include "many_pops.h"
+
 extern Window draw_win;
 extern Display *display;
 extern int screen;
 extern int xor_flag,xorfix;
 extern GC gc,gc_graph;
-extern unsigned int MyBackColor,MyForeColor,GrFore,GrBack;
- rubber(x1,y1,x2,y2,w,f)
+extern unsigned int MyBackColor,MyForeColor,MyMainWinColor,MyDrawWinColor,GrFore,GrBack;
+
+
+int rubber(x1,y1,x2,y2,w,f)
  int *x1,*y1,*x2,*y2,f;
  Window w;
  {
@@ -23,9 +29,15 @@ extern unsigned int MyBackColor,MyForeColor,GrFore,GrBack;
     int oldx=0,oldy=0;
   int state=0;
   xor_flag=1;
+  XFlush(display);
   chk_xor();
    if(xorfix)
-     XSetForeground(display,gc,GrFore); 
+   {
+   	XSetForeground(display,gc,MyDrawWinColor);
+ 	XSetBackground(display,gc,MyForeColor);  
+   	/*XSetForeground(display,gc,GrFore);*/ 
+   }
+   
    XSelectInput(display,w,
    KeyPressMask|ButtonPressMask|ButtonReleaseMask|
 		PointerMotionMask|ButtonMotionMask|ExposureMask);
@@ -34,11 +46,15 @@ extern unsigned int MyBackColor,MyForeColor,GrFore,GrBack;
    XNextEvent(display,&ev);
    switch(ev.type){ 
        case Expose: do_expose(ev);
-         xor_flag=1;
-  chk_xor();
-   if(xorfix)
-     XSetForeground(display,gc,GrFore); 
-	 break;
+        	xor_flag=1;
+  		chk_xor();
+   		if(xorfix)
+   		{
+   			XSetForeground(display,gc,MyDrawWinColor);
+ 			XSetBackground(display,gc,MyForeColor);  
+     			/*XSetForeground(display,gc,GrFore);*/
+     		} 
+		break;
      
         case KeyPress:
 		if(state>0)break;  /* too late Bozo   */
@@ -71,8 +87,12 @@ extern unsigned int MyBackColor,MyForeColor,GrFore,GrBack;
 	xor_flag=0;
 	chk_xor();
 
-if(xorfix)
-  XSetForeground(display,gc,GrBack); 
+   if(xorfix)
+   {
+   	/*XSetForeground(display,gc,GrBack); */
+  	XSetForeground(display,gc,MyForeColor);   
+  	XSetBackground(display,gc,MyDrawWinColor);
+   }
 
         if(!error){
 	*x1=dragx;
@@ -88,7 +108,7 @@ ButtonReleaseMask|ButtonMotionMask);
  }
  
 
-rbox(i1,j1,i2,j2,w,f)
+void rbox(i1,j1,i2,j2,w,f)
 int i1,j1,i2,j2,f;
 Window w;
 {

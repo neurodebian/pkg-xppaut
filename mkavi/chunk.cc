@@ -16,9 +16,13 @@
  */
 
 
-#include <iostream.h>
+/*#include <iostream.h> <- This is now deprecated. Use the following instead*/
+#include <iostream>
 #include <assert.h>
 #include "chunk.h"
+#include "stdlib.h"
+
+using namespace std;
 
 long stdIO::seek(long off, int whence)
 {

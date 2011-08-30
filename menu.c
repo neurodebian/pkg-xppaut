@@ -1,3 +1,7 @@
+#include "menus.h"
+#include "menu.h"
+#include "main.h"
+
 #include <stdlib.h> 
 #include <stdio.h>
 #include <string.h>
@@ -6,22 +10,26 @@
 #include <X11/Xos.h>
 #include <X11/Xatom.h>
 #include <X11/cursorfont.h>
-#include "menus.h"
+
+#include "ggets.h"
+#include "many_pops.h"
+#include "pop_list.h"
+
 int help_menu;
 MENUDEF my_menus[3]; 
 extern Display *display;
 extern int tfBell,TipsFlag;
-extern int DCURY,DCURX,CURY_OFF;
+extern int DCURY,DCURX,CURY_OFF,DCURYs,DCURYb;
 extern GC gc;
 Window make_unmapped_window(); 
-flash(num)
+void flash(num)
 int num;
 {
 }
 
 
 
-add_menu(base,j,n,names,key,hint)
+void add_menu(base,j,n,names,key,hint)
    Window base;
    char **names,*key,**hint;
    int j,n;
@@ -30,7 +38,7 @@ add_menu(base,j,n,names,key,hint)
   int i;
     Cursor cursor;
      cursor=XCreateFontCursor(display,XC_hand2);
-  w=make_unmapped_window(base,0,DCURY+DCURY+6,16*DCURX,21*(DCURY+2)+2,1);
+  w=make_plain_unmapped_window(base,0,DCURYs+DCURYb+10,16*DCURX,21*(DCURY+2)-3,1);
    my_menus[j].base=w;
    XDefineCursor(display,w,cursor); 
    my_menus[j].names=names;
@@ -46,7 +54,7 @@ add_menu(base,j,n,names,key,hint)
    XMapSubwindows(display,my_menus[j].base);
 }
 
-create_the_menus(base)
+void create_the_menus(base)
      Window base;
 {
   char key[30];
@@ -63,7 +71,7 @@ create_the_menus(base)
 }
 
 
-show_menu(j)
+void show_menu(j)
      int j;
 { 
   /*  XMapRaised(display,my_menus[j].base);
@@ -74,7 +82,7 @@ show_menu(j)
   help_menu=j;
 }
 
-unshow_menu(j)
+void unshow_menu(j)
      int j;
 {
   
@@ -85,19 +93,19 @@ unshow_menu(j)
    
 }  
 
-help()
+void help()
 {
   unshow_menu(help_menu);
   show_menu(MAIN_MENU);
 }
 
-help_num()
+void help_num()
 {
  unshow_menu(help_menu);
   show_menu(NUM_MENU);
 }
 
-help_file()
+void help_file()
 {
   if(tfBell)
    my_menus[FILE_MENU].names=fileon_menu;
@@ -107,7 +115,7 @@ help_file()
   show_menu(FILE_MENU);
 }
 
-menu_crossing(win,yn)
+void menu_crossing(win,yn)
      Window win;
      int yn;
 {
@@ -126,7 +134,7 @@ menu_crossing(win,yn)
   }
 }
 
-menu_expose(win)
+void menu_expose(win)
      Window win;
 {
   int i,n,j=help_menu;
@@ -139,7 +147,7 @@ menu_expose(win)
      set_fore();
      bar(0,0,16*DCURX,DCURY,win);
      set_back();
-     XDrawString(display,win,gc,DCURX/2,CURY_OFF,z[0],strlen(z[0]));
+     XDrawString(display,win,gc,DCURX/2+5,CURY_OFF,z[0],strlen(z[0]));
      set_fore();
     /* BaseCol();
     XDrawString(display,win,gc,0,CURY_OFF,z[0],strlen(z[0]));
@@ -149,13 +157,13 @@ menu_expose(win)
   for(i=0;i<n;i++){
     if(win==my_menus[j].w[i]){
        BaseCol();
-       XDrawString(display,win,gc,0,CURY_OFF,z[i+1],strlen(z[i+1]));
+       XDrawString(display,win,gc,5,CURY_OFF,z[i+1],strlen(z[i+1]));
     return;
     }
   }
 }
 
-menu_button(win)
+void menu_button(win)
      Window win;
 {
   int i,n,j=help_menu;
@@ -171,7 +179,7 @@ menu_button(win)
   }
 }
       
-draw_help()
+void draw_help()
 {
   int i,j=help_menu,n;
   char **z;

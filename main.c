@@ -1,6 +1,43 @@
+#include "main.h"
+
+#include "aniparse.h"
+#include "adj2.h"
+#include "storage.h"
+#include "load_eqn.h"
+#include "ggets.h"
+#include "many_pops.h"
+#include "read_dir.h"
+#include "comline.h"
+#include "simplenet.h"
+#include "dae_fun.h"
+#include "auto.h"
+#include "extra.h"
+#include "menudrive.h"
+#include "init_conds.h"
+#include "graphics.h"
+#include "integrate.h"
+#include "numerics.h"
+#include "form_ode.h"
+#include "pop_list.h"
+#include "arrayplot.h"
+#include "menu.h"
+#include "userbut.h"
+#include "color.h"
+#include "eig_list.h"
+#include "txtread.h"
+#include "edit_rhs.h"
+#include "axes2.h"
+#include "do_fit.h"
+#include "graf_par.h"
+
+
+#include "nullcline.h"
+#include "lunch-new.h"
+
+#include "calc.h"
 #include <stdlib.h> 
 /*
-  Copyright (C) 2002-2008  Bard Ermentrout
+    Copyright (C) 2002-2011  Bard Ermentrout & Daniel Dougherty
     
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -22,6 +59,7 @@
 */
 
 
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xos.h>
@@ -35,6 +73,7 @@
 #include "help_defs.h"
 #include "browse.h"
 #include "struct.h"
+#include <dirent.h>
 
 #define FIX_SIZE 3
 #define FIX_MIN_SIZE 2
@@ -50,19 +89,20 @@
 
 #include "myfonts.h"
 
-#define cstring MYSTR
+#define cstringmaj MYSTR1
+#define cstringmin MYSTR2
 
 #ifdef NOERRNO
 int errno;
 #endif
 
 int allwinvis=0;
-
-float xppver;
+int use_intern_sets=1;
+float xppvermaj,xppvermin;
 
 extern char this_file[100];
 extern int METHOD,storind;
-extern (*rhs)();
+extern int (*rhs)();
 extern XFontStruct *symfonts[5],*romfonts[5];
 extern int avsymfonts[5],avromfonts[5];
 extern int RunImmediately;
@@ -70,12 +110,14 @@ int Xup,TipsFlag=1;
 Atom deleteWindowAtom=0;
 int XPPBatch=0,batch_range=0;
 char batchout[256];
+char UserOUTFILE[256];
+
  int my_rhs(); 
 
  int DisplayHeight,DisplayWidth;
 int TrueColorFlag;
 char big_font_name[100],small_font_name[100];
-int PaperWhite;
+int PaperWhite=-1;
 extern int DF_FLAG;
 char mycommand[100];
 
@@ -90,7 +132,14 @@ Window command_pop,info_pop;
 GC gc, gc_graph,small_gc, font_gc;
 extern int help_menu,current_pop;
 unsigned int Black,White;
-unsigned int MyBackColor,MyForeColor;
+char UserBlack[8];
+char UserWhite[8];
+char UserMainWinColor[8];
+char UserDrawWinColor[8];
+char UserBGBitmap[100];
+int UserGradients=-1;
+int UserMinWidth=0,UserMinHeight=0;
+unsigned int MyBackColor,MyForeColor,MyMainWinColor,MyDrawWinColor;
 unsigned int GrFore,GrBack;
 int SCALEX,SCALEY;
 extern int COLOR;
@@ -100,16 +149,19 @@ extern int periodic;
 int DCURYb,DCURXb,CURY_OFFb;
 int DCURYs,DCURXs,CURY_OFFs;
 int DCURY,DCURX,CURY_OFF;
-
-
-
+FILE *logfile;
+int XPPVERBOSE=1;
+int OVERRIDE_QUIET=0;
+int OVERRIDE_LOGFILE=0;
+extern BROWSER my_browser;
 int tfBell;
+OptionsSet notAlreadySet;
 
- XFontStruct *big_font,*small_font;
+XFontStruct *big_font,*small_font;
 
  int popped=0;
 
-do_main(argc,argv)
+void do_main(argc,argv)
 char **argv;
 int argc;
 {
@@ -119,47 +171,245 @@ int argc;
 /*  char *win_name; */
   char pptitle[80];
   
+  /*Track which options have not been set already*/
+  notAlreadySet.BIG_FONT_NAME=1;
+  notAlreadySet.SMALL_FONT_NAME=1;
+  notAlreadySet.BACKGROUND=1;
+  notAlreadySet.IXPLT=1;
+  notAlreadySet.IYPLT=1;
+  notAlreadySet.IZPLT=1;
+  notAlreadySet.AXES=1;
+  notAlreadySet.NMESH=1;
+  notAlreadySet.METHOD=1;
+  notAlreadySet.TIMEPLOT=1;
+  notAlreadySet.MAXSTOR=1;
+  notAlreadySet.TEND=1;
+  notAlreadySet.DT=1;
+  notAlreadySet.T0=1;
+  notAlreadySet.TRANS=1;
+  notAlreadySet.BOUND=1;
+  notAlreadySet.TOLER=1;
+  notAlreadySet.DELAY=1;
+  notAlreadySet.XLO=1;
+  notAlreadySet.XHI=1;
+  notAlreadySet.YLO=1;
+  notAlreadySet.YHI=1;  
+  notAlreadySet.UserBlack=1;
+  notAlreadySet.UserWhite=1;
+  notAlreadySet.UserMainWinColor=1;
+  notAlreadySet.UserDrawWinColor=1;
+  notAlreadySet.UserGradients=1;
+  notAlreadySet.UserBGBitmap=1;
+  notAlreadySet.UserMinWidth=1;
+  notAlreadySet.UserMinHeight=1;
+  notAlreadySet.YNullColor=1;
+  notAlreadySet.XNullColor=1;
+  notAlreadySet.StableManifoldColor=1;
+  notAlreadySet.UnstableManifoldColor=1;
+  notAlreadySet.START_LINE_TYPE=1;
+  notAlreadySet.RandSeed=1;
+  notAlreadySet.PaperWhite=1;
+  notAlreadySet.COLORMAP=1;
+  notAlreadySet.NPLOT=1;
+  notAlreadySet.DLL_LIB=1;
+  notAlreadySet.DLL_FUN=1;
+  notAlreadySet.XP=1;
+  notAlreadySet.YP=1;
+  notAlreadySet.ZP=1;
+  notAlreadySet.NOUT=1;
+  notAlreadySet.VMAXPTS=1;
+  notAlreadySet.TOR_PER=1;
+  notAlreadySet.JAC_EPS=1;
+  notAlreadySet.NEWT_TOL=1;
+  notAlreadySet.NEWT_ITER=1;
+  notAlreadySet.FOLD=1;
+  notAlreadySet.DTMIN=1;
+  notAlreadySet.DTMAX=1;
+  notAlreadySet.ATOL=1;
+  notAlreadySet.TOL=1;
+  notAlreadySet.BANDUP=1;
+  notAlreadySet.BANDLO=1;
+  notAlreadySet.PHI=1;
+  notAlreadySet.THETA=1;
+  notAlreadySet.XMIN=1;
+  notAlreadySet.XMAX=1;
+  notAlreadySet.YMIN=1;
+  notAlreadySet.YMAX=1;
+  notAlreadySet.ZMIN=1;
+  notAlreadySet.ZMAX=1;
+  notAlreadySet.POIVAR=1;
+  notAlreadySet.OUTPUT=1;
+  notAlreadySet.POISGN=1;
+  notAlreadySet.POISTOP=1;
+  notAlreadySet.STOCH=1;
+  notAlreadySet.POIPLN=1;
+  notAlreadySet.POIMAP=1;
+  notAlreadySet.RANGEOVER=1;
+  notAlreadySet.RANGESTEP=1;
+  notAlreadySet.RANGELOW=1;
+  notAlreadySet.RANGEHIGH=1;
+  notAlreadySet.RANGERESET=1;
+  notAlreadySet.RANGEOLDIC=1;
+  notAlreadySet.RANGE=1;
+  notAlreadySet.NTST=1;
+  notAlreadySet.NMAX=1;
+  notAlreadySet.NPR=1;
+  notAlreadySet.NCOL=1;
+  notAlreadySet.DSMIN=1;
+  notAlreadySet.DSMAX=1;
+  notAlreadySet.DS=1;
+  notAlreadySet.PARMAX=1;
+  notAlreadySet.NORMMIN=1;
+  notAlreadySet.NORMMAX=1;
+  notAlreadySet.EPSL=1;
+  notAlreadySet.EPSU=1;
+  notAlreadySet.EPSS=1;
+  notAlreadySet.RUNNOW=1;
+  notAlreadySet.SEC=1;
+  notAlreadySet.UEC=1;
+  notAlreadySet.SPC=1;
+  notAlreadySet.UPC=1;
+  notAlreadySet.AUTOEVAL=1;
+  notAlreadySet.AUTOXMAX=1;
+  notAlreadySet.AUTOYMAX=1;
+  notAlreadySet.AUTOXMIN=1;
+  notAlreadySet.AUTOYMIN=1;
+  notAlreadySet.AUTOVAR=1;
+  notAlreadySet.PS_FONT=1;
+  notAlreadySet.PS_LW=1;   
+  notAlreadySet.PS_FSIZE=1;
+  notAlreadySet.PS_COLOR=1;
+  notAlreadySet.FOREVER=1;
+  notAlreadySet.BVP_TOL=1;
+  notAlreadySet.BVP_EPS=1;
+  notAlreadySet.BVP_MAXIT=1;
+  notAlreadySet.BVP_FLAG=1;
+  notAlreadySet.SOS=1;
+  notAlreadySet.FFT=1;
+  notAlreadySet.HIST=1;
+  notAlreadySet.PSFlag=1;
+  notAlreadySet.ATOLER=1;
+  notAlreadySet.MaxEulIter=1;
+  notAlreadySet.EulTol=1;
+  notAlreadySet.EVEC_ITER=1;
+  notAlreadySet.EVEC_ERR=1;
+  notAlreadySet.NULL_ERR=1;
+  notAlreadySet.NEWT_ERR=1;
+  notAlreadySet.NULL_HERE=1;
+
   
   unsigned int min_wid=450,min_hgt=360;
+  
 /*  unsigned int x=0,y=0; */
+  /*
   sprintf(myfile,"lecar.ode");
+  */
+  get_directory(myfile);
+  
   SCALEX=640;
   SCALEY=480;
+  
   Xup=0;
   sprintf(batchout,"output.dat");
+  
+
+  /*Read visualization environement variables here
+  since some may be overridden by command line
+  */
+  logfile=stdout;
+  check_for_quiet(argc, argv);
+  /*do_vis_env();*/
+  
+  
+   /* Old code did it this way...
+   do_vis_env();
   do_comline(argc, argv);
+   if(!XPPBatch)
+   {
+    	init_X();
+   }
+   
+  load_eqn(); 
+  */
+  
+  do_comline(argc, argv);
+  /*We need to init_X here if there is no file on command line
+  so that a file browser can be opened.
+  */
   if(!XPPBatch)
-    init_X();
-  load_eqn();
+  {    
+       /*Swap out the current options for a temporary place holder
+       */
+       OptionsSet *tempNS = (OptionsSet*)malloc(sizeof(OptionsSet));
+       *tempNS = notAlreadySet;
+       /*Initialize what's needed to open a browser based on 
+       the current options.
+       */
+       do_vis_env();
+       set_all_vals();
+       init_X();
+       /*       XSynchronize(display,1); */
+       /*
+       Now swap back the options for proper precedence ordering of options.
+       */
+       notAlreadySet = *tempNS;
+       free(tempNS);
+  }
+  load_eqn();   
+  OptionsSet *tempNS = (OptionsSet*)malloc(sizeof(OptionsSet));
+  *tempNS = notAlreadySet;
+  set_internopts(tempNS);
+  free(tempNS);
+  
   init_alloc_info();
+  do_vis_env();
+  
   set_all_vals();
+  
+ 
+  if(!XPPBatch)
+  {
+       init_X();
+  }
+  init_alloc_info();
   set_init_guess();
-  update_all_ffts();
-#ifdef AUTO 
-  init_auto_win();
-#endif
+  update_all_ffts(); 
+ 
+  #ifdef AUTO 
+    init_auto_win();
+  #endif
+  
   /* if(make_kernels()==0){
-     printf("Illegal kernel -- aborting \n");
+    plintf("Illegal kernel -- aborting \n");
      exit(0);
      } */
-  
+     
+ 
+ 
   if(disc(this_file))METHOD=0;
-  xppver=(float)cstring;
+  xppvermaj=(float)cstringmaj;
+  xppvermin=(float)cstringmin;
   if(strlen(this_file)<60)
-    sprintf(pptitle,"XPP Ver %g >> %s",xppver,this_file);
-  else sprintf(pptitle,"XPP Version %g",xppver);
+    sprintf(pptitle,"XPP Ver %g.%g >> %s",xppvermaj,xppvermin,this_file);
+  else sprintf(pptitle,"XPP Version %g.%g",xppvermaj,xppvermin);
 /*  win_name=pptitle; */
   do_meth();
+  
+  
   set_delay();
   rhs=my_rhs;
   init_fit_info();
   strip_saveqn();
   create_plot_list();
   auto_load_dll();
+  
   if(XPPBatch){
     init_browser();
     init_all_graph();
      if_needed_load_set();
+     if_needed_load_par();
+     if_needed_load_ic();
+     if_needed_select_sets();
     batch_integrate();
     exit(0);
   }
@@ -184,6 +434,7 @@ int argc;
 XSelectInput(display,win,ExposureMask|KeyPressMask|ButtonPressMask|
               StructureNotifyMask|ButtonReleaseMask|ButtonMotionMask);
  load_fonts();
+
 DCURXb=XTextWidth(big_font,"W",1);
 DCURYb=big_font->ascent+big_font->descent;
 CURY_OFFb=big_font->ascent+1;
@@ -250,25 +501,193 @@ make_scrbox_lists();
 /*          MAIN LOOP             */
 test_color_info();
   if_needed_load_set();
+  if_needed_load_par();
+  if_needed_load_ic();
 do_events(min_wid,min_hgt);
 } 
 
 
-init_X ()
+void check_for_quiet(argc,argv)
+char **argv;
+int argc;
+{
+	/*First scan, check for any QUIET option set...*/
+	int i = 0;
+	/*Allow for multiple calls to the QUIET and LOGFILE options 
+	on the command line. The last setting is the one that will stick.
+	Settings of logfile and quiet in the xpprc file will be ignored
+	if they are set on the command line.
+	*/ 
+	int quiet_specified_once=0;
+	int logfile_specified_once=0;
+	
+	for(i=1;i<argc;i++)
+	{
+ 	       if (strcmp(argv[i],"-quiet")==0)
+	       {
+	       	       set_option("QUIET",argv[i+1],1,NULL);
+		       quiet_specified_once=1;
+     		       i++;
+	       }
+	       else if (strcmp(argv[i],"-logfile")==0)
+	       {
+		       set_option("LOGFILE",argv[i+1],1,NULL);
+		       logfile_specified_once = 1;
+     		       i++;
+	       }
+	}
+	/*If -quiet or -logfile were specified at least once on the command line
+	we lock those in now...
+	*/
+	if (quiet_specified_once == 1)
+	{
+		OVERRIDE_QUIET=1;
+	}
+	if (logfile_specified_once == 1)
+	{
+		OVERRIDE_LOGFILE=1;
+	}
+}
+
+
+void do_vis_env()
+{
+  set_X_vals();
+  check_for_xpprc();
+  set_internopts_xpprc_and_comline();
+  
+}
+
+
+void init_X ()
 {
   char *icon_name = "xpp";
   char *win_name = "XPPAUT";
   unsigned int x = 0, y = 0;
-  unsigned int min_wid = 450, min_hgt = 360;
+  unsigned int min_wid = 450, min_hgt = 360; 
+  char *getenv();
+  
+  char teststr[] = "The Quick Brown Fox Jumped Over The Lazy Dog?";
+  
+   
+  if (UserMinWidth > 0)
+  {
+  	min_wid = UserMinWidth;
+	SCALEX = min_wid;
+  }
+  
+  if (UserMinHeight> 0)
+  {
+  	min_hgt = UserMinHeight;
+	SCALEY = min_hgt;
+  }
+
+  if (PaperWhite == 0)
+    {
+      GrFore = White;
+      GrBack = Black;
+    }
+
+
   main_win = init_win (4, icon_name, win_name,
                        x, y, min_wid, min_hgt, 0, NULL);
+		       
+   /*Set up foreground and background colors*/
+  
+ 
+  Black = BlackPixel (display, screen);
+  White = WhitePixel (display, screen);
+  
+  
+
+
+
+  if (strlen(UserBlack) != 0)
+  {       
+ 	XColor user_col;
+
+  	XParseColor(display, DefaultColormap(display,screen), UserBlack, &user_col);
+  	XAllocColor(display, DefaultColormap(display,screen), &user_col);
+  
+  	MyForeColor = GrFore = user_col.pixel;
+	Black = MyForeColor;
+  }
+  
+  if (strlen(UserWhite) != 0)
+  {
+  	XColor user_col;
+
+  	XParseColor(display, DefaultColormap(display,screen), UserWhite, &user_col);
+  	XAllocColor(display, DefaultColormap(display,screen), &user_col);
+  
+  	MyBackColor = GrBack = user_col.pixel;
+	White = MyBackColor;
+	     
+  }
+  
+  
+  
+  /*  Switch for reversed video  */
+  MyForeColor = GrFore = Black;
+  MyBackColor = GrBack = White;
+ /*  This is reversed  
+  MyForeColor=White;
+  MyBackColor=Black; */
+  	
+  if (PaperWhite == 1)/*Respect the swapping implied by the -white option.*/
+  {
+	  char swapcol[8];
+	  strcpy(swapcol,UserWhite);
+	  strcpy(UserWhite,UserBlack);
+	  strcpy(UserBlack,swapcol);
+
+
+	  MyForeColor = GrFore = White;
+	  MyBackColor = GrBack = Black;
+  }	
+	
+	
+  if (strlen(UserMainWinColor) != 0)
+  {
+  	XColor main_win_col;
+
+  	XParseColor(display, DefaultColormap(display,screen), UserMainWinColor, &main_win_col);
+  	XAllocColor(display, DefaultColormap(display,screen), &main_win_col);
+  
+    	MyMainWinColor = main_win_col.pixel;
+  }
+  else
+  {
+  	MyMainWinColor = MyBackColor;
+  }
+  
+  XSetWindowBorder(display,main_win,MyForeColor);
+  XSetWindowBackground(display,main_win,MyMainWinColor); 
+  
+  if (strlen(UserDrawWinColor) != 0)
+  {
+  	XColor draw_win_col;
+  	XParseColor(display, DefaultColormap(display,screen), UserDrawWinColor, &draw_win_col);
+  	XAllocColor(display, DefaultColormap(display,screen), &draw_win_col);
+  
+    	MyDrawWinColor = draw_win_col.pixel;
+  }
+  else
+  { 
+  	MyDrawWinColor = MyBackColor;
+  }
+  
   /* win = main_win; */
   FixWindowSize (main_win, SCALEX, SCALEY, FIX_MIN_SIZE);
   periodic = 1;
   if (DefaultDepth (display, screen) >= 8)
+  {
     COLOR = 1;
+  }
   else
+  {
     COLOR = 0;
+  }
   /* if(DefaultDepth(display,screen)==4){
      map16();
      COLOR=1;
@@ -279,36 +698,77 @@ init_X ()
                 ExposureMask | KeyPressMask | ButtonPressMask |
                 StructureNotifyMask | ButtonReleaseMask | ButtonMotionMask);
 
-  strcpy (big_font_name, "9x15");
-  strcpy (small_font_name, "6x13");
+  
+  load_fonts();
+   
+  /*BETTER SUPPORT FOR VARIABLE WIDTH FONTS
+  Use a statistical average to get average spacing. Some fonts don't
+  or are not able to report this accurately so this is reliable way to 
+  get the information. If person only has variable width font on their 
+  system they can get by.  
+  The average spacing will be too small for some short strings having 
+  capital letters (for example "GO"). Thus, we divide by the string 
+  length of our test string minus 2 for a little more wiggle room.
+  */
+   
+  /*   DCURXb = XTextWidth (big_font, "#", 1);
+   */
+  DCURXb = XTextWidth(big_font,teststr,strlen(teststr))/(strlen(teststr)-2);
+ 
 
-
-  load_fonts ();
-  DCURXb = XTextWidth (big_font, "W", 1);
   DCURYb = big_font->ascent + big_font->descent;
-  CURY_OFFb = big_font->ascent + 1;
-  DCURXs = XTextWidth (small_font, "W", 1);
+  CURY_OFFb = big_font->ascent - 1;
+  
+  /*  DCURXs = XTextWidth (small_font, "#", 1);
+   */
+ 
+  DCURXs = XTextWidth (small_font,teststr,strlen(teststr))/(strlen(teststr)-2);
+  
+
   DCURYs = small_font->ascent + small_font->descent;
-  CURY_OFFs = small_font->ascent + 1;
+  CURY_OFFs = small_font->ascent - 1;
 
-
-  Black = BlackPixel (display, screen);
-  White = WhitePixel (display, screen);
-/*  Switch for reversed video  */
-  MyForeColor = GrFore = Black;
-  MyBackColor = GrBack = White;
-/*  This is reversed  
-MyForeColor=White;
-MyBackColor=Black; */
-  if (PaperWhite == 0)
-    {
-      GrFore = White;
-      GrBack = Black;
-    }
   getGC (&gc);
   getGC (&gc_graph);
   getGC (&small_gc);
   getGC (&font_gc);
+  
+
+  if (strlen(UserBGBitmap) != 0) /*User supplied */
+  {
+  	  /*Pixmap pmap=XCreatePixmapFromBitmapData(display,main_win,lines_bits,lines_width,lines_height,MyForeColor,MyBackColor,DefaultDepth(display, DefaultScreen(display)));
+	 */
+	 unsigned int width_return,height_return;
+	 int x_hot,y_hot;
+	 unsigned char* pixdata;
+	 
+	 int success = XReadBitmapFileData(UserBGBitmap,&width_return, &height_return,&pixdata,&x_hot,&y_hot);
+	
+	 if (success != BitmapSuccess)
+	 {
+	 	if (success == BitmapOpenFailed)
+		{
+		plintf("Problem reading bitmap file %s -> BitmapOpenFailed\n",UserBGBitmap);
+		}
+		else if (success == BitmapFileInvalid)
+		{
+		plintf("Problem reading bitmap file %s -> BitmapFileInvalid\n",UserBGBitmap);
+	 	}
+		else if (success == BitmapNoMemory)
+		{
+		plintf("Problem reading bitmap file %s -> BitmapNoMemory\n",UserBGBitmap);
+	 	}
+	 } 
+	 else
+	 { 
+		Pixmap pmap=XCreatePixmapFromBitmapData(display,main_win,(char *)pixdata,width_return,height_return,MyForeColor,MyMainWinColor,DefaultDepth(display, DefaultScreen(display)));
+		XSetWindowBackgroundPixmap(display,main_win,pmap); 
+		XFreePixmap(display,pmap);
+		XFree(pixdata);
+	 }    
+  }
+         
+	 
   if (COLOR)
     MakeColormap ();
 
@@ -316,10 +776,30 @@ MyBackColor=Black; */
 /* set_small_font(); */
 
   XSetFont (display, small_gc, small_font->fid);
-  make_pops ();
+  /*make_pops();*/
+  
+  /*
+  If the user didn't specify specifically heights and widths
+  we try to set the initial size to fit everything nicely especially
+  if they are using wacky fonts...
+  */
+  if (UserMinWidth <= 0)
+  {
+	SCALEX = 10+36*2*DCURXs + 32*DCURXs;
+  }
+  
+  if (UserMinHeight <= 0)
+  {
+	SCALEY = 27*DCURYb+4*DCURYs;
+  }
+  
+  XResizeWindow(display,main_win,SCALEX,SCALEY);
+  /*FixWindowSize (main_win, SCALEX, SCALEY, FIX_MIN_SIZE);
+  */
 }
 
-set_big_font()
+
+void set_big_font()
 {
  DCURX=DCURXb;
  DCURY=DCURYb;
@@ -327,7 +807,7 @@ set_big_font()
  XSetFont(display,gc,big_font->fid);
 }
 
-set_small_font()
+void set_small_font()
 {
   DCURX=DCURXs;
  DCURY=DCURYs;
@@ -338,7 +818,7 @@ set_small_font()
 
 
 
-xpp_events(XEvent report,int min_wid,int min_hgt)
+void xpp_events(XEvent report,int min_wid,int min_hgt)
 {
 int window_size,com;
  
@@ -371,6 +851,7 @@ int window_size,com;
     resize_par_box(report.xany.window);  
   resize_my_browser(report.xany.window);
    resize_eq_list(report.xany.window);
+   resize_auto_window(report); 
   if(report.xconfigure.window==main_win){
 
   SCALEX=report.xconfigure.width;
@@ -383,7 +864,7 @@ int window_size,com;
    window_size=BIG_ENOUGH;
    XResizeWindow(display,command_pop,SCALEX-4,DCURY+1);
    XMoveResizeWindow(display,info_pop,0,SCALEY-DCURY-4,SCALEX-4,DCURY);
-   resize_par_slides(SCALEY-4*DCURY-5);
+   resize_par_slides(SCALEY-3*DCURYs-1*DCURYb-13);
    resize_all_pops(SCALEX,SCALEY);
 
     }
@@ -442,7 +923,8 @@ int window_size,com;
 	        menu_button(report.xbutton.window);
 	        /* box_select_events(report.xbutton.window,&i1); */
 		box_buttons(report.xbutton.window);
-	        slide_button_press(report.xbutton.window);
+
+		       slide_button_press(report.xbutton.window);
                 eq_list_button(report);
 		my_browse_button(report);
 #ifdef AUTO
@@ -459,7 +941,7 @@ int window_size,com;
 }
 
 
-do_events(min_wid,min_hgt)
+void do_events(min_wid,min_hgt)
 unsigned int min_wid,min_hgt;  
 {
  XEvent report;
@@ -480,7 +962,7 @@ while(1)
 
 
 
-bye_bye()
+void bye_bye()
 {
    int i;
   yes_reset_auto();
@@ -495,17 +977,14 @@ XCloseDisplay(display);
  exit(1);
 }
 
-clr_scrn()
+void clr_scrn()
 {
 	  blank_screen(draw_win);
 			 restore_off();
 			 do_axes();
-	
-
- 			
 }
 
-redraw_all()
+void redraw_all()
 {
     redraw_dfield();
   restore(0,my_browser.maxrow);
@@ -513,7 +992,9 @@ redraw_all()
   draw_freeze(draw_win);
   restore_on();
 }
- commander(ch)
+
+
+void commander(ch)
  char ch;
  {
    switch(help_menu)
@@ -736,6 +1217,7 @@ Window make_unmapped_window(root,x,y,width,height,bw)
  Window init_win(bw,icon_name,win_name,
                  x,y,min_wid,min_hgt,argc,argv)
  int argc;
+ int x,y;
  char **argv;
  unsigned int min_wid,min_hgt,bw;
  char *icon_name,*win_name;
@@ -751,7 +1233,7 @@ Window make_unmapped_window(root,x,y,width,height,bw)
   XSizeHints size_hints;
  char *display_name=NULL;
  if((display=XOpenDisplay(display_name))==NULL){
-   printf(" Failed to open X-Display \n");
+  plintf(" Failed to open X-Display \n");
    exit(-1);
  }
 /*   Remove after debugging is done */   
@@ -773,7 +1255,7 @@ Window make_unmapped_window(root,x,y,width,height,bw)
  XChangeWindowAttributes(display,wine,CWOverrideRedirect,&xswa); */
  XGetIconSizes(display,RootWindow(display,screen),&size_list,&count);
  icon_map=XCreateBitmapFromData(display,wine,
- pp_bits,pp_width,pp_height);
+ (char*)pp_bits,pp_width,pp_height);
 
 #ifdef X11R3
   size_hints.flags=PPosition|PSize|PMinsize;
@@ -800,12 +1282,12 @@ Window make_unmapped_window(root,x,y,width,height,bw)
   XTextProperty winname,iconname;
  if(XStringListToTextProperty(&icon_name,1,&iconname)==0)
  {
- printf("X error: failure for iconname\n");
+plintf("X error: failure for iconname\n");
  exit(-1);
  }
 if(XStringListToTextProperty(&win_name,1,&winname)==0)
  {
- printf("X error: failure for winname\n");
+plintf("X error: failure for winname\n");
  exit(-1);
  }
  
@@ -822,23 +1304,23 @@ if(XStringListToTextProperty(&win_name,1,&winname)==0)
  return(wine);
 }
 
-top_button_draw(Window w)
+void top_button_draw(Window w)
 {
   if(w==TopButton[0])
-    XDrawString(display,w,small_gc,0,CURY_OFFs,"ICs  ",5);
+    XDrawString(display,w,small_gc,5,CURY_OFFs,"ICs  ",5);
 if(w==TopButton[1])
-    XDrawString(display,w,small_gc,0,CURY_OFFs,"BCs  ",5);
+    XDrawString(display,w,small_gc,5,CURY_OFFs,"BCs  ",5);
 if(w==TopButton[2])
-    XDrawString(display,w,small_gc,0,CURY_OFFs,"Delay",5);
+    XDrawString(display,w,small_gc,5,CURY_OFFs,"Delay",5);
 if(w==TopButton[3])
-    XDrawString(display,w,small_gc,0,CURY_OFFs,"Param",5);
+    XDrawString(display,w,small_gc,5,CURY_OFFs,"Param",5);
 if(w==TopButton[4])
-    XDrawString(display,w,small_gc,0,CURY_OFFs,"Eqns ",5);
+    XDrawString(display,w,small_gc,5,CURY_OFFs,"Eqns ",5);
 if(w==TopButton[5])
-    XDrawString(display,w,small_gc,0,CURY_OFFs,"Data ",5);
+    XDrawString(display,w,small_gc,5,CURY_OFFs,"Data ",5);
 }
  
-top_button_cross(Window w,int b)
+void top_button_cross(Window w,int b)
 {
   int i;
   for(i=0;i<6;i++)
@@ -847,7 +1329,7 @@ top_button_cross(Window w,int b)
       return;
     }
 }
-top_button_press(Window w)
+void top_button_press(Window w)
 {
   if(w==TopButton[0]){
     make_new_ic_box();
@@ -875,7 +1357,7 @@ top_button_press(Window w)
   }
 }
     
-top_button_events(XEvent report)
+void top_button_events(XEvent report)
 {
   switch(report.type){
   case Expose:
@@ -894,9 +1376,9 @@ top_button_events(XEvent report)
   }
   user_button_events(report);
 }
-make_top_buttons()
+void make_top_buttons()
 {
-  int x1=2,x2=6*DCURXs,dx=DCURXs;
+  int x1=2,x2=6*DCURXs+5,dx=DCURXs;
   TopButton[0]=make_fancy_window(main_win,x1,1,x2,DCURYs,1,ColorMap(20),ColorMap(TOPBUTTONCOLOR));
   x1=x1+x2+dx;
   TopButton[1]=make_fancy_window(main_win,x1,1,x2,DCURYs,1,ColorMap(20),ColorMap(TOPBUTTONCOLOR));
@@ -915,7 +1397,7 @@ make_top_buttons()
   x1=x1+x2+dx;
   create_user_buttons(x1,1,main_win);
 }
-getGC(gc)
+void getGC(gc)
 GC *gc;
 {
  unsigned int valuemask=0;
@@ -933,19 +1415,21 @@ GC *gc;
  XSetDashes(display,*gc,dash_off,dash,ll); */
 }
 
- load_fonts()
-
+void load_fonts()
  {
+ 
   int i;
+  /*printf("\n\nFONTS %s %s \n",big_font_name,small_font_name); 
+   */
    if((big_font=XLoadQueryFont(display,big_font_name))==NULL)
  {
-  printf("X Error: Failed to load font: %s\n",big_font_name);
+ plintf("X Error: Failed to load big font: %s\n",big_font_name);
   exit(-1);
  }
  
   if((small_font=XLoadQueryFont(display,small_font_name))==NULL)
  {
-  printf("X Error: Failed to load  font: %s\n",small_font_name);
+ plintf("X Error: Failed to load small font: %s\n",small_font_name);
   exit(-1);
  }
   
@@ -960,7 +1444,7 @@ GC *gc;
     }
     else{ 
       avsymfonts[i]=1;
-      printf(" sym %d loaded ..",i);
+     plintf(" sym %d loaded ..",i);
     }
     
     if((romfonts[i]=XLoadQueryFont(display,timesfonts[i]))==NULL){
@@ -972,16 +1456,16 @@ GC *gc;
     }
     else{
       avromfonts[i]=1;
-      printf( " times %d loaded ..",i);
+     plintf( " times %d loaded ..",i);
     }
   }
-  printf("\n");
+ plintf("\n");
 
  
 }
 
 
-make_pops()
+void make_pops()
 
 {  int x,y;
   unsigned int h,w,bw,d;
@@ -993,7 +1477,7 @@ make_pops()
      MyBackColor);
      */
   create_the_menus(main_win);
- command_pop=XCreateSimpleWindow(display,main_win,0,DCURY,w-2,DCURY+4,2,
+ command_pop=XCreateSimpleWindow(display,main_win,0,DCURYs+4,w-2,DCURY+4,2,
 MyForeColor,
      MyBackColor);
  info_pop=XCreateSimpleWindow(display,main_win,0,h-DCURY-4,w-2,DCURY,2,
@@ -1007,14 +1491,14 @@ XSelectInput(display,info_pop,ExposureMask);
  XMapWindow(display,info_pop);
  XMapWindow(display,command_pop);
  /* XMapWindow(display,menu_pop); */
- init_grafs(16*DCURX+6,2*DCURY+6,w-16-16*DCURX,h-6*DCURY-16);
- create_par_sliders(main_win,10,h-5*DCURY-5);
+ init_grafs(16*DCURX+6,DCURYs+DCURYb+6,w-16-16*DCURX,h-6*DCURY-16);
+ create_par_sliders(main_win,0,h-5*DCURY+8);
   get_draw_area(); 
  
 }
 
 
-FixWindowSize(w,width,height,flag)
+void FixWindowSize(w,width,height,flag)
      Window w;
      int width,height,flag;
 {
@@ -1062,17 +1546,17 @@ int getxcolors(win_info, colors)
   TrueColorFlag=0;
   if (win_info->visual->class == TrueColor) {
     TrueColorFlag=1;
-    printf("TrueColor visual:  no colormap needed\n"); 
+   plintf("TrueColor visual:  no colormap needed\n"); 
     return 0;
   }
 
   else if (!win_info->colormap) {
-    printf("no colormap associated with window\n");
+   plintf("no colormap associated with window\n");
     return 0;
   }
 
   ncolors = win_info->visual->map_entries;
-  printf("%d entries in colormap\n", ncolors);
+ plintf("%d entries in colormap\n", ncolors);
 
   *colors = (XColor *) malloc (sizeof(XColor) * ncolors);
 
@@ -1080,7 +1564,7 @@ int getxcolors(win_info, colors)
   if (win_info->visual->class == DirectColor) {
     int red, green, blue, red1, green1, blue1;
 
-    printf("DirectColor visual\n");
+   plintf("DirectColor visual\n");
 
     red = green = blue = 0;
     red1   = lowbit(win_info->visual->red_mask);
@@ -1115,7 +1599,7 @@ int getxcolors(win_info, colors)
 
 
 
-test_color_info()
+void test_color_info()
 {
  XColor *colors;
  XWindowAttributes xwa;
