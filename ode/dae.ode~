@@ -1,0 +1,5 @@
+x'=y
+0=x+y
+solve y=-1
+init x=0
+done

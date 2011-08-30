@@ -1,0 +1,11 @@
+# bacterial chemotaxis model
+
+flux0=0
+flux[1..100]=D*(b[j]-b[j-1])-chi*b[j]*(1-a[j-1]/a[j])
+b[0..99]'=flux[j+1]-flux[j]
+b100'=-flux[100]
+a[0..100]'=-k*b[j]
+init a[0..100]=1
+init b[0..5]=1
+par chi=1,d=1,k=.2
+done
