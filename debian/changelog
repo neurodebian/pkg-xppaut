@@ -3,6 +3,7 @@ xppaut (6.11-1) unstable; urgency=low
   * New upstream release
   * Reviving from the dead (was removed from the archive, see
     #566638)
+  * Switched to use dh7
 
  -- Jakub Nowacki <j.s.nowacki@gmail.com>  Tue, 30 Aug 2011 13:56:42 +0200
 
