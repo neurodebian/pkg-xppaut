@@ -1,6 +1,3 @@
-* Boost policy compliance to 3.9.2
-  /usr/share/doc/debian-policy/upgrading-checklist.txt.gz
-
 * fix up the left over patches (may be could just be dropped)
 
 * inflitrate source tarballs:
