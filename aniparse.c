@@ -13,7 +13,7 @@
 #include <unistd.h>
 #include "scrngif.h"
 #include "load_eqn.h"
-
+#include "integrate.h"
 #include "sys/types.h"
 #include "sys/stat.h"
 #include <sys/time.h>
@@ -212,7 +212,8 @@ int ani_text_font;
 
 GC ani_gc;
 
-
+extern int use_ani_file;
+extern char anifile[256]; 
 
 
 
@@ -361,6 +362,8 @@ void create_vcr(name)
  mpeg.filter[0]=0;
  mpeg.skip=1;
  vcr.pos=0;
+ if(use_ani_file)
+   get_ani_file(vcr.file);
 }
 
 void ani_border(w,i)
@@ -380,7 +383,13 @@ void destroy_vcr()
    XDestroyWindow(display,vcr.base);
 }
 
-
+int check_ani_pause(ev)
+     XEvent ev;
+{
+  if((vcr.iexist==0)||(!animation_on_the_fly)) return 0;
+  if(ev.type==ButtonPress && ev.xbutton.window==vcr.wpause) return(27);
+  return(0);
+}
 void do_ani_events(ev)
      XEvent ev;
 {
@@ -419,7 +428,7 @@ void do_ani_events(ev)
 }
 /*************************  NEW ANIMaTION STUFF ***********************/
 
-ani_motion_stuff(Window w,int x,int y)
+void ani_motion_stuff(Window w,int x,int y)
 {
   if(w==vcr.view)
     update_ani_motion_stuff(x,y);
@@ -433,7 +442,7 @@ double get_current_time()
   return t1;
 }
 
-update_ani_motion_stuff(int x,int y)
+void update_ani_motion_stuff(int x,int y)
 {
   double dt;
   ami.t2=ami.t1;
@@ -475,24 +484,30 @@ void ani_buttonx(XEvent ev,int flag)
       ani_ij_to_xy(ev.xbutton.x,ev.xbutton.y,&ami.x,&ami.y);
       ami.x0=ami.x;
       ami.y0=ami.y;
-      who_was_grabbed=search_for_grab(ami.x,ami.y);
-      if(who_was_grabbed<0)printf("Nothing grabbed\n");
+      	who_was_grabbed=search_for_grab(ami.x,ami.y);
+	if(who_was_grabbed<0)
+	  printf("Nothing grabbed\n");
+	
+      
       /*     printf("found %d\n",who_was_grabbed); */
       
     }
     if(flag==0){ /* This is BUTTON RELEASE  */
       /*  update_ani_motion_stuff(ev.xbutton.x,ev.xbutton.y); */
   
-       if(who_was_grabbed<0){
-	 ani_grab_flag=0;
+         if(who_was_grabbed<0){
+	   /*  ani_grab_flag=0; */
 	 return;
-       }
+       } 
        /* printf("Final position %g %g %g %g \n",ami.x,ami.y,ami.vx,ami.vy); */ 
        do_grab_tasks(2);
        set_to_init_data();
-       ani_grab_flag=0;
+       ani_grab_flag=0;  
        redraw_params();
-       if(run_now_grab())run_now();
+       if(run_now_grab()){
+	 run_now();
+	 ani_grab_flag=0;
+       }
     }
     return;
   }
@@ -505,7 +520,8 @@ void ani_buttonx(XEvent ev,int flag)
 void ani_button(w)
      Window w;
 {
-  if((ani_grab_flag==1))return; /* Grab button resets and shows first frame */ 
+  if((ani_grab_flag==1))return; 
+   /* Grab button resets and shows first frame */ 
    if(w==vcr.wgrab){
      if(n_ani_grab==0)return;
     if(vcr.ok){
@@ -530,7 +546,7 @@ void ani_button(w)
   if(w==vcr.wdn)
     ani_flip1(-1);
   if(w==vcr.wfile)
-    get_ani_file();
+    get_ani_file(NULL);
   if(w==vcr.wfly){
     animation_on_the_fly=1-animation_on_the_fly;
     check_on_the_fly();
@@ -702,10 +718,18 @@ void ani_frame(int task)
 void set_to_init_data()
 {
   int i;
-   for(i=0;i<NODE+NMarkov;i++)
+  for(i=0;i<NODE;i++){
      last_ic[i]=get_ivar(i+1);
+
+  }
+  for(i=NODE+FIX_VAR;i<NODE+FIX_VAR+NMarkov;i++){
+    last_ic[i-FIX_VAR]=get_ivar(i+1);
+
+  }
+
    redraw_ics();
 }
+
   
 void set_from_init_data()
 {
@@ -1067,11 +1091,15 @@ void ani_zero()
   ani_speed=10;
   aniflag=TRANSIENT;
   ani_grab_flag=0;
-  strcpy(vcr.file,"foo.ani");
+  if(use_ani_file)
+    strcpy(vcr.file,anifile);
+  else
+    strcpy(vcr.file,"foo.ani");
+  
 }
 
 
-void get_ani_file()
+void get_ani_file(char *fname)
 {
   
   int status;
@@ -1081,8 +1109,15 @@ void get_ani_file()
   status=get_dialog("Load ani file","Filename:",vcr.file,"Ok","Cancel",40);
   XSetInputFocus(display,w,rev,CurrentTime);
   */
-  status=file_selector("Load animation",vcr.file,"*.ani");
-   if(status==0)return;
+  if (fname == NULL)
+  {
+    status=file_selector("Load animation",vcr.file,"*.ani");
+    if(status==0)return;
+  }
+  else
+  {
+  	strcpy(vcr.file,fname);
+  }
   err=ani_new_file(vcr.file);
   if(err>=0){
     vcr.ok=1; /* loaded and compiled */
@@ -1957,9 +1992,10 @@ void render_ani()
       
 void set_ani_perm()
 {
-  double t;
+  /*double t;
   double y[MAXODE];
   float **ss;
+  */
   int i,type;
         set_from_init_data();
   /* ss=my_browser.data;
@@ -2439,14 +2475,14 @@ int add_grab_command(char *xs,char *ys,char *ts, FILE *fp)
 {
   char start[256],end[256];
   int com[256];
-  int nc,i,k,j,ans;
+  int nc,j,k,ans;
   double z;
   read_ani_line(fp,start);
   read_ani_line(fp,end);
   /* printf(" %s %s %s \n %s \n %s \n",xs,ys,ts,start,end); */
   
   if(n_ani_grab>=MAX_ANI_GRAB){
-    printf("Too many grabbables! \n");
+    plintf("Too many grabbables! \n");
     return(-1);
   }
   j=n_ani_grab;
@@ -2454,7 +2490,7 @@ int add_grab_command(char *xs,char *ys,char *ts, FILE *fp)
   if(z<=0.0)z=.02;
   ani_grab[j].tol=z;
   if(add_expr(xs,com,&nc)){
-    printf("Bad grab x %s \n",xs);
+    plintf("Bad grab x %s \n",xs);
     return(-1);
   }
   ani_grab[j].x= (int *)malloc(sizeof(int)*(nc+1));
@@ -2463,7 +2499,7 @@ int add_grab_command(char *xs,char *ys,char *ts, FILE *fp)
 
 
   if(add_expr(ys,com,&nc)){
-    printf("Bad grab y %s \n",ys);
+    plintf("Bad grab y %s \n",ys);
     return(-1);
   }
   ani_grab[j].y= (int *)malloc(sizeof(int)*(nc+1));
@@ -2479,18 +2515,18 @@ int add_grab_command(char *xs,char *ys,char *ts, FILE *fp)
 
 void info_grab_stuff()
 {
-  int i,j,n;
+  int i,n;
   for(i=0;i<n_ani_grab;i++){
     n=ani_grab[i].start.n;
-    printf("start n=%d\n",n);
+    plintf("start n=%d\n",n);
     n=ani_grab[i].end.n;
-    printf("end n=%d\n",n);
+    plintf("end n=%d\n",n);
   }
 }
 
 int ani_grab_tasks(char *line, int igrab,int which)
 {
-  int i,k,flag=0;
+  int i,k;
   int n=strlen(line);
   char form[256],c;
   char rhs[256],lhs[20];
@@ -2574,10 +2610,10 @@ int add_grab_task(char *lhs,char *rhs, int igrab,int which)
   int rn;
   if(which==1) {
     i=ani_grab[igrab].start.n;
-    if(i>=MAX_GEVENTS)return; /* too many events */
+    if(i>=MAX_GEVENTS)return(-1); /* too many events */
     strcpy(ani_grab[igrab].start.lhsname[i],lhs);
     if(add_expr(rhs,com,&nc)){
-      printf("Bad right-hand side for grab event %s\n",rhs);
+      plintf("Bad right-hand side for grab event %s\n",rhs);
 
       return(-1);
     }
@@ -2597,13 +2633,13 @@ int add_grab_task(char *lhs,char *rhs, int igrab,int which)
      return(1);
    }
     i=ani_grab[igrab].end.n;
-    if(i>=MAX_GEVENTS)return; /* too many events */
+    if(i>=MAX_GEVENTS)return(-1); /* too many events */
 
     
     strcpy(ani_grab[igrab].end.lhsname[i],lhs);
     if(add_expr(rhs,com,&nc)){
-      printf("Bad right-hand side for grab event %s\n",rhs);
-      printf("should return -1\n");
+      plintf("Bad right-hand side for grab event %s\n",rhs);
+      plintf("should return -1\n");
       return(-1);
     }
     ani_grab[igrab].end.comrhs[i] = (int *)malloc(sizeof(int)*(nc+1));
@@ -2612,6 +2648,7 @@ int add_grab_task(char *lhs,char *rhs, int igrab,int which)
      ani_grab[igrab].end.n=ani_grab[igrab].end.n+1;
      return(1);
   }
+  return(-1);
 } 
 
 void draw_grab_points()  /* Draw little black x's where the grab points are */
@@ -2654,6 +2691,8 @@ void free_grabber()
     m=ani_grab[i].end.n;
     for(j=0;j<m;j++)
       free(ani_grab[i].end.comrhs[j]);
+    ani_grab[i].start.n=0;
+    ani_grab[i].end.n=0;
   }
     
 }

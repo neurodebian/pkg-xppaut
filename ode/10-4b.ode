@@ -1,0 +1,50 @@
+# 10 filaments, 4 motors, hence eleanor
+# http://jaylipp.com/Fun/ClassicComedy/porgy.html
+# here is the motor dynamics
+markov z[1..4] 2
+{0} {p1}
+{p0+pbig*heav(s[j]-1)} {0}
+s[1..4]'=v[j]
+v[1..4]'=0
+k[1..4]'=0
+a[1..4]'=0
+b[1..4]'=0
+init v[1..4]=0,k[j]=0
+global -1 z[1..4]-.5 {v[j]=0;k[j]=0;z[j]=0;s[j]=0}
+global 1 z[1..4]-.5 {v[j]=v0;k[j]=k0;a[j]=flr(ran(1)*10);b[j]=flr(ran(1)*10);z[j]=1}
+par sigxy=0,sigq=0
+par v0=.4,k0=.5
+par p0=.2,p1=.2,pbig=500
+wiener wx[0..9],wy[j],wq[j]
+# here are the motor forces acting on the filaments
+ua[1..4]=shift(x0,a[j])+s[j]*cos(shift(q0,a[j]))
+va[1..4]=shift(y0,a[j])+s[j]*sin(shift(q0,a[j]))
+ub[1..4]=shift(x0,b[j])+s[j]*cos(shift(q0,b[j]))
+vb[1..4]=shift(y0,b[j])+s[j]*sin(shift(q0,b[j]))
+fx[1..4]=k[j]*(ua[j]-ub[j])
+fy[1..4]=k[j]*(va[j]-vb[j])
+fqa[1..4]=-fx[j]*s[j]*sin(shift(q0,a[j]))+fy[j]*s[j]*cos(shift(q0,a[j]))
+fqb[1..4]=fx[j]*s[j]*sin(shift(q0,b[j]))-fy[j]*s[j]*cos(shift(q0,b[j]))
+
+# filament dynamics
+
+x[0..9]'=-c[j]*((([j]==a1)-([j]==b1))*fx1 + (([j]==a2)-([j]==b2))*fx2 + (([j]==a3)-([j]==b3))*fx3 + (([j]==a4)-([j]==b4))*fx4)+sigxy*wx[j]
+y[0..9]'=-c[j]*((([j]==a1)-([j]==b1))*fy1 + (([j]==a2)-([j]==b2))*fy2 + (([j]==a3)-([j]==b3))*fy3 + (([j]==a4)-([j]==b4))*fy4)+sigxy*wy[j]
+q[0..9]'=-d[j]*(([j]==a1)*fqa1+([j]==b1)*fqb1+([j]==a2)*fqa2+([j]==b2)*fqb2 +([j]==a3)*fqa3+([j]==b3)*fqb3+([j]==a4)*fqa4+([j]==b4)*fqb4)+sigq*wq[j]
+
+xe[0..9]=x[j]+cos(q[j])
+ye[0..9]=y[j]+sin(q[j])
+ym[0..9]=y[j]+.5*sin(q[j])
+xm[0..9]=x[j]+.5*cos(q[j])
+par c=0.2
+par d=0.2
+par m[0..9]=1
+par n[0..9]=1
+!c[0..9]=c*m[j]
+!d[0..9]=d*n[j]
+q[0..9](0)=ran(1)*2*pi
+x[0..9](0)=2*ran(1)-1
+y[0..9](0)=2*ran(1)-1
+@ total=2000.dt=.0501
+@ meth=euler,nout=5,maxstor=10000
+done

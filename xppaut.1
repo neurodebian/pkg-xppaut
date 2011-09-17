@@ -3,7 +3,7 @@
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" groff xppaut.1 -man -T ps > xppman.ps to make a copy
 .\" other parameters are allowed: see man(7), man(1)
-.TH XPPAUT 1 "Jun  4, 2011" "Version 6.10.2" "XPPAUT Documentation"
+.TH XPPAUT 1 "Aug  26, 2011" "Version 6.11.1" "XPPAUT Documentation"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .\" Some roff macros, for reference:
@@ -37,7 +37,7 @@ xppaut \- X Phase plane plus AUTO.  Solves many kinds of equations.
 .IP
 \fR[\fB\-rset\fR \fIsetname\fR] [\fB\-include \fIfile\fR]  [\fB\-qics\fR] [\fB\-qpars\fR] [\fB\-qsets\fR]
 .IP
-\fR[file...]
+\fR[\fB\-anifile \fIfile\fR] [file...]
 .PD
 .br
 .SH DESCRIPTION 
@@ -215,10 +215,13 @@ Query parameters (output saved to OUTFILE)
 Query initial conditions (output saved to OUTFILE)
 .TP 
 .B \-quiet \fIB       
-Verbose log messages will (B=0) or will not be (B=1) written.
+Verbose log messages will (B=0) or will not be (B=1) written
 .TP 
 .B \-logfile \fIfilename
-Verbose log messages are written to named file instead of stdout. 
+Verbose log messages are written to named file instead of stdout 
+.TP 
+.B \-anifile \fIfilename
+Load animation (.ani) from the named file
 .LP
 .SH ENVIRONMENT
  
@@ -268,7 +271,6 @@ lines begin with the \(lq#\(rq symbol and are ignored.
 
 An list of the extensive options are given below. For complete description of
 each of these options the reader is referred to the technical documentation for Xppaut.
-
 
 ATOL,
 AUTOEVAL,

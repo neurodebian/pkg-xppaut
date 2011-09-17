@@ -754,7 +754,7 @@ int one_flag_step_backeul(y,t,dt,neq,yg,yp,yp2,ytemp,errvec,jac,istart)
     for(i=0;i<neq;i++)
       yold[i]=y[i];
       told=*t;
-    if((j=one_bak_step(y,t,dt,neq,yg,yp,yp2,ytemp,errvec,jac,istart))!=0)
+    if((j=one_bak_step(y,t,dtt,neq,yg,yp,yp2,ytemp,errvec,jac,istart))!=0)
       return(j);
     if((hit=one_flag_step(yold,y,istart,told,t,neq,&s ))==0)
       break;

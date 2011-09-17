@@ -312,7 +312,7 @@ void init_rpn()
         add_con("I'",0.0);
 	/*   This is going to be for interacting with the 
 	     animator */
-
+	SumIndex=NCON-1;
         add_con("mouse_x",0.0);
         add_con("mouse_y",0.0);
         add_con("mouse_vx",0.0);
@@ -322,7 +322,7 @@ void init_rpn()
 	/*  add_con("c___1",0.0);
         add_con("c___2",0.0);
         add_con("c___3",0.0); */
-	SumIndex=NCON-1;
+
 	init_table();
 	if (newseed==1) RandSeed=time(0);
 	nsrand48(RandSeed);

@@ -1,0 +1,7 @@
+line (ua[1..4]+1)/2;(va[j]+1)/2;(ub[j]+1)/2;(vb[j]+1)/2;$RED;3
+line (x[0..9]+1)/2;(y[j]+1)/2;(xe[j]+1)/2;(ye[j]+1)/2;$GREEN;2
+fcircle (x[0..9]+1)/2;(y[j]+1)/2;.01;$BLUE
+grab (x0+1)/2;(y0+1)/2;.05
+{q0=atan2((ym0+1)/2-mouse_y,(xm0+1)/2-mouse_x)}
+{q0=atan2((ym0+1)/2-mouse_y,(xm0+1)/2-mouse_x)}
+end

@@ -14,7 +14,7 @@
 #
 #%These values and derivatives will depend 
 #%on the track you set up.  Be careful to get
-#these right...   
+#%these right...   
 #
 #XRHS = [-2 1 2 1]';
 #ZRHS = [4 2 0 0]'; 
@@ -23,7 +23,6 @@
 #Xs_par = A\XRHS
 #Zs_par = A\ZRHS
 #
-
 
 #Hey, define your roller coaster track here!
 #Use parametric equations in M.
@@ -42,7 +41,6 @@ xMdM(M) = heav(-2-M)*(1) + (heav(M+2)-heav(M-2))*(xs1+2*xs2*M+3*xs3*(M^2)) + hea
 zMdM(M) = heav(-2-M)*(2*(M+3)) + (heav(M+2)-heav(M-2))*(zs1+2*zs2*M+3*zs3*(M^2)) + heav(M-2)*(2*(M-2))
 
 
-par alpha=3,beta=1,gamma=1,delta=0
 param drag=.1
 param mass=1
 param g=8.3
