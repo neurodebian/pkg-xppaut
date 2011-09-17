@@ -4,8 +4,10 @@ xppaut (6.11-1) unstable; urgency=low
   * Reviving from the dead (was removed from the archive, see
     #566638)
   * Switched to use dh7
+  * Patches fixed or dropped if not needed
+  * Adjusted debian/copyright to be DEP-5 compliant
 
- -- Jakub Nowacki <j.s.nowacki@gmail.com>  Tue, 30 Aug 2011 13:56:42 +0200
+ -- Jakub Nowacki <j.s.nowacki@gmail.com>  Sat, 17 Sep 2011 22:39:58 +0100
 
 xppaut (5.98-1) unstable; urgency=low
 
