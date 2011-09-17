@@ -6,8 +6,9 @@ xppaut (6.11-1) unstable; urgency=low
   * Switched to use dh7
   * Patches fixed or dropped if not needed
   * Adjusted debian/copyright to be DEP-5 compliant
+  * Git-related fields added to debian/control
 
- -- Jakub Nowacki <j.s.nowacki@gmail.com>  Sat, 17 Sep 2011 22:39:58 +0100
+ -- Jakub Nowacki <j.s.nowacki@gmail.com>  Sat, 17 Sep 2011 22:45:11 +0100
 
 xppaut (5.98-1) unstable; urgency=low
 
