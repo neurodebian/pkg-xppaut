@@ -10,7 +10,8 @@
 #include "comline.h"
 #include "simplenet.h"
 #include "dae_fun.h"
-#include "auto.h"
+#include "auto_x11.h"
+#include "auto_nox.h"
 #include "extra.h"
 #include "menudrive.h"
 #include "init_conds.h"
@@ -29,6 +30,7 @@
 #include "axes2.h"
 #include "do_fit.h"
 #include "graf_par.h"
+#include "auto_x11.h"
 
 
 #include "nullcline.h"
@@ -98,6 +100,10 @@ int errno;
 
 int allwinvis=0;
 int use_intern_sets=1;
+int use_ani_file=0;
+char anifile[256]; 
+extern int ani_grab_flag;
+
 float xppvermaj,xppvermin;
 
 extern char this_file[100];
@@ -492,6 +498,8 @@ init_browser();
 /* make_my_aplot("z"); */
 Xup=1;
 ani_zero();
+
+
 make_scrbox_lists();
 
 /*   This is for testing widgets  ---    */
@@ -503,7 +511,17 @@ test_color_info();
   if_needed_load_set();
   if_needed_load_par();
   if_needed_load_ic();
+  
+if(use_ani_file)
+{
+  /*
+	new_vcr();
+	get_ani_file(anifile); */ 
+}
+
 do_events(min_wid,min_hgt);
+
+
 } 
 
 

@@ -33,6 +33,7 @@ void auto_motion(XEvent ev);
 void display_auto(Window w);
 Window lil_button(Window root, int x, int y, char *name);
 void make_auto(char *wname, char *iname);
+void resize_auto_window(XEvent ev);
 void a_msg(int i, int v);
 void auto_enter(Window w, int v);
 void auto_button(XEvent ev);

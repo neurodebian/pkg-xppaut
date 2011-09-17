@@ -29,17 +29,6 @@
 
 #define EXPORT 15
 
-/*New pHtools stuff*/
-#define MKSOL 16
-#define ADDTOSOL 17
-#define TRACKSOL 18
-#define DPHDT 19
-#define PHSOL 20
-#define SPECIE 21
-#define MIXSOL 22
-#define STRENGTH 23
-#define BUFFCAP 24
-#define CB 25
 
 
 #define ONLY 26

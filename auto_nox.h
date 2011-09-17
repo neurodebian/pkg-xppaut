@@ -84,6 +84,7 @@ void auto_params(void);
 void auto_num_par(void);
 void auto_plot_par(void);
 void auto_fit(void);
+void auto_default(void);
 void auto_zoom_in(int i1, int j1, int i2, int j2);
 void auto_zoom_out(int i1, int j1, int i2, int j2);
 void auto_xy_plot(double *x, double *y1, double *y2, double par1, double par2, double per, double *uhigh, double *ulow, double *ubar, double a);

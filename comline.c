@@ -6,7 +6,7 @@
 #include <string.h>
 /* command-line stuff for xpp */
 #include <stdio.h>
-#define NCMD 34 /* add new commands as needed  */
+#define NCMD 35 /* add new commands as needed  */
 
 #define MAKEC 0
 #define XORFX 1
@@ -42,6 +42,7 @@
 #define QICS 31
 #define QUIET 32
 #define LOGFILE 33
+#define ANIFILE 34
 
 extern OptionsSet notAlreadySet;
 
@@ -71,6 +72,8 @@ extern int UserMinHeight;
 extern char UserOUTFILE[256];
 extern int tfBell;
 extern int use_intern_sets;
+extern int use_ani_file;
+extern char anifile[256];
 int select_intern_sets=0;
 
 
@@ -110,7 +113,7 @@ typedef struct {
 
 VOCAB my_cmd[NCMD]=
 {
-  {"-m",3},
+  {"-m",3},         
   {"-xorfix",7},
   {"-silent",7},
   {"-convert",8},
@@ -143,7 +146,8 @@ VOCAB my_cmd[NCMD]=
   {"-qpars",6},
   {"-qics",5},
   {"-quiet",6},
-  {"-logfile",8}
+  {"-logfile",8},
+  {"-anifile",8}
  };
 
 
@@ -356,6 +360,11 @@ int argc;
      set_option("LOGFILE",argv[i+1],1,NULL);
      i++;
    }
+   if(k==22){
+     strcpy(anifile,argv[i+1]);
+     use_ani_file=1;
+     i++;
+   }
   
  }
 }
@@ -522,7 +531,9 @@ int parse_it(com)
     case QUIET:
       return 20; 
     case LOGFILE:
-      return 21;
+      return 21; 
+    case ANIFILE:
+      return 22;
     case QSETS:
       XPPBatch=1;
       querysets=1;
@@ -577,6 +588,7 @@ int parse_it(com)
      plintf("  -qics                  Query initial conditions (output saved to OUTFILE)\n");
      plintf("  -quiet <1 |0>          Do not print *anything* out to console\n");
      plintf("  -logfile <filename>    Print console output to specified logfile \n");
+     plintf("  -anifile <filename>    Load an animation code file (.ani) \n");
      
      plintf("\n");
      plintf("Environment variables:\n");

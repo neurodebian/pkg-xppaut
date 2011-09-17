@@ -505,10 +505,16 @@ void set_col_par_com(int i)
       ind_to_sym(MyGraph->ColorValue,name);
       new_string("Color via:",name);
       find_variable(name,&ivar);
-      if(i>-1)
+      
+
+      if(ivar>=0)
 	MyGraph->ColorValue=ivar;
-      else
+      else{
+	
 	err_msg("No such quantity!");
+	MyGraph->ColorFlag=0;
+	return;
+      }
     }
       
     

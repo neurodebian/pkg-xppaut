@@ -8,7 +8,7 @@ MANDIR = /usr/local/man/man1
 # End Debian Edit
 #################################
 #
-VERSION=6.11
+VERSION=6.11b
 MAJORVER=6.0
 MINORVER=11
 

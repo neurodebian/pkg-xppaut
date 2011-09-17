@@ -6,7 +6,7 @@
 # friction is set to zero 
 # scale is for animation
 r'=rp
-rp'=r*thp^2+cos(th)-1-a*(r-1)-fk*rp
+rp'=r*thp^2+cos(th)-a*(r-1)-fk*rp
 th'=thp
 thp'=-(2*rp*thp+sin(th)+ft*thp)/r
 par a=.15,fk=0,ft=0,scale=15

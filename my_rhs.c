@@ -76,9 +76,6 @@ void set_fix_rhs(t,y)
   for(i=NODE;i<NODE+FIX_VAR;i++)
     SETVAR(i+1,evaluate(my_ode[i]));
   eval_all_nets();
-  #ifdef PHTOOLS
-  	eval_all_buffersols();
-  #endif
   do_in_out(); 
 }
 
@@ -99,9 +96,6 @@ int neq;
     /*printf("WTF %g\n",evaluate(my_ode[1]));
     */
     eval_all_nets();
-    #ifdef PHTOOLS
-    	eval_all_buffersols();
-    #endif
     
     do_daes();
     do_in_out(); 
@@ -119,9 +113,7 @@ void update_based_on_current()
   int i;
    for(i=NODE;i<NODE+FIX_VAR;i++)
     SETVAR(i+1,evaluate(my_ode[i]));
-    #ifdef PHTOOLS
-  	eval_all_buffersols();
-    #endif
+    
   eval_all_nets();
   do_in_out(); 
 }
