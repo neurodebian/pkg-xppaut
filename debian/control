@@ -12,7 +12,7 @@ Homepage: http://www.math.pitt.edu/~bard/xpp/xpp.html
 
 Package: xppaut
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Phase Plane Plus Auto: Solves many kinds of equations
  XPPAUT is a tool for solving
     * differential equations,

@@ -4,10 +4,6 @@
  - remove *.jar?
  - built materials install.pdf
 
-* at the end we aim to achieve lintian-free package
-
- run recent lintian *.changes
-
 * git-buildpackage
 
   git-pbuilder create

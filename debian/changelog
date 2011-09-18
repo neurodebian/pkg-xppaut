@@ -3,8 +3,9 @@ xppaut (6.11b-1) unstable; urgency=low
   * New upstream release 
   * Quilt related fixes: added debian/source/format and
     debian/README.source; minor fix to debian/changelog
+  * Fixing lintian warning: debhelper-but-no-misc-depends
 
- -- Jakub Nowacki <j.s.nowacki@gmail.com>  Sun, 18 Sep 2011 22:16:20 +0100
+ -- Jakub Nowacki <j.s.nowacki@gmail.com>  Sun, 18 Sep 2011 22:41:23 +0100
 
 xppaut (6.11-1) unstable; urgency=low
 
