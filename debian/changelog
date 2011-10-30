@@ -1,11 +1,14 @@
 xppaut (6.11b-1) unstable; urgency=low
 
-  * New upstream release 
+  * New upstream release (fix #2106089, #448531)
   * Quilt related fixes: added debian/source/format and
     debian/README.source; minor fix to debian/changelog
   * Fixing lintian warning: debhelper-but-no-misc-depends
+  * Application compiles and works well on 32 and 64-bits 
+    (fixed #412102, #557980, #566495, #293517)
+  * Patches removing unused macdirent.h and mkavi added
 
- -- Jakub Nowacki <j.s.nowacki@gmail.com>  Sun, 18 Sep 2011 22:41:23 +0100
+ -- Jakub Nowacki <j.s.nowacki@gmail.com>  Sun, 30 Oct 2011 21:06:01 +0000
 
 xppaut (6.11-1) unstable; urgency=low
 
