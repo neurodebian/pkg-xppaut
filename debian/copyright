@@ -3,7 +3,7 @@ Upstream-name: XPPAUT
 Upstream-contact: Bard Ermentraut <bard@pitt.edu>
 Source: http://www.math.pitt.edu/~bard/xpp/download.html
 
-Files: * main.c
+Files: *
 Copyright: 2002-2011 Bard Ermentrout & Daniel Dougherty
 License: GPL-2+
  This program is free software; you can redistribute it and/or modify
