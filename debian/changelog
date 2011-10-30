@@ -7,8 +7,9 @@ xppaut (6.11b-1) unstable; urgency=low
   * Application compiles and works well on 32 and 64-bits 
     (fixed #412102, #557980, #566495, #293517)
   * Patches removing unused macdirent.h and mkavi added
+  * Not used files deleted; debian/copyright updated
 
- -- Jakub Nowacki <j.s.nowacki@gmail.com>  Sun, 30 Oct 2011 21:06:01 +0000
+ -- Jakub Nowacki <j.s.nowacki@gmail.com>  Sun, 30 Oct 2011 21:12:18 +0000
 
 xppaut (6.11-1) unstable; urgency=low
 
