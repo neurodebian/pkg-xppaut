@@ -1,0 +1,51 @@
+diff --git a/Makefile b/Makefile
+index a6c8cca..44d1c5a 100644
+--- a/Makefile
++++ b/Makefile
+@@ -113,8 +113,8 @@ HEADERS = abort.h comline.h extra.h kinescope.h newhome.h stiff.h\
+ 	  array_print.h cvspgmr.h fmt.h local.h toons.h\
+ 	  autevd.h dae_fun.h form_ode.h lread.h open.h torus.h\
+ 	  autlib1.h delay_handle.h fp.h lunch-new.h parser.h txtread.h\
+-	  autlib2.h del_stab.h gear.h macdirent.h parserslow.h uio.h\
+-	  autlim.h dense.h getvar.h macsysdirent.h phsplan.h userbut.h\
++	  autlib2.h del_stab.h gear.h parserslow.h uio.h\
++	  autlim.h dense.h getvar.h  phsplan.h userbut.h\
+ 	  auto_define.h derived.h ggets.h main.h pop_list.h util.h\
+ 	  auto.h dfe.h graf_par.h many_pops.h pp_shoot.h vector.h\
+ 	  auto_nox.h diagram.h graphics.h markov.h rdfmt.h volterra2.h\
+diff --git a/load_eqn.c b/load_eqn.c
+index 67b7724..e3611f8 100644
+--- a/load_eqn.c
++++ b/load_eqn.c
+@@ -16,7 +16,9 @@
+ #include "adj2.h"
+ #include "arrayplot.h"
+ #include "lunch-new.h"
+-#include "macdirent.h"
++//#include "macdirent.h"
++//SUbstitued with system dirent.h
++#include <dirent.h>
+ #include "userbut.h"
+ #include "volterra2.h"
+ #include "storage.h"
+diff --git a/read_dir.c b/read_dir.c
+index 07e378a..b374e35 100644
+--- a/read_dir.c
++++ b/read_dir.c
+@@ -44,11 +44,12 @@ and save the file.
+ 
+ 
+ */
+-#ifdef MACOSX
+-#include "macdirent.h"
+-#else
++//#ifdef MACOSX
++//#include "macdirent.h"
++//#else
++// Just system dirent.h should work
+ #include <dirent.h>
+-#endif
++//#endif
+ #include <stdio.h>
+ #include <sys/stat.h>
+ #define MAXPATHLEN 1024

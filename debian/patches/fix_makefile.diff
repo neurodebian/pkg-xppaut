@@ -1,0 +1,33 @@
+diff --git a/Makefile b/Makefile
+index 38af165..06f046c 100644
+--- a/Makefile
++++ b/Makefile
+@@ -249,8 +249,6 @@ mkI77:
+ 	cd libI77 ; make
+ mkcvode:
+ 	cd cvodesrc ; make
+-mkmkavi:
+-	cd mkavi ; make
+ #
+ # Edited for Debian GNU/Linux.
+ install: xppaut 
+@@ -291,8 +289,7 @@ tarfile:
+ 	tar cvf xppaut$(VERSION).tar $(SOURCES) $(AUTOSRC) $(HEADERS) $(BITMAPS) default.opt \
+ 	 xpp_doc.tex README Makefile Makefile.nice  Makefile.lib Makefile.avi Makefile.old \
+ 	ode/*.* xpp_doc.ps xpp_doc.pdf xpp_sum.tex xpp_sum.pdf xpp_sum.ps nullcline_bw.c  \
+-	xppaut.1\
+-        mkavi/*.cc mkavi/*.h mkavi/Makefile mkavi/drive.c help/*.html \
++	xppaut.1 help/*.html \
+ 	help/odes/*.ode help/odes/*.c install.pdf install.tex LICENSE HISTORY \
+ 	Makefile.s2x sbml2xpp.c *.xbm *.jar changes.txt
+ 	gzip xppaut$(VERSION).tar 
+@@ -301,8 +298,7 @@ otarfile:
+ 	 xpp_doc.tex README Makefile Makefile.nice  Makefile.lib Makefile.avi Makefile.old \
+ 	ode/*.* xpp_doc.ps xpp_doc.pdf xpp_sum.tex xpp_sum.pdf xpp_sum.ps nullcline_bw.c  \
+         libI77/*.c libI77/*.h libI77/Makefile \
+-	cvodesrc/*.c cvodesrc/*.h cvodesrc/Makefile xppaut.1\
+-        mkavi/*.cc mkavi/*.h mkavi/Makefile mkavi/drive.c help/*.html \
++	cvodesrc/*.c cvodesrc/*.h cvodesrc/Makefile xppaut.1 help/*.html \
+ 	help/odes/*.ode help/odes/*.c install.pdf install.tex LICENSE HISTORY \
+ 	Makefile.s2x sbml2xpp.c *.xbm *.jar
+ 	gzip xppaut$(VERSION).tar 
