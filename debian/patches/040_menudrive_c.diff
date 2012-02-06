@@ -1,3 +1,5 @@
+diff --git a/menudrive.c b/menudrive.c
+index 0973452..1d43431 100644
 --- a/menudrive.c
 +++ b/menudrive.c
 @@ -2,6 +2,7 @@
@@ -8,10 +10,11 @@
  /* the menu for XPP commands 
     this calls any command
     it also has lots of the direct X Gui stuff
-@@ -73,10 +74,19 @@
+@@ -118,20 +119,28 @@ void xpp_hlp()
  {
-   char cmd[256];
  
+   char cmd[256];
+-
 -  if(getenv("XPPHELP")==NULL)
 -  {
 -  	err_msg("Environment variable XPPHELP undefined.");
@@ -30,9 +33,11 @@
 +      return;
 +    }
    }
-   
+-  
++
    if (getenv("XPPBROWSER")==NULL)
-@@ -85,7 +95,7 @@
+   {
+     	err_msg("Environment variable XPPBROWSER undefined.");
      	return;
    }
    
