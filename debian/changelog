@@ -1,8 +1,9 @@
 xppaut (6.11b+1-1) oneiric; urgency=low
 
   * New upstream release
+  * Fixed patches dropped 
 
- -- Jakub Nowacki <j.s.nowacki@gmail.com>  Mon, 06 Feb 2012 21:13:55 +0000
+ -- Jakub Nowacki <j.s.nowacki@gmail.com>  Mon, 06 Feb 2012 21:20:06 +0000
 
 xppaut (6.11b-1) unstable; urgency=low
 
