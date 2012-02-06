@@ -363,13 +363,14 @@ void special_put_text_ps(x,y,str,size)
      char *str;
 {
   int i=0,j=0,type=1;
-  int cf=0,cs;
+  int cf=0;
+  /*int cs;*/
   int n=strlen(str);
   int cy=0;
   char tmp[256],c;
   int sub,sup,pssz;
   static int sz[]={8,10,14,18,24};    
-  cs=size;
+  /*cs=size; Not used anywhere*/
   /* plintf(" %s size %d \n",str,size); */
   fprintf(psfile, "0 0 0 setrgbcolor \n");
   ps_abs(x,y);

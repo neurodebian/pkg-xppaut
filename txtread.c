@@ -289,7 +289,8 @@ void make_txtview()
  int ww=9*DCURXs,hh=DCURYs+4;
   static char *wname[]={"Text Viewer"},*iname[]={"Txtview"};
   
-  XWMHints wm_hints;
+  /*XWMHints wm_hints;
+  */
   XTextProperty winname,iconname;
   XSizeHints size_hints;
   if(txtview.here==1)return;
@@ -305,8 +306,9 @@ void make_txtview()
   size_hints.min_height=minlen;
   size_hints.x=0;
   size_hints.y=0;
-  wm_hints.initial_state=IconicState;
+  /*wm_hints.initial_state=IconicState;
   wm_hints.flags=StateHint; 
+  */
   XSetWMProperties(display,base,&winname,&iconname,
 		   NULL,0,&size_hints,NULL,NULL);
   make_icon((char*)txtview_bits,txtview_width,txtview_height,base);

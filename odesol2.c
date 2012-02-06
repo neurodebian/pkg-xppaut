@@ -492,7 +492,8 @@ int *istart,int n,double *work,int *ierr)
  double atol=ATOLER,rtol=TOLER;
  double sqrteps=sqrt(eps);
  double thresh=atol/rtol,absh,h;
- double d=1/(2.+sqrt(2.)),e32=6.+sqrt(2.),tnew,ninf;
+ double d=1/(2.+sqrt(2.)),e32=6.+sqrt(2.),tnew;
+ /*double ninf;  Is this needed?*/
  int i,n2=n*n,done=0,info,ml=cv_bandlower,mr=cv_bandupper,mt=ml+mr+1;
  int ipivot[MAXODE1],nofailed;
  double temp,err,tdel;
@@ -573,7 +574,8 @@ int *istart,int n,double *work,int *ierr)
 	 bandsol(dfdy,k3,ml,mr,n);
        else
 	 sgesl(dfdy,n,n,ipivot,k3,0);
-       ninf=0;
+       /*ninf=0;  This is not used anywhere?
+       */
        err=0.0;
        for(i=0;i<n;i++){
 	 temp=MAX(MAX(fabs(y[i]),fabs(ynew[i])),thresh);

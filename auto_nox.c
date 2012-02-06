@@ -1539,6 +1539,10 @@ void auto_new_ss()
   NewPeriodFlag=0;
   if(NBifs>1){
     ans=reset_auto();
+    if ((ans!=0) || (ans!=1))
+    {
+       plintf("Boolean response expected.\n");	
+    }
    /* if(ans==0){
       opn=OPEN_3;
       cls=APPEND;
@@ -1563,6 +1567,10 @@ void auto_new_discrete()
   NewPeriodFlag=0;
   if(NBifs>1){
     ans=reset_auto();
+    if ((ans!=0) || (ans!=1))
+    {
+       plintf("Boolean response expected.\n");	
+    }
    /* if(ans==0){
       opn=OPEN_3;
       cls=APPEND;

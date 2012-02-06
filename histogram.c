@@ -421,7 +421,9 @@ int spectrum(float *data,int nr,int win,int w_type,float *pow)
   int shift=win/2;
   int kwin=(nr-win+1)/shift;
  int i,j,kk;
- float *ct,*st,*f,*d,x,sum,nrmf;
+ float *ct,*st,*f,*d,x,nrmf;
+ /*float sum;
+ */
  if(nr<2)return(0);
  if(kwin<1)return(0);
  ct=(float *)malloc(sizeof(float)*win);
@@ -446,8 +448,8 @@ int spectrum(float *data,int nr,int win,int w_type,float *pow)
  /* plintf("NRMF = %g\n",log(nrmf)); */
  for(i=0;i<shift;i++)
    pow[i]=0.0;
- sum=0;
-
+ /*sum=0;
+  */
   
  for(j=0;j<kwin;j++){
    for(i=0;i<win;i++){
@@ -496,7 +498,8 @@ int cross_spectrum(float *data,float *data2,int nr,int win,int w_type,float *pow
   int kwin=(nr-win+1)/shift; 
   /*  int kwin=nr/shift; */
   int i,j,kk;
- float *ct,*st,*f,*d,x,sum,nrmwin;
+ float *ct,*st,*f,*d,x,nrmwin;
+ /*float sum; Not used anywhere*/
  float *ct2,*st2,*d2;
  float *pxx,*pyy;
  float *pxyr,*pxym;
@@ -535,7 +538,7 @@ pxym=(float *)malloc(sizeof(float)*win);
    pxym[i]=0.0;
  }
    
- sum=0;
+ /*sum=0;*/
  for(j=0;j<=kwin;j++){
    for(i=0;i<win;i++){
      /* kk=kk=(-shift+j*shift+i+nr)%nr; */
@@ -792,7 +795,8 @@ void fftxcorr(float *data1,float *data2,int length,int nlag,float *cr,int flag)
 {
   double *re1,*re2,*im1,*im2,x,y,sum;
   float av1=0.0,av2=0.0;
-  int dim[2],i,n2;
+  int dim[2],i;
+  /*int n2; Not used anywhere*/
   if(flag){
     for(i=0;i<length;i++){
       av1+=data1[i];
@@ -801,7 +805,8 @@ void fftxcorr(float *data1,float *data2,int length,int nlag,float *cr,int flag)
     av1=av1/(float)length;
     av2=av2/(float)length;
   }
-  n2=length/2;
+ /* n2=length/2;*/
+ 
   dim[0]=length;
     re1=(double *)malloc(length*sizeof(double));
   im1=(double *)malloc(length*sizeof(double));

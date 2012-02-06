@@ -260,13 +260,15 @@ void set_linestyle(ls)
 void set_line_style_x11(ls)
      int ls;
 {
-  int width=0,type;
+  /*int width=0;*/
+  int type=0;
   if(ls==-2){  /*  Border  */
     set_color(0);
     XSetLineAttributes(display,gc_graph,2,LineSolid,CapButt,JoinBevel);
     return;
   }
- width=0;
+ /*width=0;
+ */
  if(ls==-1){
    set_color(0);
    XSetDashes(display,gc_graph,0,dashes[1],strlen(dashes[1]));
@@ -413,18 +415,20 @@ void fancy_put_text_x11(x,y,str,size,font)
      int x,y,size,font;
      char *str;
 {
-  int yoff;
+  /*int yoff;
+  */
   if(strlen(str)==0)return;
   switch(font){
   
   case 1: 
     if(avsymfonts[size]==1){
       XSetFont(display,font_gc,symfonts[size]->fid);
-      yoff=symfonts[size]->ascent;
+      /*yoff=symfonts[size]->ascent;*/
     }
     else {
       XSetFont(display,font_gc,small_font->fid);
-      yoff=small_font->ascent;
+      /*yoff=small_font->ascent;*/
+      
     }
     XSetForeground(display,font_gc,GrFore);
     XDrawString(display,draw_win,font_gc,x,y,str,strlen(str));
@@ -433,12 +437,12 @@ void fancy_put_text_x11(x,y,str,size,font)
   default: 
     if(avromfonts[size]==1){
       XSetFont(display,font_gc,romfonts[size]->fid);
-      yoff=romfonts[size]->ascent;
+      /*yoff=romfonts[size]->ascent;*/
     
     }
     else {
       XSetFont(display,font_gc,small_font->fid);
-      yoff=small_font->ascent;
+      /*yoff=small_font->ascent;*/
     }
     XSetForeground(display,font_gc,GrFore);
     XDrawString(display,draw_win,font_gc,x,y,str,strlen(str));

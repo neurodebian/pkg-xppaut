@@ -13,6 +13,7 @@
 #include "init_conds.h"
 #include "kinescope.h"
 #include "main.h"
+#include "alert.bitmap"
 
 #include "graf_par.h"
 #include "integrate.h"
@@ -69,8 +70,53 @@ MSGBOXSTRUCT MsgBox;
 char *getenv();
 
 
+
+void edit_xpprc()
+{
+	pid_t child_pid;
+	
+	char rc[256];
+	char editor[256];
+	int child_status;
+	
+	char* ed = getenv("XPPEDITOR");
+		
+	if ((ed == NULL) || (strlen(ed)==0))
+	{
+		err_msg("Environment variable XPPEDITOR needs to be set.");
+		
+		return;
+	}
+	else
+	{
+		sprintf(editor,ed);
+	}
+	
+	child_pid = fork();
+	
+	if (child_pid == 0)
+	{
+		sprintf(rc,"%s/.xpprc",getenv("HOME"));
+		
+		char *const args[] = {editor,rc,NULL};
+	        execvp(editor,args); 
+		wait(&child_status);
+		return;
+	}
+	else
+	{    
+		if (child_pid == -1)
+		{
+		 	err_msg("Unable to fork process for editor.");
+		}
+		
+		return;
+	}
+}
+
 void xpp_hlp()
 {
+
   char cmd[256];
 
   if(getenv("XPPHELP")==NULL)
@@ -108,6 +154,8 @@ void MessageBox(char *m)
  int hgt=4*DCURY;
  MsgBox.w=make_plain_window(RootWindow(display,screen),
 		      DisplayWidth/2,DisplayHeight/2, wid,hgt,4);
+		      
+ make_icon((char*)alert_bits,alert_width,alert_height,MsgBox.w);
  MsgBox.here=1;
  set_window_title(MsgBox.w,"Yo!");
  strcpy(MsgBox.text,m);
@@ -187,7 +235,6 @@ void clr_all_scrns()
 
 void run_the_commands(int com)
 {
-
   if(com<0)return;
   if(com<=MAX_M_I){
     do_init_data(com);
@@ -403,8 +450,11 @@ void do_file_com(int com)
     tfBell=1-tfBell;
     break;
   case M_FH:
-    xpp_hlp();
-
+    /*xpp_hlp();
+*/
+    break;
+  case M_FX:
+    edit_xpprc();
     break;
   case M_FQ: 
     if(yes_no_box())bye_bye();

@@ -10,6 +10,7 @@
 #include "ggets.h"
 #include "pop_list.h"
 #include "many_pops.h"
+#include "info.bitmap"
 
 extern int DisplayHeight,DisplayWidth;
 
@@ -124,7 +125,8 @@ char *title;
 {
  
  int ndn,nac,width,height;
- int nv,nh;
+ int nv;
+ /*int nh; Not used anywhere*/
  int i,i1,j1,xpos,ypos;
  int xstart=DCURXs;
  int ystart=DCURYs;
@@ -133,7 +135,8 @@ char *title;
    XSizeHints size_hints;
  
  nv=4*DisplayHeight/(5*(DCURYs+8));
- nh=DisplayWidth/(18*DCURXs);
+ /*nh=DisplayWidth/(18*DCURXs);*/
+ 
  if(NEQ<nv)ndn=NEQ;
  else ndn=nv;
  nac=NEQ/ndn;
@@ -143,6 +146,7 @@ char *title;
  height=3*DCURYs+ndn*(DCURYs+8);
  
  base=make_plain_window(RootWindow(display,screen),0,0,width,height,4);
+ 
  torbox.base=base;
 XStringListToTextProperty(&title,1,&winname);
  size_hints.flags=PPosition|PSize|PMinSize|PMaxSize;
@@ -154,7 +158,14 @@ XStringListToTextProperty(&title,1,&winname);
  size_hints.min_height=height;
  size_hints.max_width=width;
  size_hints.max_height=height;
- XSetWMProperties(display,base,&winname,NULL,NULL,0,&size_hints,NULL,NULL);
+ 
+ XClassHint class_hints;
+ class_hints.res_name="";
+ class_hints.res_class="";
+ 
+ make_icon((char*)info_bits,info_width,info_height,base);
+ 
+ XSetWMProperties(display,base,&winname,NULL,NULL,0,&size_hints,NULL,&class_hints);
  for(i=0;i<NEQ;i++){
    i1=i/nv;
    j1=i%nv;

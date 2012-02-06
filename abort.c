@@ -8,6 +8,7 @@
 #include "many_pops.h"
 #include "ggets.h"
 
+#include "aniparse.h"
 
 extern Window command_pop;
 extern GC gc,gc_graph,small_gc;

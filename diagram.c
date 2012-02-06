@@ -40,6 +40,8 @@ void start_diagram(n)
   bifd->ubar=DALLOC(n);
   bifd->evr=DALLOC(n);
   bifd->evi=DALLOC(n);
+  bifd->norm=0;
+  bifd->lab=0;
   DiagFlag=0;
 }
 
@@ -214,11 +216,14 @@ void write_info_out()
 {
  char filename[256];
   DIAGRAM *d;
-  int type,flag=0,i;
+  int type,i;
+  /*int flag=0
+  */
   int status;
   int icp1,icp2;
   double *par;
-  double par1,par2=0,a,*uhigh,*ulow,*ubar,*u0,per;
+  double par1,par2=0,*uhigh,*ulow,per;
+  /*double a,*ubar,*u0;*/
   FILE *fp;
   sprintf(filename,"allinfo.dat");
   /* status=get_dialog("Write all info","Filename",filename,"Ok","Cancel",60);
@@ -237,17 +242,18 @@ void write_info_out()
  while(1){
     type=get_bif_type(d->ibr,d->ntot,d->lab);
     
-    if(d->ntot==1)flag=0;
+    /*if(d->ntot==1)flag=0;
     else flag=1;
+    */
     icp1=d->icp1;
     icp2=d->icp2;
     par=d->par;
     per=d->per;
     uhigh=d->uhi;
     ulow=d->ulo;
-    ubar=d->ubar;
-    u0=d->u0;
-    a=d->norm;
+    /*ubar=d->ubar; Not used*/
+   /* u0=d->u0; Not used*/
+    /* a=d->norm; Not used*/
     par1=par[icp1];
     if(icp2<NAutoPar)
       par2=par[icp2];
@@ -275,11 +281,14 @@ void write_init_data_file()
 {
  char filename[256];
   DIAGRAM *d;
-  int type,flag=0,i;
+  int type,i;
+  /*int flag=0;
+  */
   int status;
   int icp1,icp2;
   double *par;
-  double par1,par2=0,a,*uhigh,*ulow,*ubar,*u0,per;
+  double par1,par2=0,*u0,per;
+  /*double a,*uhigh,*ulow,*ubar;*/
   FILE *fp;
   sprintf(filename,"initdata.dat");
   /* status=get_dialog("Write all info","Filename",filename,"Ok","Cancel",60);
@@ -298,17 +307,27 @@ void write_init_data_file()
  while(1){
     type=get_bif_type(d->ibr,d->ntot,d->lab);
     
-    if(d->ntot==1)flag=0;
+    /*if(d->ntot==1)flag=0;
     else flag=1;
+    Unused here?
+    */
     icp1=d->icp1;
     icp2=d->icp2;
     par=d->par;
     per=d->per;
+    /*
     uhigh=d->uhi;
     ulow=d->ulo;
-    ubar=d->ubar;
+    ubar=d->ubar; 
+    Unused here??
+    */
     u0=d->u0;
+    
+    /*
     a=d->norm;
+    
+    Unused here??
+    */
     par1=par[icp1];
     if(icp2<NAutoPar)
       par2=par[icp2];
@@ -332,7 +351,9 @@ void write_pts()
 {
   char filename[256];
   DIAGRAM *d;
-  int type,flag=0;
+  int type;
+  /*int flag=0;
+  */
   int status;
   int icp1,icp2;
   double *par;
@@ -353,8 +374,11 @@ void write_pts()
   while(1){
     type=get_bif_type(d->ibr,d->ntot,d->lab);
     
-    if(d->ntot==1)flag=0;
+    /*if(d->ntot==1)flag=0;
     else flag=1;
+    
+    Unused here??
+    */
     icp1=d->icp1;
     icp2=d->icp2;
     par=d->par;
@@ -392,7 +416,10 @@ void post_auto()
   if(d->next==NULL)return;
   while(1){
     type=get_bif_type(d->ibr,d->ntot,d->lab);
- 
+    if (type < 0)
+    {	
+    	plintf("Unable to get bifurcation type.\n");
+    }
     if(d->ntot==1)flag=0;
     else flag=1;
     add_ps_point(d->par,d->per,d->uhi,d->ulo,d->ubar,d->norm,type,flag,
@@ -409,7 +436,10 @@ void bound_diagram(xlo,xhi,ylo,yhi)
      double *xlo,*xhi,*ylo,*yhi;
 {
   DIAGRAM *d;
-  int type,flag=0;
+  int type;
+  
+  /*int flag=0;
+  */
   double x,y1,y2,par1,par2=0.0;
   d=bifd;
   if(d->next==NULL)return;
@@ -419,9 +449,14 @@ void bound_diagram(xlo,xhi,ylo,yhi)
   *yhi=-*ylo;
   while(1){
     type=get_bif_type(d->ibr,d->ntot,d->lab);
- 
-    if(d->ntot==1)flag=0;
+    if (type <1)
+    {
+        plintf("Unable to get bifurcation type.\n");
+    }
+    /*if(d->ntot==1)flag=0;
     else flag=1;
+    Unused here?
+    */
     par1=d->par[d->icp1];
     if(d->icp2<NAutoPar)par2=d->par[d->icp2];
     auto_xy_plot(&x,&y1,&y2,par1,par2,d->per,d->uhi,d->ulo,d->ubar,d->norm);

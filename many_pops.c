@@ -193,7 +193,10 @@ wm_hints.input=True;
 wm_hints.icon_pixmap=icon_map;
  wm_hints.flags=StateHint|IconPixmapHint|InputHint;
 
-XSetWMProperties(display,w,NULL,NULL,NULL,0,NULL,&wm_hints,NULL);
+XClassHint class_hints;
+class_hints.res_name="";
+class_hints.res_class="";
+XSetWMProperties(display,w,NULL,NULL,NULL,0,NULL,&wm_hints,&class_hints);
 
 }
 
@@ -620,9 +623,9 @@ void add_pntarr(type)
   double size=.1;
   int i1,j1,i2,j2,color=0;
   float xe,ye,xs,ys;
-  Window temp;
+  /*Window temp;*/
   int flag;
-  temp=main_win;
+  /*temp=main_win;*/
   if(new_float("Size: ",&size))return;
   if(new_int("Color: ",&color))return;
   /* message_box(&temp,0,SCALEY-5*DCURY,"Choose start/end"); */

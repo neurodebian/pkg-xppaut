@@ -912,7 +912,8 @@ int getppmbits(Window window,int *wid,int *hgt, unsigned char *out)
   int i;
   int CMSK=0,CSHIFT=0,CMULT=0;
   int bbp=0,bbc=0;
-  int lobits,midbits,hibits,vv;
+  int lobits,midbits,hibits;
+  /*int vv; Not used anywhere?*/
   unsigned x,y;
   XColor palette[256];
   XColor pix;
@@ -954,7 +955,7 @@ int getppmbits(Window window,int *wid,int *hgt, unsigned char *out)
             with byte order etc  
 	*/
 	value=XGetPixel(ximage,x,y)>>INIT_C_SHIFT;
-	vv=value;
+	/*vv=value; Not used?*/
 	/*  get the 3 colors   hopefully  */
 	lobits=value&CMSK;
 	value=value>>CSHIFT;
@@ -997,7 +998,8 @@ int writeframe(filename,window,wid,hgt)
   int i;
   int CMSK=0,CSHIFT=0,CMULT=0;
   int bbp=0,bbc=0;
-  int lobits,midbits,hibits,vv;
+  int lobits,midbits,hibits;
+  /*int vv; Not used anywhere...*/
   unsigned x,y;
   char head[100];
   XColor palette[256];
@@ -1049,7 +1051,8 @@ int writeframe(filename,window,wid,hgt)
             with byte order etc  
 	*/
 	value=XGetPixel(ximage,x,y)>>INIT_C_SHIFT;
-	vv=value;
+	/*vv=value;
+	*/
 	/*  get the 3 colors   hopefully  */
 	lobits=value&CMSK;
 	value=value>>CSHIFT;
@@ -2426,13 +2429,14 @@ void read_ani_line(fp,s)
      FILE *fp;
 {
   char temp[256];
-  int i,n,nn,ok,ihat=0;
+  int i,n,ok,ihat=0;
+  /*int nn; Not used anywhere?*/
   s[0]=0;
   ok=1;
   while(ok){
     ok=0;
     fgets(temp,256,fp);
-     nn=strlen(temp)+1;
+     /*nn=strlen(temp)+1;Not used*/
     n=strlen(temp);
     for(i=n-1;i>=0;i--){
       if(temp[i]=='\\'){

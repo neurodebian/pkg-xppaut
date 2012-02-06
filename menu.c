@@ -65,7 +65,7 @@ void create_the_menus(base)
   key[18]=0;
   add_menu(base,NUM_MENU,NUM_ENTRIES,num_menu,key,num_hint);
   /* CLONE */
-  strcpy(key,"pwracesbhqtigl");
+  strcpy(key,"pwracesbhqtiglx");
   add_menu(base,FILE_MENU,FILE_ENTRIES,fileon_menu,key,file_hint);
   help_menu=-1;
 }
@@ -182,11 +182,13 @@ void menu_button(win)
 void draw_help()
 {
   int i,j=help_menu,n;
-  char **z;
+  /*char **z;
+  */
   if(j<0)return;
   if(my_menus[j].visible==0)return;
   n=my_menus[j].n;
-  z=my_menus[j].names;
+  /*z=my_menus[j].names;
+  */
   menu_expose(my_menus[j].title);
   for(i=0;i<n;i++)
       menu_expose(my_menus[j].w[i]);

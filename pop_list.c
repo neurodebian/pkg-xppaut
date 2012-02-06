@@ -3,14 +3,21 @@
 #include "many_pops.h"
 #include "ggets.h"
 #include "menudrive.h"
+#include "info.bitmap"
+#include "alert.bitmap"
 
 
 void set_window_title(Window win,char *string)
 {
- XTextProperty wname,iname;
+  XTextProperty wname,iname;
   XStringListToTextProperty(&string,1,&wname);
   XStringListToTextProperty(&string,1,&iname);
- XSetWMProperties(display,win,&wname,&iname,NULL,0,NULL,NULL,NULL);
+  
+  XClassHint class_hints;
+  class_hints.res_name="";
+  class_hints.res_class="";
+ 
+  XSetWMProperties(display,win,&wname,&iname,NULL,0,NULL,NULL,&class_hints);
 }
 
 /* these are the standard lists that are possible */
@@ -499,7 +506,13 @@ STRING_BOX *sb;
  size_hints.min_height=height;
  size_hints.max_width=width;
  size_hints.max_height=height;
- XSetWMProperties(display,base,&winname,NULL,NULL,0,&size_hints,NULL,NULL);
+
+ XClassHint class_hints;
+ class_hints.res_name="";
+ class_hints.res_class="";
+ 
+ make_icon((char*)info_bits,info_width,info_height,base);
+ XSetWMProperties(display,base,&winname,NULL,NULL,0,&size_hints,NULL,&class_hints);
  sb->base=base;
  sb->hgt=height;
  sb->wid=width; 
@@ -557,7 +570,8 @@ Window make_fancy_window(root,x,y,width,height,bw,fc,bc)
 		 Pixmap pmap = XCreatePixmap(display,root,width,height,DefaultDepth(display, DefaultScreen(display)));
 
 		 int xx, yy;
-		 double cosine, l2rads;
+		 double cosine;
+		 /*double l2rads;*/
 		 xx= 0;
 		 
 		 XColor bcolour, col2, diffcol;
@@ -565,8 +579,9 @@ Window make_fancy_window(root,x,y,width,height,bw,fc,bc)
 		 XParseColor(display, cmap,UserWhite, &bcolour);
 		 XParseColor(display, cmap,UserBlack, &diffcol);
 
-		 l2rads = 3.1415926535897932384/(1.0*height);
-
+		 /*l2rads = 3.1415926535897932384/(1.0*height);
+		 */
+		 
 		 /*win=XCreateSimpleWindow(display,root,x,y,width,height,
 			bw,diffcol.pixel,bcolour.pixel);
 		 */
@@ -670,8 +685,9 @@ Window make_unmapped_window(root,x,y,width,height,bw)
 		 Pixmap pmap = XCreatePixmap(display,root,width,height,DefaultDepth(display, DefaultScreen(display)));
 
 		 int xx, yy;
-		 double cosine, l2rads;
-		 
+		 double cosine;
+		 /*double l2rads;
+		 */
 		 xx= 0;
 		 
 		 XColor bcolour, col2, diffcol;
@@ -679,7 +695,7 @@ Window make_unmapped_window(root,x,y,width,height,bw)
 		 XParseColor(display, cmap,UserWhite, &bcolour);
 		 XParseColor(display, cmap,UserBlack, &diffcol);
 
-		 l2rads = 3.1415926535897932384/(1.0*height);
+		 /*l2rads = 3.1415926535897932384/(1.0*height);*/
 
 		/* win=XCreateSimpleWindow(display,root,x,y,width,height,
 			bw,diffcol.pixel,bcolour.pixel);
@@ -832,8 +848,11 @@ void respond_box(button,message)
       height=5*DCURY;
        wmain=make_plain_window(RootWindow(display,screen),DisplayWidth/2,
        DisplayHeight/2,width*DCURX,height,4);
+       make_icon((char*)alert_bits,alert_width,alert_height,wmain);
        wm=make_plain_window(wmain,((width-l1)*DCURX)/2,DCURY/2,l1*DCURX,DCURY,0);
        wb=make_window(wmain,((width-l2)*DCURX)/2,2*DCURY,l2*DCURX,DCURY,1);
+       
+	
             ping();
       set_window_title(wmain,"!!");
       XSelectInput(display,wb,BUT_MASK);
@@ -926,16 +945,22 @@ int two_choice(choice1,choice2,string,key,x,y,w)
 	x1=(tot-l1-l2-4*DCURX)/2;
 	x2=x1+l1+4*DCURX;
         base=make_plain_window(w,x,y,tot,5*DCURY,4);
+	
+	make_icon((char*)alert_bits,alert_width,alert_height,base);
+	
+	
 	c1=make_window(base,x1,3*DCURY,l1+DCURX,DCURY+4,1);
         c2=make_window(base,x2,3*DCURY,l2+DCURX,DCURY+4,1);
 	  XSelectInput(display,c1,BUT_MASK);
  	 XSelectInput(display,c2,BUT_MASK);
-
+	
 	wm=make_window(base,xm,DCURY/2,lm+2,DCURY,0);
+	 
 	ping();
         if(w==RootWindow(display,screen))
 	  set_window_title(base,"!!!!");
-
+       
+  
         while(not_done){
         XNextEvent(display,&ev);
 		switch(ev.type){

@@ -109,6 +109,7 @@ extern int querypars;
 extern int queryics;
 extern int aplot_range;
 
+extern OptionsSet notAlreadySet;
 
 typedef struct {
   int index0,type;
@@ -247,7 +248,6 @@ void dump_range(fp,f)
 }
 void init_range()
 {
-
  eq_range.col=-1;
  eq_range.shoot=0;
  eq_range.steps=10;
@@ -258,15 +258,40 @@ void init_range()
  range.type=0;
  range.rtype=0;
  range.index=range.index2=0;
- range.steps=20;
+ if (notAlreadySet.RANGESTEP)
+ {
+ 	range.steps=20;
+	notAlreadySet.RANGESTEP=0;
+ }
  range.steps2=20;
- range.plow=range.plow2=0.0;
- range.phigh=range.phigh2=1.0;
- range.reset=1;
- range.oldic=1;
+ if (notAlreadySet.RANGELOW)
+ {
+ 	range.plow=range.plow2=0.0;
+	notAlreadySet.RANGELOW=0;
+ }
+ 
+ if (notAlreadySet.RANGEHIGH)
+ {
+ 	range.phigh=range.phigh2=1.0;
+ 	notAlreadySet.RANGEHIGH=0;
+ }
+ if (notAlreadySet.RANGERESET)
+ {
+ 	range.reset=1;
+ 	notAlreadySet.RANGERESET=0;
+ }
+ if (notAlreadySet.RANGEOLDIC)
+ {
+ 	range.oldic=1;
+ 	notAlreadySet.RANGEOLDIC=0;
+ }
  range.cycle=0;
  range.movie=0;
- sprintf(range.item,"%s",uvar_names[0]);
+ if (notAlreadySet.RANGEOVER)
+ {
+ 	sprintf(range.item,"%s",uvar_names[0]);
+	notAlreadySet.RANGEOVER=0;
+ }
  sprintf(range.item2,"%s",uvar_names[0]);
  init_shoot_range(upar_names[0]); 
  init_monte_carlo();
@@ -392,6 +417,9 @@ int set_up_range()
  if(!Xup){
    return(range_item());
  }
+ 
+ /* printf("Checking here now %d\n",range.steps); */
+ 
  sprintf(values[0],"%s",range.item);
  sprintf(values[1],"%d",range.steps);
  sprintf(values[2],"%.16g",range.plow);

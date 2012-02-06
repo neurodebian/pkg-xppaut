@@ -230,7 +230,7 @@ static int dopcor (unsigned n, FcnEqDiff fcn, double x, double* y, double xend,
   double   facold, expo1, fac, facc1, facc2, fac11, posneg, xph;
   double   atoli, rtoli, hlamb, err, sk, hnew, ydiff, bspl;
   double   stnum, stden, sqr, err2, erri, deno;
-  int      iasti, iord, irtrn, reject, last, nonsti;
+  int      iasti, iord, irtrn, reject, last, nonsti=0;
   unsigned i, j;
   double   c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c14, c15, c16;
   double   b1, b6, b7, b8, b9, b10, b11, b12, bhh1, bhh2, bhh3;
@@ -1045,7 +1045,7 @@ static int dopcor5 (unsigned n, FcnEqDiff fcn, double x, double* y, double xend,
   double   facold, expo1, fac, facc1, facc2, fac11, posneg, xph;
   double   atoli, rtoli, hlamb, err, sk, hnew, yd0, ydiff, bspl;
   double   stnum, stden, sqr;
-  int      iasti, iord, irtrn, reject, last, nonsti;
+  int      iasti, iord, irtrn, reject, last, nonsti=0;
   unsigned i, j;
   double   c2, c3, c4, c5, e1, e3, e4, e5, e6, e7, d1, d3, d4, d5, d6, d7;
   double   a21, a31, a32, a41, a42, a43, a51, a52, a53, a54;

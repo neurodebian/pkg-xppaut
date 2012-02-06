@@ -748,7 +748,8 @@ int one_flag_step_backeul(y,t,dt,neq,yg,yp,yp2,ytemp,errvec,jac,istart)
 {
   double yold[MAXODE],told;
   int i,hit,j;
-  double s,dtt=dt;
+  double s;
+  double dtt=dt; 
   int nstep=0; 
   while(1){
     for(i=0;i<neq;i++)
@@ -760,7 +761,7 @@ int one_flag_step_backeul(y,t,dt,neq,yg,yp,yp2,ytemp,errvec,jac,istart)
       break;
     /* Its a hit !! */
     nstep++;
-    dtt=(1-s)*dt;
+    dtt=(1-s)*dt;  
     if(nstep>(NFlags+2)){
       plintf(" Working too hard?");
             plintf("smin=%g\n",s);
