@@ -2,8 +2,9 @@ xppaut (6.11b+1-1) oneiric; urgency=low
 
   * New upstream release
   * Fixed patches dropped 
+  * menudrive.c patch fixed 
 
- -- Jakub Nowacki <j.s.nowacki@gmail.com>  Mon, 06 Feb 2012 21:20:06 +0000
+ -- Jakub Nowacki <j.s.nowacki@gmail.com>  Mon, 06 Feb 2012 21:48:57 +0000
 
 xppaut (6.11b-1) unstable; urgency=low
 
