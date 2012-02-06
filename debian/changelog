@@ -1,3 +1,9 @@
+xppaut (6.11b+1-1) oneiric; urgency=low
+
+  * New upstream release
+
+ -- Jakub Nowacki <j.s.nowacki@gmail.com>  Mon, 06 Feb 2012 21:13:55 +0000
+
 xppaut (6.11b-1) unstable; urgency=low
 
   * New upstream release (fix #2106089, #448531)
