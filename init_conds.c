@@ -43,6 +43,7 @@ This also has the clone gadget
 #include "ic.bitmap"
 #include "param.bitmap"
 #include "delay.bitmap"
+#include "filebrowse.bitmap"
 #include "bc.bitmap"
 #include "shoot.h"
 #include "ggets.h"
@@ -667,7 +668,9 @@ void create_file_selector(title,file,wild)
 {
  int n=my_ff.ndirs+my_ff.nfiles;
  int nwin=FILESELNWIN;
- int wid,hgt,i;
+ /*int wid,hgt,i;
+ */
+ int hgt,i;
  int width,height;
  
  Window base;
@@ -680,7 +683,7 @@ void create_file_selector(title,file,wild)
  strcpy(filesel.wildtxt,wild);
  strcpy(filesel.filetxt,file);
  width=80*DCURXs;
- wid=30*DCURXs;
+ /*wid=30*DCURXs;*/
  hgt=DCURYs+4;
  height=(5+nwin)*hgt;
  filesel.minwid=width;
@@ -700,7 +703,15 @@ void create_file_selector(title,file,wild)
  size_hints.min_height=height;
  size_hints.max_width=width; 
  size_hints.max_height=height; 
- XSetWMProperties(display,base,&winname,NULL,NULL,0,&size_hints,NULL,NULL);
+ 
+ make_icon((char*)filebrowse_bits,filebrowse_width,filebrowse_height,base);
+ 
+ XClassHint class_hints;
+ class_hints.res_name="";
+ class_hints.res_class="";
+
+ 
+ XSetWMProperties(display,base,&winname,NULL,NULL,0,&size_hints,NULL,&class_hints);
  
  filesel.up=make_window(base,DCURXs,2+4*hgt,3*DCURXs+5,DCURYs,1);
  filesel.dn=make_window(base,DCURXs,2+5*hgt,3*DCURXs+5,DCURYs,1);
@@ -1062,6 +1073,7 @@ int file_selector(title,file,wild)
  create_file_selector(title,file,wild);
  i=do_file_select_events();
  destroy_selector();
+ XFlush(display);/*Need to do this otherwise the file dialog hangs around*/
  if(i==0)return 0;
  /* plintf(" Got a file: %s \n",filesel.filetxt); */
  strcpy(file,filesel.filetxt);
@@ -1448,7 +1460,8 @@ void get_nrow_from_hgt(h,n,w)
 void destroy_box(BoxList *b)
 {
 
-  int n,nrow;
+  /*int n,nrow;
+  */
   if(b->xuse==0)return;
   b->xuse=0;
   XFlush(display);
@@ -1456,8 +1469,9 @@ void destroy_box(BoxList *b)
   if(b->use==0)return;
   XDestroySubwindows(display,b->base);
   XDestroyWindow(display,b->base);
-  n=b->n;
+  /*n=b->n;
   nrow=b->nwin;
+  */
   /* now free up stuff */
   free(b->w);
   free(b->we);
@@ -1509,7 +1523,10 @@ int nrow,n;
  size_hints.min_height=height;
   size_hints.max_width=width; 
  size_hints.max_height=height; 
- XSetWMProperties(display,base,&winname,&iconame,NULL,0,&size_hints,NULL,NULL);
+ XClassHint class_hints;
+ class_hints.res_name="";
+ class_hints.res_class="";
+ XSetWMProperties(display,base,&winname,&iconame,NULL,0,&size_hints,NULL,&class_hints);
  b->w = (Window *)malloc(nrow*sizeof(Window));
  b->we = (Window *)malloc(nrow*sizeof(Window));
  if(type==ICBOX){

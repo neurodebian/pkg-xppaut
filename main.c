@@ -361,7 +361,8 @@ int argc;
        notAlreadySet = *tempNS;
        free(tempNS);
   }
-  load_eqn();   
+  load_eqn();
+
   OptionsSet *tempNS = (OptionsSet*)malloc(sizeof(OptionsSet));
   *tempNS = notAlreadySet;
   set_internopts(tempNS);
@@ -514,9 +515,8 @@ test_color_info();
   
 if(use_ani_file)
 {
-  /*
 	new_vcr();
-	get_ani_file(anifile); */ 
+	get_ani_file(anifile);
 }
 
 do_events(min_wid,min_hgt);
@@ -838,8 +838,10 @@ void set_small_font()
 
 void xpp_events(XEvent report,int min_wid,int min_hgt)
 {
-int window_size,com;
+/*int window_size,com;
+ */
  
+ int com;
  char ch;
  
  int used=0;
@@ -875,11 +877,11 @@ int window_size,com;
   SCALEX=report.xconfigure.width;
   SCALEY=report.xconfigure.height;
   if((SCALEX<min_wid) || (SCALEY<min_hgt)){
-   window_size=TOO_SMALL;
+   /*window_size=TOO_SMALL;*/
   SCALEX=min_wid;
   SCALEY=min_hgt;}
   else {
-   window_size=BIG_ENOUGH;
+   /*window_size=BIG_ENOUGH;*/
    XResizeWindow(display,command_pop,SCALEX-4,DCURY+1);
    XMoveResizeWindow(display,info_pop,0,SCALEY-DCURY-4,SCALEX-4,DCURY);
    resize_par_slides(SCALEY-3*DCURYs-1*DCURYb-13);
@@ -1208,7 +1210,9 @@ void commander(ch)
 	  case 'l':  
 	    clone_ode();
 	    break;
-	              
+	  case 'x':  
+	    edit_xpprc();
+	    break;  
                 } /* end file switch  */
 	        help();
             } /*  end file case   */ break;
@@ -1314,7 +1318,8 @@ plintf("X error: failure for winname\n");
  wm_hints.icon_pixmap=icon_map;
  wm_hints.flags=StateHint|IconPixmapHint|InputHint;
  class_hints.res_name="base";
- class_hints.res_class="Basicwin";
+ class_hints.res_class=win_name;
+ 
  XSetWMProperties(display,wine,&winname,&iconname,argv,argc,&size_hints,&wm_hints,&class_hints);
  XSetWMProtocols(display, wine, &deleteWindowAtom, 1);
 }
@@ -1488,7 +1493,7 @@ void make_pops()
 {  int x,y;
   unsigned int h,w,bw,d;
    Window wn;
-   Cursor cursor;
+   /*Cursor cursor;*/
    XGetGeometry(display,main_win,&wn,&x,&y,&w,&h,&bw,&d);
    /* menu_pop=XCreateSimpleWindow(display,main_win,
      0,DCURY+6,16*DCURX,22*DCURY,2,MyForeColor,
@@ -1501,7 +1506,8 @@ MyForeColor,
  info_pop=XCreateSimpleWindow(display,main_win,0,h-DCURY-4,w-2,DCURY,2,
 MyForeColor,
      MyBackColor);
- cursor=XCreateFontCursor(display,XC_hand2);
+ /*cursor=XCreateFontCursor(display,XC_hand2);*/
+ XCreateFontCursor(display,XC_hand2);
  /* XDefineCursor(display,menu_pop,cursor); */
  /* XSelectInput(display,menu_pop,KeyPressMask|ButtonPressMask|ExposureMask); */
 XSelectInput(display,command_pop,KeyPressMask|ButtonPressMask|ExposureMask);
@@ -1621,11 +1627,15 @@ void test_color_info()
 {
  XColor *colors;
  XWindowAttributes xwa;
- int n;
+ /*int n;
+ */
  TrueColorFlag=0;
  
  XGetWindowAttributes(display,main_win, &xwa);
- n=getxcolors(&xwa,&colors);
+ /*n=getxcolors(&xwa,&colors);
+ */
+ getxcolors(&xwa,&colors);
+ 
 if (colors) free((char *) colors);
 }
 

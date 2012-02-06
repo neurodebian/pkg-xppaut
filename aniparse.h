@@ -139,6 +139,6 @@ void do_grab_tasks(int which);
 int add_grab_task(char *lhs, char *rhs, int igrab, int which);
 void draw_grab_points(void);
 void free_grabber(void);
-
+int check_ani_pause(XEvent ev);
 
 #endif

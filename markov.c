@@ -118,7 +118,9 @@ int build_markov(ma,name)
      char **ma;
      char *name;
 {
- int nn,len=0,ll;
+ /*int nn;
+ */
+ int len=0,ll;
  char line[256],expr[256];
   int istart;
  
@@ -151,7 +153,7 @@ int build_markov(ma,name)
    sprintf(line,"%s",ma[i]);
    if(ConvertStyle)
      fprintf(convertf,"%s",line);
-   nn=strlen(line)+1;
+   /*nn=strlen(line)+1;*/
    /* if((save_eqn[NLINES]=(char *)malloc(nn))==NULL){
      plintf("saveeqn-prob\n");exit(0);}
      strncpy(save_eqn[NLINES++],line,nn); */
@@ -172,7 +174,8 @@ int old_build_markov(fptr,name)
 
      char *name;
 {
- int nn,len=0,ll;
+ /*int nn;*/
+ int len=0,ll;
  char line[256],expr[256];
   int istart;
  
@@ -205,7 +208,7 @@ int old_build_markov(fptr,name)
 
    if(ConvertStyle)
      fprintf(convertf,"%s",line);
-   nn=strlen(line)+1;
+   /*nn=strlen(line)+1;*/
    /* if((save_eqn[NLINES]=(char *)malloc(nn))==NULL)exit(0);
       strncpy(save_eqn[NLINES++],line,nn); */
    istart=0;
@@ -455,7 +458,8 @@ void make_gill_nu(double *nu,int n,int m,double *v)
 void one_gill_step(int meth,int nrxn,int *rxn,double *v)
 {
   double rate=0,test;
-  double r[1000],rold[1000];
+  double r[1000];
+  double rold[1000];
 
   int i;
   switch(meth){

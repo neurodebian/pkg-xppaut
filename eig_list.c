@@ -143,7 +143,13 @@ void create_eq_list()
  size_hints.height=height;
  size_hints.min_width=width;
  size_hints.min_height=height;
-  XSetWMProperties(display,base,&winname,&iconame,NULL,0,&size_hints,NULL,NULL);
+ 
+ XClassHint class_hints;
+ class_hints.res_name="";
+ class_hints.res_class="";
+ 
+ 
+  XSetWMProperties(display,base,&winname,&iconame,NULL,0,&size_hints,NULL,&class_hints);
  make_icon((char*)eqns_bits,eqns_width,eqns_height,base);
  eq_list.main=make_plain_window(base,0,0,width,hmain,1);
  eq_list.list=make_plain_window(base,0,hmain,width,hlist,1);

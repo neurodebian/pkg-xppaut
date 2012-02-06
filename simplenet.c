@@ -761,10 +761,11 @@ void add_special_name(name,rhs)
 int is_network(s)
      char *s;
 {
-  int n;
+  /*int n;
+  */
   de_space(s);
   strupr(s);
-  n=strlen(s);
+ /* n=strlen(s); Not used*/
   if(s[0]=='C' &&s[1]=='O' &&s[2]=='N' && s[3]=='V')return 1;
   if(s[0]=='S' &&s[1]=='P' &&s[2]=='A' && s[3]=='R')return 2;
   if(s[0]=='F'&&s[1]=='C' &&s[2]=='O' &&s[3]=='N' && s[4]=='V')return 3;

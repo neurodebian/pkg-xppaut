@@ -704,12 +704,12 @@ void make_auto(wname,iname)  /* this makes the auto window  */
      char *wname,*iname;
 
 {
- int x,y,wid,hgt,addwid=16*DCURX,addhgt=3.5*DCURY,hinthgt=DCURY+6;
+ int x,y,wid,hgt,addwid=16*DCURX,addhgt=3.0*DCURY,hinthgt=DCURY+6;
  Window base;
  int dely=DCURY+5;
  STD_HGT_var =20*DCURY;
  /*STD_WID_var =1.62*STD_HGT_var;*/
- STD_WID_var = 50*DCURX;
+ STD_WID_var = 67*DCURX;
  int ymargin=4*DCURYs,xmargin=12*DCURXs;
  XTextProperty winname,iconname;
  XSizeHints size_hints;
@@ -735,8 +735,13 @@ void make_auto(wname,iname)  /* this makes the auto window  */
  size_hints.y=0;
  size_hints.min_width=wid;
  size_hints.min_height=hgt;
+ 
+ XClassHint class_hints;
+ class_hints.res_name="";
+ class_hints.res_class="";
+ 
  XSetWMProperties(display,base,&winname,&iconname,NULL,0,
-		  &size_hints,NULL,NULL);
+		  &size_hints,NULL,&class_hints);
  make_icon((char*)auto_bits,auto_width,auto_height,base);
  AutoW.canvas=make_plain_window(base,x,y,STD_WID_var+xmargin,STD_HGT_var+ymargin,1);
  XSetWindowBackground(display,AutoW.canvas,MyDrawWinColor);
@@ -776,7 +781,7 @@ void make_auto(wname,iname)  /* this makes the auto window  */
  y=DCURY+STD_HGT_var+ymargin+5;
  x=addwid+5;
  AutoW.info=make_plain_window(base,x,y,STD_WID_var+xmargin,addhgt,2);
- AutoW.hint=make_window(base,x,y+addhgt+8,STD_WID_var+xmargin,DCURY+2,1);
+ AutoW.hint=make_plain_window(base,x,y+addhgt+6,STD_WID_var+xmargin,DCURY+2,2);
  draw_bif_axes();
 }
  
@@ -784,11 +789,42 @@ void make_auto(wname,iname)  /* this makes the auto window  */
 
 void resize_auto_window(XEvent ev)
 {
-  int wid,hgt;
+
+  int wid,hgt,addhgt=3.5*DCURY;
+  
+   STD_HGT_var =20*DCURY;
+ /*STD_WID_var =1.62*STD_HGT_var;*/
+ STD_WID_var = 50*DCURX;
+ int ymargin=4*DCURYs,xmargin=12*DCURXs;
   if(ev.xconfigure.window==AutoW.base){
     wid=ev.xconfigure.width-Auto_extra_wid;
     hgt=ev.xconfigure.height-Auto_extra_hgt;
-    /*  printf("resizing %d X %d \n",wid,hgt);*/
+    
+    addhgt=3.0*DCURY;
+    
+    XResizeWindow(display,AutoW.canvas,wid,hgt);
+    Window root;
+    int xloc;
+    int yloc;
+    unsigned int cwid;
+    unsigned int chgt;
+    unsigned int cbwid;
+    unsigned int cdepth;
+    
+    XGetGeometry(display,AutoW.canvas,&root,&xloc,&yloc,&cwid,&chgt,&cbwid,&cdepth);
+    Auto.hgt=chgt-ymargin;
+    Auto.wid=cwid-xmargin;
+    
+    XMoveResizeWindow(display,AutoW.info,xloc,yloc+chgt+4,wid,addhgt);
+    XMoveResizeWindow(display,AutoW.hint,xloc,yloc+chgt+addhgt+10,wid,DCURY+2);
+    
+    DIAGRAM *d;
+    int ix,iy; 
+    
+    if(NBifs<2)return;
+    d=bifd; 
+    traverse_out(d,&ix,&iy,1);
+    
   }
 }
     

@@ -63,7 +63,13 @@ int max;
  d.base=XCreateSimpleWindow(display,RootWindow(display,screen),0,0,
 	lm+lv+20,30+2*DCURY,2,MyForeColor,MyBackColor);
  XStringListToTextProperty(&wname,1,&winname);
- XSetWMProperties(display,d.base,&winname,NULL,NULL,0,NULL,NULL,NULL);
+ 
+ XClassHint class_hints;
+ class_hints.res_name="";
+ class_hints.res_class="";
+ 
+ 
+ XSetWMProperties(display,d.base,&winname,NULL,NULL,0,NULL,NULL,&class_hints);
  
  d.mes=XCreateSimpleWindow(display,d.base,5,5,lm,DCURY+8,1,MyBackColor,MyBackColor);
  d.input=XCreateSimpleWindow(display,d.base,10+lm,5,lv,DCURY+8,1,MyBackColor,MyBackColor);

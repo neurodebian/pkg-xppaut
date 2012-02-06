@@ -9,7 +9,7 @@
 #define NUM_MENU 2
 #define MAIN_ENTRIES 20
 /* CLONE */
-#define FILE_ENTRIES 14
+#define FILE_ENTRIES 15
 #define NUM_ENTRIES 18
 char *main_menu[]={
  "XPP","Initialconds","Continue","Nullcline",
@@ -28,12 +28,12 @@ char *num_menu[]={"NUMERICS","Total","Start time","tRansient",
 char *fileon_menu[]={
 "FILE","Prt src","Write set","Read set",
 "Auto","Calculator","Edit","Save info",
-"Bell off","Help","Quit","Transpose","tIps","Get par set","cLone"}; 
+"Bell off","Help","Quit","Transpose","tIps","Get par set","cLone",".Xpprc"}; 
 
 char *fileoff_menu[]={
 "FILE","Prt src","Write set","Read set",
 "Auto","Calculator","Edit","Save info",
-"Bell on","Help","Quit","Transpose","tIps","Get par set","cLone"}; 
+"Bell on","Help","Quit","Transpose","tIps","Get par set","cLone",".Xpprc"}; 
 
 /* end CLONE change */
 typedef struct {
@@ -87,7 +87,8 @@ char *file_hint[]={
 "Transpose storage",
 "Turn off these silly tips",
 "Set predefined parameters",
-"Clone the ode file"
+"Clone the ode file",
+"Edit your .xpprc preferences file"
 };
 
 
@@ -329,7 +330,7 @@ char *auto_hint[]={
 "Grab a point to continue from",
 "Tell AUTO to save at values of period or parameter",
 "Erase the screen",
-" ",
+"Redraw the diagram",
 "Save and output options"};
 
 char *no_hint[]={ 

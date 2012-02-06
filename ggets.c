@@ -209,16 +209,18 @@ XEvent ev;
 int *com;
 {
 
- int i,j;
+ /*int i,j;
 
  Window w;
- w=ev.xbutton.window;
+ */
+ /*w=ev.xbutton.window;*/
   /* XSetInputFocus(display,w,RevertToParent,CurrentTime); */
   
  
 
- i=ev.xbutton.x;
+ /*i=ev.xbutton.x;
  j=ev.xbutton.y;
+ */
  /*
  if(w==menu_pop)
   {

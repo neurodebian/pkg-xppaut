@@ -30,6 +30,7 @@
 #else
 #include <wctype.h>
 #endif
+#include <errno.h>
 
 #include "xpplim.h"
 
@@ -1064,6 +1065,32 @@ double *value;
   }
 }
 
+void new_take_apart(bob, value, name)
+char *bob,*name;
+double *value;
+{
+ int k,i,l;
+ char * end;
+ l=strlen(bob);
+ k=strcspn(bob,"=");
+ if(k==l)
+   {
+     *value=0.0;
+     strcpy(name,bob);
+   }
+ else
+   {
+     name[0] = '\0';
+     name[k]='\0';
+     errno = 0;
+     *value = strtod(bob+k+1, &end);
+     if (*value == 0 && errno != 0)
+       {
+	 plintf(" Invalid number: %s\n", bob+k+1);
+       }
+   }
+}
+
 char *get_first(string,src)
 char *string,*src;
 {
@@ -1308,7 +1335,8 @@ int nnn;
  char name[20],nstates=0;
  char newfile[256];
  FILE *fnew;
- int nlin;
+ /*int nlin;
+ */
  char big[MAXEXPLEN],old[MAXEXPLEN],new[MAXEXPLEN];
  char *my_string;
  int is_array=0;
@@ -1456,8 +1484,8 @@ int nnn;
 	 plintf("Markov variable %s  must have at least 2 states \n",name);
 	 return -1;
        }
-       nlin=NLINES;
-
+       /*nlin=NLINES;
+       */
        add_markov(nstates,name);
        if(jj==jj1) {  /* test to see if this is the first one */
 	 markovarrays=(char **)malloc(nstates*sizeof(char *));
@@ -1883,6 +1911,10 @@ void compile_em() /* Now we try to keep track of markov, fixed, etc as
        sprintf(big,"i %s \n",v->rhs);
        ptr=big;
        junk=get_first(ptr," ,");
+       if (junk == NULL)
+       {
+       	/*No more tokens.  Should this throw an error?*/
+       }
        while((my_string=get_next(" ,\n"))!=NULL)
 	 {
 	   take_apart(my_string,&z,name);

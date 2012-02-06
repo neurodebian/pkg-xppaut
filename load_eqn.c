@@ -16,7 +16,9 @@
 #include "adj2.h"
 #include "arrayplot.h"
 #include "lunch-new.h"
-#include "macdirent.h"
+//#include "macdirent.h"
+//SUbstitued with system dirent.h
+#include <dirent.h>
 #include "userbut.h"
 #include "volterra2.h"
 #include "storage.h"
@@ -577,8 +579,9 @@ void set_all_vals()
  }
  notAlreadySet.NPLOT=0;
  }
+ 
  /* internal options go here  */
- set_internopts(NULL);
+
  
 
  if((fp=fopen(options,"r"))!=NULL)
@@ -588,11 +591,11 @@ void set_all_vals()
  } 
 
  custom_color=0;
- init_range();
+   init_range();    
  init_trans();
  init_my_aplot();
  init_txtview();
-
+ set_internopts(NULL);
   chk_volterra();  
 
 /*                           */
@@ -768,6 +771,11 @@ void extract_action(char *ptr)
   /* plintf("ptr=%s \n",ptr); */
   strcpy(tmp,ptr);
   junk=get_first(tmp," ");
+  if (junk == NULL)
+  {
+  	/*No more tokens--should this throw an error?*/
+  }
+  
   while((mystring=get_next(" ,;\n"))!=NULL){
    split_apart(mystring,name,value);
       if(strlen(name)>0&&strlen(value)>0)
@@ -828,6 +836,10 @@ void set_internopts(OptionsSet *mask)
   for(i=0;i<Nopts;i++){
     ptr=interopt[i];
     junk=get_first(ptr," ,");
+    if (junk == NULL)
+    {
+    	/*No more tokens.  Should this throw an error?*/
+    }	
     while((mystring=get_next(" ,\n\r"))!=NULL)
     {
       split_apart(mystring,name,value);
@@ -913,7 +925,11 @@ void set_internopts_xpprc_and_comline()
   for(i=0;i<Nopts;i++){
     strcpy(intrnoptcpy,interopt[i]);
     ptr=intrnoptcpy;
-    junk=get_first(ptr," ,");
+    junk=get_first(ptr," ,");  
+    if (junk == NULL)
+    {
+    	/*No more tokens.  Should this throw an error?*/
+    }	
     while((mystring=get_next(" ,\n\r"))!=NULL)
     {
       split_apart(mystring,name,value);
@@ -994,6 +1010,8 @@ char *bob,*name,*value;
     }
 
 }
+
+
 
 
 void check_for_xpprc()
@@ -1769,10 +1787,12 @@ if(msc("UMC",s1)){
    	range.phigh=atof(s2);
 	notAlreadySet.RANGEHIGH=0;
      }
+
    return;
  }
  
  if(msc("RANGERESET",s1)){
+
      if ((notAlreadySet.RANGERESET||force)|| ((mask!=NULL)&&(mask->RANGERESET==1)))
      {
 	 if(s2[0]=='y'||s2[0]=='Y')
@@ -1781,6 +1801,7 @@ if(msc("UMC",s1)){
 	  range.reset=0;
 	  notAlreadySet.RANGERESET=0;
     }
+
   	return;
    }
 

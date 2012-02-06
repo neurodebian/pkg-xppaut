@@ -833,7 +833,8 @@ char *wname,*iname;
  int ncol=col;
  int width,height;
  Window base;
- XWMHints wm_hints;
+/* XWMHints wm_hints;
+*/
   XTextProperty winname,iconname;
   XSizeHints size_hints;
  int dcol=DCURXs*17;
@@ -861,9 +862,14 @@ XStringListToTextProperty(&iname,1,&iconname);
  size_hints.height=height; */
  size_hints.min_width=width-15;
  size_hints.min_height=height;
-  wm_hints.initial_state=IconicState;
+ /* wm_hints.initial_state=IconicState;
  wm_hints.flags=StateHint; 
-  XSetWMProperties(display,base,&winname,&iconname,NULL,0,&size_hints,NULL,NULL);
+ */
+ XClassHint class_hints;
+ class_hints.res_name="";
+ class_hints.res_class="";
+ 
+  XSetWMProperties(display,base,&winname,&iconname,NULL,0,&size_hints,NULL,&class_hints);
  make_icon((char*)browse_bits,browse_width,browse_height,base);
  b->upper=make_window(base,0,0,width,ystart+drow*6,1);
  XSetWindowBackground(display,b->upper,MyMainWinColor);
