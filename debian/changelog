@@ -1,3 +1,9 @@
+xppaut (6.11b+1.dfsg) oneiric; urgency=low
+
+  * New upstream release; cleaned (DFSG) version 
+
+ -- Jakub Nowacki <j.s.nowacki@gmail.com>  Wed, 08 Feb 2012 20:44:12 +0000
+
 xppaut (6.11b+1-1) oneiric; urgency=low
 
   * New upstream release
