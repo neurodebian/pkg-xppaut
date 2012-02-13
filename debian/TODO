@@ -3,3 +3,10 @@
   git-pbuilder create
 
   git-buildpackage --git-pbuilder
+
+* Remove output.dat from repository
+
+* Provide regression testing by running provided .ode files with -silent
+
+  store/compare output.dat and stdout
+
