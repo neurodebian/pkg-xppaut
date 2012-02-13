@@ -1,4 +1,4 @@
-Format: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?op=file&rev=174
+Format: http://dep.debian.net/deps/dep5/
 Upstream-name: XPPAUT
 Upstream-contact: Bard Ermentraut <bard@pitt.edu>
 Source: http://www.math.pitt.edu/~bard/xpp/download.html
@@ -9,7 +9,7 @@ License: GPL-2+
 
 Files: fftn.c
 Copyright: 1995,97 Mark Olesen <olesen@me.QueensU.CA> Queen's Univ at Kingston (Canada)
-Licence:
+Licence: custom
  Permission to use, copy, modify, and distribute this software for
  any purpose without fee is hereby granted, provided that this
  entire notice is included in all copies of any software which is
