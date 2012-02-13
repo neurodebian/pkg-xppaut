@@ -1,0 +1,5 @@
+Format: extended
+Source: xppaut
+Tasks: debian-science/neuroscience-modeling
+Pkg-URL: http://neuro.debian.net/pkgs/%(Pkg-Name)s.html
+
