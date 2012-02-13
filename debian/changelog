@@ -1,8 +1,13 @@
 xppaut (6.11b+1.dfsg-1) unstable; urgency=low
 
-  * New upstream release; cleaned (DFSG) version 
+  [ Jakub Nowacki ]
+  * New upstream release; cleaned (DFSG) version
 
- -- Jakub Nowacki <j.s.nowacki@gmail.com>  Wed, 08 Feb 2012 20:44:12 +0000
+  [ Yaroslav Halchenko ]
+  * debian/control: placed into 'science' section due to better fit
+  * debian/copyright: added copyright information on debian/* content
+
+ -- Yaroslav Halchenko <debian@onerussian.com>  Sun, 12 Feb 2012 22:02:27 -0500
 
 xppaut (6.11b+1-1) UNRELEASED; urgency=low
 
@@ -82,7 +87,7 @@ xppaut (5.85-3.3) unstable; urgency=low
 
   * Non-maintainer upload.
   * Implement alternative Makefile for 64 bit to fix
-  segfaults on integration on amd64.(Closes: #412102)
+    segfaults on integration on amd64.(Closes: #412102)
 
  -- Neil Williams <codehelp@debian.org>  Wed, 28 Feb 2007 23:43:59 +0000
 
@@ -98,7 +103,6 @@ xppaut (5.85-3.1) unstable; urgency=low
   * Non-maintainer upload.
   * Fix FTBFS with gcc-4.0 (missing #include of <errno.h>): Applied patch from
     Andreas Jochens <aj@andaco.de>. (closes: #306173)
-    
 
  -- Rob Bradford <robster@debian.org>  Sat, 10 Sep 2005 00:51:41 +0100
 
