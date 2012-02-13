@@ -1,10 +1,10 @@
-xppaut (6.11b+1.dfsg) oneiric; urgency=low
+xppaut (6.11b+1.dfsg-1) unstable; urgency=low
 
   * New upstream release; cleaned (DFSG) version 
 
  -- Jakub Nowacki <j.s.nowacki@gmail.com>  Wed, 08 Feb 2012 20:44:12 +0000
 
-xppaut (6.11b+1-1) oneiric; urgency=low
+xppaut (6.11b+1-1) UNRELEASED; urgency=low
 
   * New upstream release
   * Fixed patches dropped 
@@ -12,9 +12,9 @@ xppaut (6.11b+1-1) oneiric; urgency=low
 
  -- Jakub Nowacki <j.s.nowacki@gmail.com>  Mon, 06 Feb 2012 21:48:57 +0000
 
-xppaut (6.11b-1) unstable; urgency=low
+xppaut (6.11b-1) UNRELEASED; urgency=low
 
-  * New upstream release (fix #2106089, #448531)
+  * New upstream release (fixed #216089, #448531)
   * Quilt related fixes: added debian/source/format and
     debian/README.source; minor fix to debian/changelog
   * Fixing lintian warning: debhelper-but-no-misc-depends
@@ -25,7 +25,7 @@ xppaut (6.11b-1) unstable; urgency=low
 
  -- Jakub Nowacki <j.s.nowacki@gmail.com>  Sun, 30 Oct 2011 21:12:18 +0000
 
-xppaut (6.11-1) unstable; urgency=low
+xppaut (6.11-1) UNRELEASED; urgency=low
 
   * New upstream release
   * Reviving from the dead (was removed from the archive, see
