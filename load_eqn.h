@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 /*
-Options are set accroding to an order of precendence
+Options are set accroding to an order of precedence
 
 command line < mfile < .xpprc < default.opt
 
@@ -136,8 +136,16 @@ typedef struct {
    int NULL_ERR;
    int NEWT_ERR;
    int NULL_HERE;
- 
-  
+   int TUTORIAL;
+   int SLIDER1;
+   int SLIDER2;
+   int SLIDER3;
+   int SLIDER1LO;
+   int SLIDER2LO;
+   int SLIDER3LO;
+   int SLIDER1HI;
+   int SLIDER2HI;
+   int SLIDER3HI;
   } OptionsSet;
 
 

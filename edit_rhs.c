@@ -132,7 +132,7 @@ char **names,**values,*title;
  XSelectInput(display,sb.ok,EV_MASK);
  XSelectInput(display,sb.reset,EV_MASK);
 
-
+ waitasec(ClickTime);
  XDestroySubwindows(display,sb.base);
  XDestroyWindow(display,sb.base);
 

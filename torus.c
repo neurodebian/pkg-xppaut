@@ -11,6 +11,7 @@
 #include "pop_list.h"
 #include "many_pops.h"
 #include "info.bitmap"
+#include "browse.h"
 
 extern int DisplayHeight,DisplayWidth;
 
@@ -237,7 +238,8 @@ void do_torus_events()
  }
  XSelectInput(display,torbox.cancel,EV_MASK);
  XSelectInput(display,torbox.done,EV_MASK);
-XDestroySubwindows(display,torbox.base);
+ waitasec(ClickTime);
+ XDestroySubwindows(display,torbox.base);
  XDestroyWindow(display,torbox.base);
 
 }

@@ -16,6 +16,8 @@
 #define FORGET_ALL   0
 #define FORGET_THIS 3
 #include "struct.h"
+#include "browse.h"
+
 #define EV_MASK (ButtonPressMask 	|\
 		KeyPressMask		|\
 		ExposureMask		|\
@@ -101,7 +103,7 @@ int max;
   XSelectInput(display,d.cancel,EV_MASK);
   	 XSelectInput(display,d.ok,EV_MASK);
 
-
+ waitasec(ClickTime);
  XDestroySubwindows(display,d.base);
  XDestroyWindow(display,d.base);
  XFlush(display);

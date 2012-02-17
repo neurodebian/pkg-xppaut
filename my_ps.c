@@ -38,7 +38,8 @@ int PS_FONTSIZE=14;
 double PS_LW=5;
 char PS_FONT[100]="Times-Roman";
 FILE *psfile;
-int PSFlag,PSColorFlag=0;
+/*Default is now with color*/
+int PSFlag,PSColorFlag=1;
 int PSLines;
 int LastPSX,LastPSY;
 /* this header stuff was stolen from GNUPLOT I have added  filled circles
@@ -134,7 +135,7 @@ int color;
  fprintf(psfile,"%%!PS-Adobe-2.0\n");
  fprintf(psfile,"%%Creator: xppaut\n");
  fprintf(psfile,"%%%%BoundingBox: %d %d %d %d\n",PS_XOFF,PS_YOFF,
-	 (int)(PS_YMAX/PS_SC+.5+PS_YOFF),(int)(PS_XMAX/PS_SC+.5+PS_XOFF));
+	 (int)(PS_YMAX/PS_SC+.5+PS_YOFF+0.1*PS_VCHAR),(int)(PS_XMAX/PS_SC+.5+PS_XOFF+0.1*PS_VCHAR));
  fprintf(psfile,"/xppdict 40 dict def\nxppdict begin\n");
  if(color==0){
    fprintf(psfile, "/Color false def \n");

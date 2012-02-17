@@ -293,40 +293,40 @@ char *c;
 }
 */
 
-
 void init_rpn()
 {
 
-	ERROUT = 1;
-	NCON = 0;
-	NFUN = 0;
-	NVAR = 0;
-	NKernel=0;
-    
-	MaxPoints=4000;
-	NSYM = STDSYM;
-	two_args();
-	one_arg();
-	add_con("PI", M_PI);
+    ERROUT = 1;
+    NCON = 0;
+    NFUN = 0;
+    NVAR = 0;
+    NKernel=0;
+
+    MaxPoints=4000;
+    NSYM = STDSYM;
+    two_args();
+    one_arg();
+    add_con("PI", M_PI);
 
         add_con("I'",0.0);
-	/*   This is going to be for interacting with the 
-	     animator */
-	SumIndex=NCON-1;
+    /*   This is going to be for interacting with the
+         animator */
+    SumIndex=NCON-1;
         add_con("mouse_x",0.0);
         add_con("mouse_y",0.0);
         add_con("mouse_vx",0.0);
         add_con("mouse_vy",0.0);
 
-	/* end animator stuff */
-	/*  add_con("c___1",0.0);
+    /* end animator stuff */
+    /*  add_con("c___1",0.0);
         add_con("c___2",0.0);
         add_con("c___3",0.0); */
 
-	init_table();
-	if (newseed==1) RandSeed=time(0);
-	nsrand48(RandSeed);
+    init_table();
+    if (newseed==1) RandSeed=time(0);
+    nsrand48(RandSeed);
 }
+
 
  /*  FREE_UFUNS   */
 

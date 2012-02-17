@@ -19,6 +19,7 @@
 #include "menudrive.h"
 #include "pop_list.h"
 #include "calc.h"
+#include "browse.h"
 
 
 
@@ -324,7 +325,7 @@ void cput_text()
   add_label(string,x,y,size,font);
  BaseCol();
  }
-
+  waitasec(ClickTime);
   XDestroyWindow(display,temp); 
  }
 

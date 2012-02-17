@@ -24,6 +24,7 @@
 #include "many_pops.h"
 #include "color.h"
 #include "integrate.h"
+#include "browse.h"
 
 #include "pop_list.h"
 
@@ -790,13 +791,13 @@ void make_auto(wname,iname)  /* this makes the auto window  */
 void resize_auto_window(XEvent ev)
 {
 
-  int wid,hgt,addhgt=3.5*DCURY;
+    int wid,hgt,addhgt=3.5*DCURY;
   
-   STD_HGT_var =20*DCURY;
- /*STD_WID_var =1.62*STD_HGT_var;*/
- STD_WID_var = 50*DCURX;
- int ymargin=4*DCURYs,xmargin=12*DCURXs;
-  if(ev.xconfigure.window==AutoW.base){
+    STD_HGT_var =20*DCURY;
+    /*STD_WID_var =1.62*STD_HGT_var;*/
+    STD_WID_var = 50*DCURX;
+    int ymargin=4*DCURYs,xmargin=12*DCURXs;
+    if(ev.xconfigure.window==AutoW.base){
     wid=ev.xconfigure.width-Auto_extra_wid;
     hgt=ev.xconfigure.height-Auto_extra_hgt;
     
@@ -818,12 +819,10 @@ void resize_auto_window(XEvent ev)
     XMoveResizeWindow(display,AutoW.info,xloc,yloc+chgt+4,wid,addhgt);
     XMoveResizeWindow(display,AutoW.hint,xloc,yloc+chgt+addhgt+10,wid,DCURY+2);
     
-    DIAGRAM *d;
     int ix,iy; 
     
     if(NBifs<2)return;
-    d=bifd; 
-    traverse_out(d,&ix,&iy,1);
+    traverse_out(CUR_DIAGRAM,&ix,&iy,1);
     
   }
 }
@@ -882,6 +881,7 @@ void auto_button(ev)
 void auto_kill()
 {
   Auto.exist=0;
+  waitasec(ClickTime);
   XDestroySubwindows(display,AutoW.base);
   XDestroyWindow(display,AutoW.base);
   

@@ -162,9 +162,10 @@
 
 
 #define M_FX 216
+#define M_FU 217
 
 /* CLONE change ! */
-#define M_FL 217
+#define M_FL 218
 
 /*  some numerics commands */
 
@@ -255,6 +256,7 @@ void x_vs_t(void);
 void redraw_them_all(void);
 void get_3d_par(void);
 void edit_xpprc();
+void do_tutorial();
 
 
 

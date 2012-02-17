@@ -17,5 +17,4 @@ void menu_expose(Window win);
 void menu_button(Window win);
 void draw_help(void);
 
-
 #endif

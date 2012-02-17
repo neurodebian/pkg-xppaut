@@ -1176,6 +1176,11 @@ void traverse_out(d,ix,iy,dodraw)
   int pt,itp,ibr,lab,icp1,icp2,flag2;
   double x,y1,y2;
   char symb[3];
+  if (d==NULL)
+  {
+  	/*err_msg("Can not traverse to NULL diagram.");*/
+	return;
+  }
   norm=d->norm;
   par=d->par;
 

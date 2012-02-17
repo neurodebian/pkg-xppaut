@@ -342,6 +342,7 @@ void create_vcr(name)
  if(ani_pixmap==0){
    err_msg("Failed to get the required pixmap");
    XFlush(display);
+   waitasec(ClickTime);
    XDestroySubwindows(display,base);
    XDestroyWindow(display,base);
    vcr.iexist=0;

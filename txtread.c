@@ -16,6 +16,7 @@
 #include "many_pops.h"
 
 #include "txtread.h"
+#include "browse.h"
 
 
 #ifndef WCTYPE
@@ -188,6 +189,7 @@ void txtview_press(Window w,int x,int y)
   }
   if(w==txtview.kill){
     txtview.here=0;
+    waitasec(ClickTime);
     XDestroySubwindows(display,txtview.base);
     XDestroyWindow(display,txtview.base);
   }

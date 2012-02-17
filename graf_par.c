@@ -47,7 +47,8 @@ extern char PS_FONT[100];
 extern double PS_LW;
 extern BROWSER my_browser;
 extern double x_3d[2],y_3d[2],z_3d[2];
-int PS_Color=0;
+/*Default is now color*/
+int PS_Color=1;
 #define SPER 3
 #define UPER 4
 #define SEQ 1

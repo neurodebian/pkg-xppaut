@@ -106,6 +106,7 @@ KBS kbs[400]={
   {M_FES,"fes"},
   {M_FEL,"fel"},
   {M_FX,"fx"},
+  {M_FU,"fu"},
   {M_TT,"tt"},
   {M_TA,"ta"},
   {M_TP,"tp"},

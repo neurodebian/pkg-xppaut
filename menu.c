@@ -15,6 +15,8 @@
 #include "many_pops.h"
 #include "pop_list.h"
 
+#include "menudrive.h"
+
 int help_menu;
 MENUDEF my_menus[3]; 
 extern Display *display;
@@ -65,7 +67,7 @@ void create_the_menus(base)
   key[18]=0;
   add_menu(base,NUM_MENU,NUM_ENTRIES,num_menu,key,num_hint);
   /* CLONE */
-  strcpy(key,"pwracesbhqtiglx");
+  strcpy(key,"pwracesbhqtiglxu");
   add_menu(base,FILE_MENU,FILE_ENTRIES,fileon_menu,key,file_hint);
   help_menu=-1;
 }
@@ -92,6 +94,7 @@ void unshow_menu(j)
    XUnmapWindow(display,my_menus[j].base); */
    
 }  
+
 
 void help()
 {

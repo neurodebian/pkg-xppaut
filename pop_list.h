@@ -160,7 +160,7 @@ void expose_resp_box(char *button, char *message, Window wb, Window wm, Window w
 void respond_box(char *button, char *message);
 void message_box(Window *w, int x, int y, char *message);
 void expose_choice(char *choice1, char *choice2, char *msg, Window c1, Window c2, Window wm, Window w);
-int two_choice(char *choice1, char *choice2, char *string, char *key, int x, int y, Window w);
+int two_choice(char *choice1, char *choice2, char *string, char *key, int x, int y, Window w,char *title);
 int yes_no_box(void);
 int pop_up_list(Window *root, char *title, char **list, char *key, int n, int max, int def, int x, int y, char **hints, Window hwin, char *httxt);
 void draw_pop_up(POP_UP p, Window w);

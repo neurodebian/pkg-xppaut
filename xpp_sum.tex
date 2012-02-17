@@ -295,7 +295,7 @@ than their meaning here.
 \begin{verbatim}
 sin cos tan atan atan2 sinh cosh tanh
 exp delay ln log log10 t pi if then else
-asin acos heav sign ceil flr ran abs del\_shft 
+asin acos heav sign mod flr ran abs del\_shft 
 max min normal besselj bessely besseli erf erfc poisson
 lgamma arg1 ... arg9  @ $ + - / * ^ ** shift
 | > < == >= <= != not \# int sum of i'
@@ -332,8 +332,8 @@ the program of the maximal possible delay so it can allocate storage.
 {\tt delay} and the {\tt shift} operators and returns the value of the
 variable {\tt <var>} shifted by {\tt <shft>} at the delayed time given
 by {\tt <delay>}.
-\item {\tt  ceil(arg),flr(arg)}  are the integer parts of{\tt  <arg>} returning the
- smallest integer greater than and the largest integer less than {\tt <arg>}.  
+\item {\tt mod(arg1,arg2)} is {\tt arg1} modulo {\tt arg2}
+\item {\tt  flr(arg)}  is the integer part of{\tt  <arg>} returning the largest integer less than {\tt <arg>}.  
 \item  {\tt t } is the current time in the integration of the differential equation.
 \item {\tt  pi}  is $\pi.$ 
 \item {\tt arg1, ..., arg9} are the formal arguments for functions 

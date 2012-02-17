@@ -884,12 +884,14 @@ int ind;
      yp=&variables[root2];
      for(i=0;i<n;i++){
        sum=0.0;
-       f[3]=(int)(&yp[i]);
+       /*f[3]=(int)(&yp[i]);*/
+       f[3]=lround(yp[i]);
        for(j=-ncon;j<=ncon;j++){
 	 k=abs(i+j);
 	 if(k<twon){
 	   if(k>=n)k=abs(twon-2-k);
-           f[1]=(int)(&y[k]);
+           /*f[1]=(int)(&y[k]);*/
+	   f[1]=lround(y[k]);
 	   z=evaluate(f);
 	   sum+=(w[j+ncon]*z);
 	 }
@@ -902,11 +904,13 @@ int ind;
      yp=&variables[root2];
      for(i=0;i<n;i++){
        sum=0.0;
-       f[3]=(int)(&yp[i]);
+       /*f[3]=(int)(&yp[i]);*/
+       f[3]=lround(yp[i]);
        for(j=-ncon;j<=ncon;j++){
 	 k=i+j;
 	 if(k<n&&k>=0){
-	   f[1]=(int)(&y[k]);
+	   /*f[1]=(int)(&y[k]);*/
+	   f[1]=lround(y[k]);
 	   z=evaluate(f);
 	   sum+=(w[j+ncon]*z);
 	 }
@@ -918,11 +922,13 @@ int ind;
      f=my_net[ind].f;
      yp=&variables[root2];
      for(i=0;i<n;i++){
-       f[3]=(int)(&yp[i]);
+       /*f[3]=(int)(&yp[i]);*/
+       f[3]=lround(yp[i]);
        sum=0.0;
        for(j=-ncon;j<=ncon;j++){
 	 k=((twon+i+j)%n);
-	 f[1]=(int)(&y[k]);
+	 /*f[1]=(int)(&y[k]);*/
+	 f[1]=lround(y[k]);
 	 z=evaluate(f);
 	 sum+=(w[j+ncon]*z);
        }
@@ -933,13 +939,15 @@ int ind;
      f=my_net[ind].f;
      yp=&variables[root2];
      for(i=0;i<n;i++){
-       f[3]=(int)(&yp[i]);
+       /*f[3]=(int)(&yp[i]);*/
+       f[3]=lround(yp[i]);
        sum=0.0;
        for(j=0;j<ncon;j++){
 	 ij=i*ncon+j;
 	 k=(int)cc[ij];
          if(k>=0){
-	   f[1]=(int)(&y[k]);
+	   /*f[1]=(int)(&y[k]);*/
+	   f[1]=lround(y[k]);
 	   z=evaluate(f);
 	   sum+=(w[ij]*z);
 	 }
@@ -951,11 +959,13 @@ int ind;
      f=my_net[ind].f;
      yp=&variables[root2];
      for(j=0;j<n;j++){
-       f[3]=(int)(&yp[j]);
+       /*f[3]=(int)(&yp[j]);*/
+       f[3]=lround(yp[j]);
        sum=0.0;
        for(i=0;i<ncon;i++){
 	 ij=j*ncon+i;
-	 f[1]=(int)(&y[i]);
+	 /*f[1]=(int)(&y[i]);*/
+	 f[1]=lround(y[i]);
 	 z=evaluate(f);
 	 sum+=(w[ij]*z);
        }

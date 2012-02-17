@@ -283,6 +283,7 @@ create_vcr(name)
  if(ani_pixmap==0){
    err_msg("Failed to get the required pixmap");
    XFlush(display);
+   waitasec(ClickTime);
    XDestroySubwindows(display,base);
    XDestroyWindow(display,base);
    vcr.iexist=0;
@@ -446,6 +447,7 @@ ani_resize(x,y)
  if(ani_pixmap==0){
    err_msg("Failed to get the required pixmap");
    XFlush(display);
+   waitasec(ClickTime);
    XDestroySubwindows(display,vcr.base);
    XDestroyWindow(display,vcr.base);
    vcr.iexist=0;
@@ -653,7 +655,7 @@ ani_disk_warn()
   if(mpeg.aviflag==1)return;
   if(total>10){
  sprintf(junk," %d Mb disk space needed! Continue?",total);
- ans=(char)two_choice("YES","NO",junk,"yn",0,0,vcr.base);
+ ans=(char)two_choice("YES","NO",junk,"yn",0,0,vcr.base,NULL);
  if(ans!='y')mpeg.flag=0;
   
  }

@@ -41,7 +41,8 @@ void start_diagram(n)
   bifd->evr=DALLOC(n);
   bifd->evi=DALLOC(n);
   bifd->norm=0;
-  bifd->lab=0;
+  bifd->lab=NULL;
+   
   DiagFlag=0;
 }
 

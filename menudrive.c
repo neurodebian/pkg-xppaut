@@ -38,6 +38,7 @@
 #include <string.h>
 #include <X11/Xlib.h>
 #include "menudrive.h"
+#include "tutor.h"
 extern char *info_message,*ic_hint[],*sing_hint[],
 *null_hint[],*flow_hint[],*null_freeze[], *bvp_hint[],*color_hint[],
   *stoch_hint[];
@@ -70,6 +71,23 @@ MSGBOXSTRUCT MsgBox;
 char *getenv();
 
 
+void do_tutorial()
+{
+
+        printf("Running tutorial!\n");
+	int tut=0;
+	while (1)
+	{
+		
+		char ans = (char)two_choice("Next","Done",tutorial[tut],"nd",DisplayWidth/2,DisplayHeight/2,
+		   RootWindow(display,screen),"Did you know you can...");
+
+   		if(ans=='d')break;
+		tut++;
+		tut = tut % N_TUTORIAL;
+	}
+
+}
 
 void edit_xpprc()
 {
@@ -174,12 +192,13 @@ void KillMessageBox()
 {
   if(MsgBox.here==0)return;
   MsgBox.here=0;
+  waitasec(ClickTime);
   XDestroyWindow(display,MsgBox.w);
 }
 int TwoChoice(char *c1,char *c2, char *q,char *key)
 {
  return two_choice(c1,c2,q,key,DisplayWidth/2,DisplayHeight/2,
-		   RootWindow(display,screen)); 
+		   RootWindow(display,screen),NULL); 
 }
 int GetMouseXY(int *x,int *y)
 {
@@ -455,6 +474,9 @@ void do_file_com(int com)
     break;
   case M_FX:
     edit_xpprc();
+    break;
+  case M_FU:
+    do_tutorial();
     break;
   case M_FQ: 
     if(yes_no_box())bye_bye();

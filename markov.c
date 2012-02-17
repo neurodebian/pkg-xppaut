@@ -10,6 +10,7 @@
 #include "init_conds.h"
 #include "adj2.h"
 #include "histogram.h"
+#include "browse.h"
 
 
 #include <strings.h>

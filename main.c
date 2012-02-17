@@ -38,6 +38,10 @@
 
 #include "calc.h"
 #include <stdlib.h> 
+
+
+
+
 /*
     Copyright (C) 2002-2011  Bard Ermentrout & Daniel Dougherty
     
@@ -161,6 +165,28 @@ int OVERRIDE_QUIET=0;
 int OVERRIDE_LOGFILE=0;
 extern BROWSER my_browser;
 int tfBell;
+
+int SLIDER1=-1;
+int SLIDER2=-1;
+int SLIDER3=-1;
+char SLIDER1VAR[20];
+char SLIDER2VAR[20];
+char SLIDER3VAR[20];
+double SLIDER1LO=0.0;
+double SLIDER2LO=0.0;
+double SLIDER3LO=0.0;
+double SLIDER1HI=1.0;
+double SLIDER2HI=1.0;
+double SLIDER3HI=1.0;
+double SLIDER1INIT=0.5;
+double SLIDER2INIT=0.5;
+double SLIDER3INIT=0.5;
+
+/*Set this to 1 if you want the tutorial to come up at start-up
+as default behavior
+*/
+int DoTutorial=0;
+
 OptionsSet notAlreadySet;
 
 XFontStruct *big_font,*small_font;
@@ -302,8 +328,16 @@ int argc;
   notAlreadySet.NULL_ERR=1;
   notAlreadySet.NEWT_ERR=1;
   notAlreadySet.NULL_HERE=1;
-
-  
+  notAlreadySet.TUTORIAL=1;
+  notAlreadySet.SLIDER1=1;
+  notAlreadySet.SLIDER2=1;
+  notAlreadySet.SLIDER3=1;
+  notAlreadySet.SLIDER1LO=1;
+  notAlreadySet.SLIDER2LO=1;
+  notAlreadySet.SLIDER3LO=1;
+  notAlreadySet.SLIDER1HI=1;
+  notAlreadySet.SLIDER2HI=1;
+  notAlreadySet.SLIDER3HI=1;
   unsigned int min_wid=450,min_hgt=360;
   
 /*  unsigned int x=0,y=0; */
@@ -361,8 +395,7 @@ int argc;
        notAlreadySet = *tempNS;
        free(tempNS);
   }
-  load_eqn();
-
+  load_eqn();   
   OptionsSet *tempNS = (OptionsSet*)malloc(sizeof(OptionsSet));
   *tempNS = notAlreadySet;
   set_internopts(tempNS);
@@ -519,11 +552,14 @@ if(use_ani_file)
 	get_ani_file(anifile);
 }
 
+if(DoTutorial==1)
+{
+	do_tutorial();
+}
 do_events(min_wid,min_hgt);
 
 
 } 
-
 
 void check_for_quiet(argc,argv)
 char **argv;
@@ -1212,6 +1248,9 @@ void commander(ch)
 	    break;
 	  case 'x':  
 	    edit_xpprc();
+	    break;  
+	 case 'u':  
+	    do_tutorial();
 	    break;  
                 } /* end file switch  */
 	        help();
