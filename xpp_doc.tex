@@ -1468,8 +1468,8 @@ keywords that should not be used in your ODE files for anything other
 than their meaning here.
 \bvb
 sin cos tan atan atan2 sinh cosh tanh
-exp delay ln log log10 t pi if then else
-asin acos heav sign ceil flr ran abs del\_shft
+exp delay ln log log10 t pi if then else mod
+asin acos heav sign  flr ran abs del\_shft
 max min normal besselj bessely erf erfc poisson
 arg1 ... arg9  @ $ + - / * ^ ** shift
 | > < == >= <= != not \# int sum of i'
@@ -1496,6 +1496,7 @@ of events for the value of {\tt arg} from a Poisson process.
 \item {\tt max(arg1,arg2)} produces the maximum of the two arguments
 and {\tt min}  is 
 the minimum of them.
+\item {\tt mod(arg1,arg2)} is  {\tt arg1} modulo {\tt arg2}. 
 \item {\tt if(<exp1>)then(<exp2>)else(<exp3>)} evaluates {\tt <exp1> }
 If it is nonzero 
 it evaluates to {\tt <exp2>} otherwise it is { \tt <exp3>}.  E.g. {\tt if(x>1)then(ln(x))else(x-1)}
@@ -1504,8 +1505,7 @@ will lead to {\tt ln(2)}  if {\tt x=2}  and { \tt -1 if x=0.}
  evaluating {\tt <exp>}.  In order to use the delay you must inform
 the program of the maximal possible delay so it can allocate storage.
 (See the section on the NUMERICS menus.)
-\item {\tt  ceil(arg),flr(arg)}  are the integer parts of{\tt  <arg>} returning the
- smallest integer greater than and the largest integer less than {\tt <arg>}.  
+\item {\tt  flr(arg)}  is the integer part of{\tt  <arg>} returning the largest integer less than {\tt <arg>}.  
 \item  {\tt t } is the current time in the integration of the differential equation.
 \item {\tt  pi}  is $\pi.$ 
 \item {\tt arg1, ..., arg9} are the formal arguments for functions 

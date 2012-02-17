@@ -15,6 +15,7 @@
 #include "xpplim.h"
 #include "eqns.bitmap"
 #include "equilib.bitmap"
+#include "browse.h"
 
 #include "newhome.h"
 
@@ -213,6 +214,7 @@ void eq_list_button(XEvent ev)
  if(w==eq_list.down){eq_list_down(); return;}
   if(w==eq_list.close) {
    eq_list.flag=0;
+   waitasec(2*ClickTime);
    XDestroySubwindows(display,eq_list.base);
    XDestroyWindow(display,eq_list.base);
  }
@@ -283,6 +285,7 @@ void eq_box_button(Window w)
   if(w==eq_box.import){eq_box_import(); return;}
   if(eq_box.close==w){
     eq_box.flag=0;
+    waitasec(ClickTime);
     XDestroySubwindows(display,eq_box.base);
     XDestroyWindow(display,eq_box.base);
  }

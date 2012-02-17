@@ -8,12 +8,12 @@ MANDIR = /usr/local/man/man1
 # End Debian Edit
 #################################
 #
-VERSION=6.11c
+VERSION=6.11f
 MAJORVER=6.0
 MINORVER=11
 
 ODES=ode/*.ode ode/*.ani
-DOC=xpp_doc.ps xpp_doc.pdf xpp_sum.ps xpp_sum.pdf install.pdf
+DOC=xpp_doc.pdf xpp_sum.pdf install.pdf
 HELP=help/*.html
 # Standard C compiler
 #CC= cc
@@ -113,8 +113,8 @@ HEADERS = abort.h comline.h extra.h kinescope.h newhome.h stiff.h\
 	  array_print.h cvspgmr.h fmt.h local.h toons.h\
 	  autevd.h dae_fun.h form_ode.h lread.h open.h torus.h\
 	  autlib1.h delay_handle.h fp.h lunch-new.h parser.h txtread.h\
-	  autlib2.h del_stab.h gear.h parserslow.h uio.h\
-	  autlim.h dense.h getvar.h  phsplan.h userbut.h\
+	  autlib2.h del_stab.h gear.h macdirent.h parserslow.h uio.h\
+	  autlim.h dense.h getvar.h macsysdirent.h phsplan.h userbut.h\
 	  auto_define.h derived.h ggets.h main.h pop_list.h util.h\
 	  auto.h dfe.h graf_par.h many_pops.h pp_shoot.h vector.h\
 	  auto_nox.h diagram.h graphics.h markov.h rdfmt.h volterra2.h\
@@ -125,7 +125,7 @@ HEADERS = abort.h comline.h extra.h kinescope.h newhome.h stiff.h\
 	  calc.h edit_rhs.h init_conds.h mykeydef.h sfe.h wsne.h\
 	  choice_box.h eig_list.h integrate.h my_pars.h shoot.h xpplim.h\
 	  close.h endfile.h iterativ.h my_ps.h simplenet.h\
-	  color.h err.h kbs.h my_rhs.h spgmr.h cv2.h
+	  color.h err.h kbs.h my_rhs.h spgmr.h cv2.h tutor.h
 
 BITMAPS = aniwin.bitmap alert.bitmap bc.bitmap eqns.bitmap info.bitmap ic.bitmap pp.bitmap\
 	  array.bitmap browse.bitmap equilib.bitmap lines.bitmap txtview.bitmap\
@@ -292,17 +292,19 @@ tarfile:
 	 xpp_doc.tex README Makefile Makefile.64 Makefile.nice  Makefile.lib Makefile.avi Makefile.old \
 	ode/*.* xpp_doc.ps xpp_doc.pdf xpp_sum.tex xpp_sum.pdf xpp_sum.ps nullcline_bw.c  \
 	xppaut.1\
-         help/*.html help/odes/*.ode help/odes/*.c install.pdf install.tex LICENSE HISTORY \
-	Makefile.s2x sbml2xpp.c *.xbm  changes.txt
+        mkavi/*.cc mkavi/*.h mkavi/Makefile mkavi/drive.c help/*.html \
+	help/odes/*.ode help/odes/*.c install.pdf install.tex LICENSE HISTORY \
+	Makefile.s2x sbml2xpp.c *.xbm *.jar changes.txt
 	gzip xppaut$(VERSION).tar 
 otarfile:
 	tar cvf xppaut$(VERSION).tar $(SOURCES) $(AUTOSRC) $(HEADERS) $(BITMAPS) default.opt \
 	 xpp_doc.tex README Makefile Makefile.nice  Makefile.lib Makefile.avi Makefile.old \
 	ode/*.* xpp_doc.ps xpp_doc.pdf xpp_sum.tex xpp_sum.pdf xpp_sum.ps nullcline_bw.c  \
-    libI77/*.c libI77/*.h libI77/Makefile \
+        libI77/*.c libI77/*.h libI77/Makefile \
 	cvodesrc/*.c cvodesrc/*.h cvodesrc/Makefile xppaut.1\
-    help/*.html help/odes/*.ode help/odes/*.c install.pdf install.tex LICENSE HISTORY \
-	Makefile.s2x sbml2xpp.c *.xbm 
+        mkavi/*.cc mkavi/*.h mkavi/Makefile mkavi/drive.c help/*.html \
+	help/odes/*.ode help/odes/*.c install.pdf install.tex LICENSE HISTORY \
+	Makefile.s2x sbml2xpp.c *.xbm *.jar
 	gzip xppaut$(VERSION).tar 
 ##############################################
 #  pack up a binary

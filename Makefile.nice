@@ -94,7 +94,7 @@ HEADERS = browse.h form_ode.h gear.h help_defs.h my_pars.h \
 	  shoot.h struct.h volterra.h auto_define.h xpplim.h \
 	  mykeydef.h newpars.h myfonts.h f2c.h menus.h toons.h \
           parserslow.h dormpri.h fftn.h autlim.h menudrive.h lio.h cvode.h\
-          getvar.h kbs.h fio.h fmt.h fp.h local.h \
+          getvar.h kbs.h macdirent.h macsysdirent.h fio.h fmt.h fp.h local.h \
           vector.h spgmr.h llnltyps.h llnlmath.h iterativ.h dense.h \
           cvspgmr.h cvdiag.h cvdense.h cvband.h band.h 
 BITMAPS = bc.bitmap browse.bitmap delay.bitmap eqns.bitmap\
@@ -236,7 +236,8 @@ tarfile:
 	ode/*.* xpp_doc.ps xpp_doc.pdf xpp_sum.tex xpp_sum.pdf xpp_sum.ps nullcline_bw.c  \
         libI77/*.c libI77/*.h libI77/Makefile \
 	cvodesrc/*.c cvodesrc/*.h cvodesrc/Makefile xppaut.1\
-    help/*.html help/odes/*.ode help/odes/*.c install.pdf install.tex LICENSE HISTORY \
+        mkavi/*.cc mkavi/*.h mkavi/Makefile mkavi/drive.c help/*.html \
+	help/odes/*.ode help/odes/*.c install.pdf install.tex LICENSE HISTORY \
 	Makefile.s2x sbml2xpp.c *.xbm
 	gzip xppaut$(VERSION).tar 
 ##############################################

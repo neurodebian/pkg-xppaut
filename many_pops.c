@@ -897,6 +897,7 @@ void destroy_a_pop()
   graph[i].Use=0;
   destroy_label(graph[i].w);
   destroy_grob(graph[i].w);
+  waitasec(ClickTime);
   XDestroySubwindows(display,graph[i].w);
   XDestroyWindow(display,graph[i].w);
   num_pops--;

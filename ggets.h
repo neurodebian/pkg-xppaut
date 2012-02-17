@@ -5,6 +5,7 @@
 #include <X11/Xlib.h>
 
 #define MaxIncludeFiles 10
+#define ClickTime 200
 
 void ping(void);
 void reset_graphics(void);

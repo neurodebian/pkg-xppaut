@@ -30,7 +30,6 @@
 #else
 #include <wctype.h>
 #endif
-#include <errno.h>
 
 #include "xpplim.h"
 
@@ -1063,32 +1062,6 @@ double *value;
   number[l-k-1]='\0';
   *value=atof(number);
   }
-}
-
-void new_take_apart(bob, value, name)
-char *bob,*name;
-double *value;
-{
- int k,i,l;
- char * end;
- l=strlen(bob);
- k=strcspn(bob,"=");
- if(k==l)
-   {
-     *value=0.0;
-     strcpy(name,bob);
-   }
- else
-   {
-     name[0] = '\0';
-     name[k]='\0';
-     errno = 0;
-     *value = strtod(bob+k+1, &end);
-     if (*value == 0 && errno != 0)
-       {
-	 plintf(" Invalid number: %s\n", bob+k+1);
-       }
-   }
 }
 
 char *get_first(string,src)

@@ -418,8 +418,6 @@ int set_up_range()
    return(range_item());
  }
  
- /* printf("Checking here now %d\n",range.steps); */
- 
  sprintf(values[0],"%s",range.item);
  sprintf(values[1],"%d",range.steps);
  sprintf(values[2],"%.16g",range.plow);
@@ -602,7 +600,7 @@ void do_monte_carlo_search(int append, int stuffbrowse)
       m=fixptlist.n;
       if(m==0){ /* first fixed point found */
 	fixptlist.n=1;
-	printf("Found: %d\n",m);
+	plintf("Found: %d\n",m);
 	for(j=0;j<NODE;j++){
 	  fixptlist.x[0][j]=x[j];
 	  fixptlist.er[0][j]=er[j];

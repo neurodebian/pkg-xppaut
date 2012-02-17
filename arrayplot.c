@@ -283,6 +283,7 @@ void wborder(w,i,ap)
 void destroy_aplot()
 {
   aplot.alive=0;
+  waitasec(ClickTime);
   XDestroySubwindows(display,aplot.base);
     XDestroyWindow(display,aplot.base);
 }

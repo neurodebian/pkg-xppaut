@@ -44,12 +44,13 @@ and save the file.
 
 
 */
-//#ifdef MACOSX
-//#include "macdirent.h"
-//#else
-// Just system dirent.h should work
+/*#ifdef MACOSX
+#include "macdirent.h"
+#else
 #include <dirent.h>
-//#endif
+#endif
+*/
+#include <dirent.h>
 #include <stdio.h>
 #include <sys/stat.h>
 #define MAXPATHLEN 1024

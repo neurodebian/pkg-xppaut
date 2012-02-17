@@ -16,8 +16,10 @@
 #include "adj2.h"
 #include "arrayplot.h"
 #include "lunch-new.h"
-//#include "macdirent.h"
-//SUbstitued with system dirent.h
+
+/*#include "macdirent.h"
+*/
+
 #include <dirent.h>
 #include "userbut.h"
 #include "volterra2.h"
@@ -63,6 +65,21 @@ extern FILE *logfile;
 extern int OVERRIDE_QUIET;
 extern int OVERRIDE_LOGFILE;
 
+extern int SLIDER1;
+extern int SLIDER2;
+extern int SLIDER3;
+extern char SLIDER1VAR[20];
+extern char SLIDER2VAR[20];
+extern char SLIDER3VAR[20];
+extern double SLIDER1LO;
+extern double SLIDER2LO;
+extern double SLIDER3LO;
+extern double SLIDER1HI;
+extern double SLIDER2HI;
+extern double SLIDER3HI;
+extern double SLIDER1INIT;
+extern double SLIDER2INIT;
+extern double SLIDER3INIT;
 
 typedef struct {
   char *name;
@@ -90,6 +107,7 @@ extern int del_stab_flag;
 extern int MaxPoints;
 extern double THETA0,PHI0;
 extern int tfBell;
+extern int DoTutorial;
 /*void set_option(char *s1,char *s2);
 */
 
@@ -126,8 +144,8 @@ int (*solver)();
  int IXPLT,IYPLT,IZPLT;
  int AXES,TIMPLOT,PLOT_3D;
  double MY_XLO,MY_YLO,MY_XHI,MY_YHI;
- double TOR_PERIOD;
- int TORUS;
+ double TOR_PERIOD=6.2831853071795864770;
+ int TORUS=0;
  int NEQ;
  char options[100];  
 
@@ -551,7 +569,7 @@ void set_all_vals()
  my_pl_wid=10000. ;
  my_pl_ht=7000.  ;
 
- TORUS=0;
+ /* TORUS=0; */ 
  if (notAlreadySet.T0){T0=0.0;notAlreadySet.T0=0;};
  if (notAlreadySet.TRANS){TRANS=0.0;notAlreadySet.TRANS=0;};
  if (notAlreadySet.DT){DELTA_T=.05;notAlreadySet.DT=0;};
@@ -570,7 +588,7 @@ void set_all_vals()
  if (notAlreadySet.IZPLT){IZPLT=1;notAlreadySet.IZPLT=0;}
  
  if (notAlreadySet.NPLOT){
- if (NEQ>2){IZPLT=2;}
+   if (NEQ>2){if(notAlreadySet.IZPLT){IZPLT=2;}}
  NPltV=1;
  for(i=0;i<10;i++){
    IX_PLT[i]=IXPLT;
@@ -579,9 +597,8 @@ void set_all_vals()
  }
  notAlreadySet.NPLOT=0;
  }
- 
  /* internal options go here  */
-
+ set_internopts(NULL);
  
 
  if((fp=fopen(options,"r"))!=NULL)
@@ -591,11 +608,11 @@ void set_all_vals()
  } 
 
  custom_color=0;
-   init_range();    
+ init_range();
  init_trans();
  init_my_aplot();
  init_txtview();
- set_internopts(NULL);
+
   chk_volterra();  
 
 /*                           */
@@ -1469,6 +1486,7 @@ if(msc("UMC",s1)){
      {
      find_variable(s2,&i);
      if(i>0){
+       
        itor[i-1]=1;
       TORUS=1;
      }
@@ -1765,9 +1783,10 @@ if(msc("UMC",s1)){
  if(msc("RANGESTEP",s1)){
      if ((notAlreadySet.RANGESTEP||force)|| ((mask!=NULL)&&(mask->RANGESTEP==1)))
      {
+        
    	range.steps=atoi(s2);
 	notAlreadySet.RANGESTEP=0;
-    }
+     }
    return;
  }
   
@@ -1787,21 +1806,22 @@ if(msc("UMC",s1)){
    	range.phigh=atof(s2);
 	notAlreadySet.RANGEHIGH=0;
      }
-
    return;
  }
  
  if(msc("RANGERESET",s1)){
-
      if ((notAlreadySet.RANGERESET||force)|| ((mask!=NULL)&&(mask->RANGERESET==1)))
      {
 	 if(s2[0]=='y'||s2[0]=='Y')
+	 {
 	  range.reset=1;
-	  else
+	 }
+	 else
+	 {
 	  range.reset=0;
+	 } 
 	  notAlreadySet.RANGERESET=0;
-    }
-
+     }
   	return;
    }
 
@@ -2079,7 +2099,96 @@ if(msc("PS_COLOR",s1)){
      }
    return;
  }
+if(msc("TUTORIAL",s1)){
+   if(!(msc(s2,"0")||msc(s2,"1")))
+   {
+   	plintf("TUTORIAL option must be 0 or 1.\n");
+	exit(-1);
+   }
+   if ((notAlreadySet.TUTORIAL||force) || ((mask!=NULL)&&(mask->TUTORIAL==1)))
+   {
+   	DoTutorial=atoi(s2);
+	notAlreadySet.TUTORIAL=0;
+   }
+   return;
+ }
+ if(msc("S1",s1)){
+     if ((notAlreadySet.SLIDER1||force) || ((mask!=NULL)&&(mask->SLIDER1==1)))
+     {
+	strncpy(SLIDER1VAR,s2,20);
+	SLIDER1VAR[20]= '\0';
+	notAlreadySet.SLIDER1=0;
+     }
+    return;
+  }
 
+if(msc("S2",s1)){
+     if ((notAlreadySet.SLIDER2||force) || ((mask!=NULL)&&(mask->SLIDER2==1)))
+     {
+    	strncpy(SLIDER2VAR,s2,20);
+	SLIDER2VAR[20]= '\0';
+	notAlreadySet.SLIDER2=0;
+     }
+    return;
+   }
+ if(msc("S3",s1)){
+     if ((notAlreadySet.SLIDER3||force) || ((mask!=NULL)&&(mask->SLIDER3==1)))
+     {	
+     	strncpy(SLIDER3VAR,s2,20);
+	SLIDER3VAR[20]= '\0';
+	notAlreadySet.SLIDER3=0;
+     }
+    return;
+  }
+  if(msc("SLO1",s1)){
+     if ((notAlreadySet.SLIDER1LO||force) || ((mask!=NULL)&&(mask->SLIDER1LO==1)))
+     {
+    	SLIDER1LO=atof(s2);
+	notAlreadySet.SLIDER1LO=0;
+     }
+    return;
+  }
+
+if(msc("SLO2",s1)){
+     if ((notAlreadySet.SLIDER2LO||force) || ((mask!=NULL)&&(mask->SLIDER2LO==1)))
+     {
+    	SLIDER2LO=atof(s2);
+	notAlreadySet.SLIDER2LO=0;
+     }
+    return;
+   }
+ if(msc("SLO3",s1)){
+     if ((notAlreadySet.SLIDER3LO||force) || ((mask!=NULL)&&(mask->SLIDER3LO==1)))
+     {
+    	SLIDER3LO=atof(s2);
+	notAlreadySet.SLIDER3LO=0;
+     }
+    return;
+  }
+ if(msc("SHI1",s1)){
+     if ((notAlreadySet.SLIDER1HI||force) || ((mask!=NULL)&&(mask->SLIDER1HI==1)))
+     {
+    	SLIDER1HI=atof(s2);
+	notAlreadySet.SLIDER1HI=0;
+     }
+    return;
+  }
+ if(msc("SHI2",s1)){
+     if ((notAlreadySet.SLIDER2HI||force) || ((mask!=NULL)&&(mask->SLIDER2HI==1)))
+     {
+    	SLIDER2HI=atof(s2);
+	notAlreadySet.SLIDER2HI=0;
+     }
+    return;
+   }
+ if(msc("SHI3",s1)){
+     if ((notAlreadySet.SLIDER3HI||force) || ((mask!=NULL)&&(mask->SLIDER3HI==1)))
+     {
+    	SLIDER3HI=atof(s2);
+	notAlreadySet.SLIDER3HI=0;
+     }
+    return;
+  }
 
 
 plintf("!! Option %s not recognized\n",s1); 

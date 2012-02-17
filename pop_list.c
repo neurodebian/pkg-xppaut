@@ -5,6 +5,7 @@
 #include "menudrive.h"
 #include "info.bitmap"
 #include "alert.bitmap"
+#include "browse.h"
 
 
 void set_window_title(Window win,char *string)
@@ -106,6 +107,7 @@ void destroy_scroll_box(SCROLLBOX *sb)
 {
   if(sb->exist==1){
     sb->exist=0;
+    waitasec(ClickTime);
     XDestroySubwindows(display,sb->base);
     XDestroyWindow(display,sb->base);
   }
@@ -272,7 +274,7 @@ int do_string_box(n,row,col,title,names,values,maxchar)
   XSelectInput(display,sb.cancel,EV_MASK);
   	 XSelectInput(display,sb.ok,EV_MASK);
 
-
+ waitasec(ClickTime);
  XDestroySubwindows(display,sb.base);
  XDestroyWindow(display,sb.base);
 
@@ -885,6 +887,7 @@ void respond_box(button,message)
 	}
 			
      XSelectInput(display,wb,EV_MASK);
+     waitasec(ClickTime);
      XDestroySubwindows(display,wmain);
      XDestroyWindow(display,wmain); 
     }
@@ -908,7 +911,7 @@ void respond_box(button,message)
 	 int wid=strlen(message)*DCURX;
 	 int hgt=4*DCURY;
 	 Window z;
-	 z=make_window(*w,x,y,wid+50,hgt,4);
+	 z=make_plain_window(*w,x,y,wid+50,hgt,4);
          XSelectInput(display,z,0);
 	 Ftext(25,2*DCURY,message,z);
 	 ping();
@@ -925,8 +928,8 @@ void expose_choice(choice1,choice2,msg,c1,c2,wm,w)
 	if(w==c2)Ftext(0,0,choice2,c2);
 }
 
-int two_choice(choice1,choice2,string,key,x,y,w)
- char *choice1,*choice2,*string,*key;
+int two_choice(choice1,choice2,string,key,x,y,w,title)
+ char *choice1,*choice2,*string,*key,*title;
  int x,y;
   Window w;
  {
@@ -958,8 +961,16 @@ int two_choice(choice1,choice2,string,key,x,y,w)
 	 
 	ping();
         if(w==RootWindow(display,screen))
-	  set_window_title(base,"!!!!");
-       
+	{
+	  if (title==NULL)
+	  {
+	  	set_window_title(base,"!!!!");
+	  }
+	  else
+	  {
+	  	set_window_title(base,title);
+	  }
+         }
   
         while(not_done){
         XNextEvent(display,&ev);
@@ -1001,6 +1012,7 @@ int two_choice(choice1,choice2,string,key,x,y,w)
 
 				}
 	}
+	waitasec(2*ClickTime);
         XFlush(display);
 	XSelectInput(display,c1,EV_MASK);
   	XSelectInput(display,c2,EV_MASK);
@@ -1098,6 +1110,7 @@ Window *root,hwin;
 	}
 
 	for(i=0;i<n;i++) XSelectInput(display,p.w[i],EV_MASK);
+	 /*waitasec(ClickTime); Not here. Don't want to delay short cuts*/
 	 XDestroySubwindows(display,p.base);
 	 XDestroyWindow(display,p.base);
          XFlush(display);

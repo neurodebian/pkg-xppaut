@@ -14,6 +14,7 @@
 #include "xpplim.h"
 #define PARAM 1
 #define IC 2
+#include "browse.h"
 
 #include "parserslow.h"
 
@@ -112,7 +113,8 @@ double z;
 void quit_calc()
 {
  my_calc.use=0;
- XSelectInput(display,my_calc.quit,SIMPMASK); 
+ XSelectInput(display,my_calc.quit,SIMPMASK);
+ waitasec(ClickTime); 
  XDestroySubwindows(display,my_calc.base);
  XDestroyWindow(display,my_calc.base);
  clr_command();

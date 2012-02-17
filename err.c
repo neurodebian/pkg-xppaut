@@ -68,7 +68,7 @@ void fatal(n,s) char *s;int n;
 	else if(n == -1) fprintf(stderr,"%s: end of file\n",s);
 	else
 		fprintf(stderr,"%s: %s\n",s,F_err[n-100]);
-	fprintf(stderr,"apparent state: unit %d ",curunit-units);
+	fprintf(stderr,"apparent state: unit %ld ",curunit-units);
 	fprintf(stderr, curunit->ufnm ? "named %s\n" : "(unnamed)\n",
 		curunit->ufnm);
 	if (fmtbuf)

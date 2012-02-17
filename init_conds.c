@@ -16,6 +16,8 @@
 #include <stdlib.h> 
 #include <string.h>
 #include <strings.h>
+#include "browse.h"
+#include "load_eqn.h"
 
 /*    This makes a big box with windows that have the names of the
        variables and their current initial data, parameters, BCs
@@ -111,6 +113,21 @@ extern double default_ic[MAXODE];
 
 
 PAR_SLIDER my_par_slide[3];
+extern OptionsSet notAlreadySet;
+
+extern    int SLIDER1;
+extern    int SLIDER2;
+extern    int SLIDER3;
+extern   char SLIDER1VAR[20];
+extern   char SLIDER2VAR[20];
+extern   char SLIDER3VAR[20];
+extern double SLIDER1LO;
+extern double SLIDER2LO;
+extern double SLIDER3LO;
+extern double SLIDER1HI;
+extern double SLIDER2HI;
+extern double SLIDER3HI;
+
 
 
 extern BC_STRUCT my_bc[MAXODE];
@@ -1054,6 +1071,7 @@ XEvent ev;
 void destroy_selector()
 {
  filesel.here=0;
+ waitasec(ClickTime);
  XDestroySubwindows(display,filesel.base);
  XDestroyWindow(display,filesel.base);
  free_finfo(&my_ff);
@@ -1176,7 +1194,7 @@ void do_slide_motion(w,x,p,s)
       set_val(p->parname,p->val);
         if(p->type==ICBOX)
       last_ic[p->index]=p->val;
-	if(s<300) {clear_draw_window();
+	if(s<300) {clr_all_scrns();
 	create_new_cline();
 	redraw_dfield();
 	run_now();}
@@ -1279,6 +1297,7 @@ void make_par_slider(base,x,y,width,index)
      Window base;
      int x,y,width,index;
 {
+
   int mainhgt=3*(DCURYs+2);
   int mainwid=32*DCURXs;
   int xs;
@@ -1302,6 +1321,34 @@ void make_par_slider(base,x,y,width,index)
   my_par_slide[index].pos=(width+4)/2;
   my_par_slide[index].parname[0]=0;
   my_par_slide[index].hgt=DCURYs-4;
+  
+  if ((notAlreadySet.SLIDER1==0) && (index==0))
+  {
+  	strcpy(my_par_slide[index].parname,SLIDER1VAR);
+	my_par_slide[index].use=1;
+	my_par_slide[index].lo=SLIDER1LO;
+	my_par_slide[index].hi=SLIDER1HI;
+	get_val(my_par_slide[index].parname,&my_par_slide[index].val);
+  }
+  
+  if ((notAlreadySet.SLIDER2==0) && (index==1))
+  {
+  	strcpy(my_par_slide[index].parname,SLIDER2VAR);
+	my_par_slide[index].use=1;
+	my_par_slide[index].lo=SLIDER2LO;
+	my_par_slide[index].hi=SLIDER2HI;
+	get_val(my_par_slide[index].parname,&my_par_slide[index].val);
+  }
+  
+  if ((notAlreadySet.SLIDER3==0) && (index==2))
+  {
+  	strcpy(my_par_slide[index].parname,SLIDER3VAR);
+	my_par_slide[index].use=1;
+	my_par_slide[index].lo=SLIDER3LO;
+	my_par_slide[index].hi=SLIDER3HI;
+	get_val(my_par_slide[index].parname,&my_par_slide[index].val);
+  }
+  
 }
 
  
@@ -1467,6 +1514,7 @@ void destroy_box(BoxList *b)
   XFlush(display);
   XSetInputFocus(display,main_win,RevertToParent,CurrentTime);
   if(b->use==0)return;
+  waitasec(ClickTime);
   XDestroySubwindows(display,b->base);
   XDestroyWindow(display,b->base);
   /*n=b->n;
@@ -1479,7 +1527,9 @@ void destroy_box(BoxList *b)
     free(b->ck);
     free(b->isck);
   }
+  waitasec(200);
   XFlush(display);
+  
 }
 
 

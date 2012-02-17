@@ -15,7 +15,7 @@
 #include "struct.h"
 #include "pop_list.h"
 #include "ggets.h"
-
+#include "browse.h"
 
 
 
@@ -36,6 +36,7 @@ extern int xor_flag,DCURY,DCURX,CURY_OFF,CURS_X,CURS_Y;
 void destroy_choice(p)
 CHOICE_BOX p;
 {
+  waitasec(ClickTime);
   XDestroySubwindows(display,p.base);
   XDestroyWindow(display,p.base);
  }
