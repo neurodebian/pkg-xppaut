@@ -1,3 +1,9 @@
+xppaut (6.11f.dfsg) unstable; urgency=low
+
+  * New upstream release; cleaned (DFSG) version
+
+ -- Jakub Nowacki <j.s.nowacki@gmail.com>  Fri, 17 Feb 2012 20:46:17 +0000
+
 xppaut (6.11b+1.dfsg-1) unstable; urgency=low
 
   [ Jakub Nowacki ]
